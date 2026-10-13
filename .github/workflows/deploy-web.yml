@@ -1,0 +1,93 @@
+name: deploy-web
+
+# Flutter web → Vercel (ADR-0006).
+#   develop → staging (deployment preview)
+#   main    → production (--prod)
+# Requiere GitHub Environments "staging" y "production" con:
+#   vars:    API_URL, SOCKET_URL
+#   secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID_APP_WEB, VERCEL_PROJECT_ID_ADMIN
+
+on:
+  push:
+    branches: [develop, main]
+    paths: ["apps/**", ".github/workflows/deploy-web.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-web-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: "3.44.9"
+
+jobs:
+  deploy:
+    name: ${{ matrix.project }} (${{ github.ref_name == 'main' && 'production' || 'staging' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: app-web
+            path: apps/mobile
+            project_id_secret: VERCEL_PROJECT_ID_APP_WEB
+          - project: admin
+            path: apps/admin
+            project_id_secret: VERCEL_PROJECT_ID_ADMIN
+    defaults:
+      run:
+        working-directory: ${{ matrix.path }}
+    env:
+      APP_ENV: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+      VERCEL_ENV: ${{ github.ref_name == 'main' && 'production' || 'preview' }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Dependencias
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Tests
+        run: flutter test
+
+      - name: Build web
+        run: >-
+          flutter build web --release
+          --dart-define=API_URL=${{ vars.API_URL }}
+          --dart-define=SOCKET_URL=${{ vars.SOCKET_URL }}
+          --dart-define=APP_ENV=${{ env.APP_ENV }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Vercel CLI
+        run: npm install --global vercel@63.1.2
+
+      - name: Vercel pull
+        run: vercel pull --yes --environment=${{ env.VERCEL_ENV }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Vercel build (empaqueta build/web con vercel.json)
+        run: vercel build ${{ env.VERCEL_ENV == 'production' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Vercel deploy
+        run: |
+          url=$(vercel deploy --prebuilt ${{ env.VERCEL_ENV == 'production' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }})
+          echo "Desplegado en: $url"
+          echo "### ${{ matrix.project }} → $url" >> "$GITHUB_STEP_SUMMARY"

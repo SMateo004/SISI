@@ -1,0 +1,265 @@
+# Render Blueprint de SISI (docs/02 §8, ADR-0007).
+# Dos entornos: staging (rama develop) y production (rama main).
+# Sin secretos: los valores externos se piden en el dashboard (sync: false)
+# y los JWT se generan solos (generateValue: true).
+#
+# Nombres: production usa api, worker, billing-cron, db y cache; staging lleva sufijo -staging
+# (Render exige nombres únicos en el workspace).
+
+projects:
+  - name: sisi
+    environments:
+      # ───────────────────────────── STAGING ─────────────────────────────
+      - name: staging
+        envVarGroups:
+          - name: sisi-staging-shared
+            envVars:
+              - key: NODE_ENV
+                value: production
+              - key: NODE_VERSION
+                value: "24"
+              - key: TZ_DEFAULT
+                value: America/La_Paz
+              - key: JWT_SECRET
+                generateValue: true
+              - key: JWT_REFRESH_SECRET
+                generateValue: true
+
+        services:
+          - type: web
+            name: api-staging
+            runtime: node
+            region: virginia
+            plan: starter
+            branch: develop
+            rootDir: backend
+            buildCommand: npm ci --include=dev && npm run build
+            preDeployCommand: npx prisma migrate deploy && npm run prisma:seed
+            startCommand: npm run start:prod
+            healthCheckPath: /health
+            autoDeployTrigger: checksPass # despliega solo si pasa backend-ci
+            envVars:
+              - fromGroup: sisi-staging-shared
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: db-staging
+                  property: connectionString
+              - key: REDIS_URL
+                fromService:
+                  type: keyvalue
+                  name: cache-staging
+                  property: connectionString
+              - key: CORS_ORIGINS
+                sync: false
+              - key: OTP_PROVIDER_KEY
+                sync: false
+              - key: FIREBASE_SERVICE_ACCOUNT
+                sync: false
+              - key: STORAGE_BUCKET
+                sync: false
+              - key: STORAGE_ACCESS_KEY
+                sync: false
+              - key: STORAGE_SECRET_KEY
+                sync: false
+              - key: MAPS_API_KEY
+                sync: false
+              - key: SENTRY_DSN
+                sync: false
+
+          - type: worker
+            name: worker-staging
+            runtime: node
+            region: virginia
+            plan: starter
+            branch: develop
+            rootDir: backend
+            buildCommand: npm ci --include=dev && npm run build
+            startCommand: npm run start:worker
+            autoDeployTrigger: checksPass # despliega solo si pasa backend-ci
+            envVars:
+              - fromGroup: sisi-staging-shared
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: db-staging
+                  property: connectionString
+              - key: REDIS_URL
+                fromService:
+                  type: keyvalue
+                  name: cache-staging
+                  property: connectionString
+              - key: FIREBASE_SERVICE_ACCOUNT
+                sync: false
+              - key: SENTRY_DSN
+                sync: false
+
+          - type: cron
+            name: billing-cron-staging
+            runtime: node
+            region: virginia
+            plan: starter
+            branch: develop
+            rootDir: backend
+            # Corte semanal: domingo 23:59 hora de Bolivia (UTC-4) = lunes 03:59 UTC.
+            # Render interpreta el cron en UTC. Ver R7.2 y docs/pendientes.md.
+            schedule: "59 3 * * 1"
+            buildCommand: npm ci --include=dev && npm run build
+            startCommand: npm run start:billing-cron
+            autoDeployTrigger: checksPass # despliega solo si pasa backend-ci
+            envVars:
+              - fromGroup: sisi-staging-shared
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: db-staging
+                  property: connectionString
+              - key: REDIS_URL
+                fromService:
+                  type: keyvalue
+                  name: cache-staging
+                  property: connectionString
+              - key: SENTRY_DSN
+                sync: false
+
+          - type: keyvalue
+            name: cache-staging
+            region: virginia
+            plan: free
+            # Obligatorio para colas BullMQ: nunca descartar claves.
+            maxmemoryPolicy: noeviction
+            ipAllowList: [] # solo red privada de Render
+
+        databases:
+          - name: db-staging
+            databaseName: sisi
+            user: sisi
+            region: virginia
+            plan: basic-256mb
+            postgresMajorVersion: "17"
+            ipAllowList: [] # solo red privada de Render
+
+      # ──────────────────────────── PRODUCTION ───────────────────────────
+      # Planes pagos: un servicio inmediato no tolera arranques en frío (doc 02 §8).
+      - name: production
+        envVarGroups:
+          - name: sisi-production-shared
+            envVars:
+              - key: NODE_ENV
+                value: production
+              - key: NODE_VERSION
+                value: "24"
+              - key: TZ_DEFAULT
+                value: America/La_Paz
+              - key: JWT_SECRET
+                generateValue: true
+              - key: JWT_REFRESH_SECRET
+                generateValue: true
+
+        services:
+          - type: web
+            name: api
+            runtime: node
+            region: virginia
+            plan: standard
+            branch: main
+            rootDir: backend
+            buildCommand: npm ci --include=dev && npm run build
+            preDeployCommand: npx prisma migrate deploy && npm run prisma:seed
+            startCommand: npm run start:prod
+            healthCheckPath: /health
+            autoDeployTrigger: checksPass # despliega solo si pasa backend-ci
+            envVars:
+              - fromGroup: sisi-production-shared
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: db
+                  property: connectionString
+              - key: REDIS_URL
+                fromService:
+                  type: keyvalue
+                  name: cache
+                  property: connectionString
+              - key: CORS_ORIGINS
+                sync: false
+              - key: OTP_PROVIDER_KEY
+                sync: false
+              - key: FIREBASE_SERVICE_ACCOUNT
+                sync: false
+              - key: STORAGE_BUCKET
+                sync: false
+              - key: STORAGE_ACCESS_KEY
+                sync: false
+              - key: STORAGE_SECRET_KEY
+                sync: false
+              - key: MAPS_API_KEY
+                sync: false
+              - key: SENTRY_DSN
+                sync: false
+
+          - type: worker
+            name: worker
+            runtime: node
+            region: virginia
+            plan: starter
+            branch: main
+            rootDir: backend
+            buildCommand: npm ci --include=dev && npm run build
+            startCommand: npm run start:worker
+            autoDeployTrigger: checksPass # despliega solo si pasa backend-ci
+            envVars:
+              - fromGroup: sisi-production-shared
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: db
+                  property: connectionString
+              - key: REDIS_URL
+                fromService:
+                  type: keyvalue
+                  name: cache
+                  property: connectionString
+              - key: FIREBASE_SERVICE_ACCOUNT
+                sync: false
+              - key: SENTRY_DSN
+                sync: false
+
+          - type: cron
+            name: billing-cron
+            runtime: node
+            region: virginia
+            plan: starter
+            branch: main
+            rootDir: backend
+            # Corte semanal: domingo 23:59 hora de Bolivia (UTC-4) = lunes 03:59 UTC.
+            # Render interpreta el cron en UTC. Ver R7.2 y docs/pendientes.md.
+            schedule: "59 3 * * 1"
+            buildCommand: npm ci --include=dev && npm run build
+            startCommand: npm run start:billing-cron
+            autoDeployTrigger: checksPass # despliega solo si pasa backend-ci
+            envVars:
+              - fromGroup: sisi-production-shared
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: db
+                  property: connectionString
+              - key: REDIS_URL
+                fromService:
+                  type: keyvalue
+                  name: cache
+                  property: connectionString
+              - key: SENTRY_DSN
+                sync: false
+
+          - type: keyvalue
+            name: cache
+            region: virginia
+            plan: starter
+            # Obligatorio para colas BullMQ: nunca descartar claves.
+            maxmemoryPolicy: noeviction
+            ipAllowList: [] # solo red privada de Render
+
+        databases:
+          - name: db
+            databaseName: sisi
+            user: sisi
+            region: virginia
+            plan: basic-1gb
+            postgresMajorVersion: "17"
+            ipAllowList: [] # solo red privada de Render

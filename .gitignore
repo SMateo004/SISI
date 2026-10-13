@@ -74,3 +74,6 @@ build/
 # Logs
 *.log
 logs/
+
+# --- Prisma (cliente generado) ---
+backend/src/generated/

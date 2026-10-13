@@ -14,4 +14,4 @@ El doc 02 pide Prisma + SQL directo para lo geográfico y `CREATE EXTENSION IF N
 - Ids `uuid` generados por la BD (`gen_random_uuid()`).
 
 ## Consecuencias
-`prisma migrate dev` puede detectar la extensión como drift si alguien la quita; no hay que quitarla.
+Verificado: `prisma migrate dev` no detecta drift por las tablas de PostGIS (`spatial_ref_sys`). La línea `CREATE EXTENSION` no se debe quitar.

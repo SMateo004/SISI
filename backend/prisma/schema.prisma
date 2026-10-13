@@ -1,0 +1,28 @@
+// Esquema de datos de SISI. Ver docs/02-contexto-tecnico-claude-code.md §4 y ADR-0003.
+// Nombres en BD en snake_case; montos en Decimal; fechas en UTC (timestamptz).
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Ciudades donde opera la plataforma (R10.1: toda entidad relevante lleva city_id).
+model City {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug        String   @unique
+  name        String
+  /// Código de país ISO 3166-1 alfa-2 (BO).
+  countryCode String   @map("country_code") @db.Char(2)
+  /// Zona horaria IANA (America/La_Paz).
+  timezone    String
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("cities")
+}

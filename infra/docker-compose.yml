@@ -1,0 +1,45 @@
+# Infra local de SISI: PostgreSQL + PostGIS y Redis.
+# Uso: docker compose -f infra/docker-compose.yml up -d
+# Versiones alineadas con CI y Render (ver docs/adr/0004).
+name: sisi
+
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sisi
+      POSTGRES_PASSWORD: sisi
+      POSTGRES_DB: sisi
+      TZ: UTC
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Crea la base sisi_test para los tests e2e.
+      - ./postgres/20-create-test-db.sql:/docker-entrypoint-initdb.d/20-create-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sisi -d sisi"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # noeviction: igual que Render Key Value, obligatorio para colas BullMQ.
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
+  redisdata:

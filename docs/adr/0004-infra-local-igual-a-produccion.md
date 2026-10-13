@@ -12,3 +12,5 @@ Render ofrece Postgres 17 con PostGIS y Key Value compatible con Redis. Las cola
 
 ## Consecuencias
 Lo que pasa en local y en CI se parece a producción. Actualizar la versión aquí, en CI y en `render.yaml` a la vez.
+
+Puertos del host: 55432 (Postgres) y 56379 (Redis), para no chocar con instalaciones nativas en 5432/5433/6379. Se cambian con `SISI_DB_PORT` y `SISI_REDIS_PORT`.

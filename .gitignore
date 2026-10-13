@@ -1,0 +1,76 @@
+# --- Sistema / IDE ---
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# --- Secretos y entorno ---
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.keystore
+*.jks
+key.properties
+google-services.json
+GoogleService-Info.plist
+firebase-service-account*.json
+
+# --- Node / backend ---
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+.npm/
+.eslintcache
+
+# --- Vercel ---
+.vercel/
+
+# --- Flutter / Dart ---
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+**/doc/api/
+*.g.dart.tmp
+
+# Android
+**/android/.gradle/
+**/android/captures/
+**/android/local.properties
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/gradle/wrapper/gradle-wrapper.jar
+**/android/**/GeneratedPluginRegistrant.java
+
+# iOS / macOS
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/ios/**/xcuserdata/
+**/ios/**/DerivedData/
+
+# Logs
+*.log
+logs/

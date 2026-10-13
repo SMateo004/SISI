@@ -45,13 +45,12 @@ jobs:
     env:
       APP_ENV: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
       VERCEL_ENV: ${{ github.ref_name == 'main' && 'production' || 'preview' }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
+      VERCEL_PROD_FLAG: ${{ github.ref_name == 'main' && '--prod' || '' }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: stable
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -80,14 +79,16 @@ jobs:
       - name: Vercel CLI
         run: npm install --global vercel@63.1.2
 
-      - name: Vercel pull
-        run: vercel pull --yes --environment=${{ env.VERCEL_ENV }} --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Vercel build (empaqueta build/web con vercel.json)
-        run: vercel build ${{ env.VERCEL_ENV == 'production' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Vercel deploy
+      # Los secretos de Vercel solo existen en este paso (no los ven acciones de terceros).
+      - name: Vercel pull, build y deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
         run: |
-          url=$(vercel deploy --prebuilt ${{ env.VERCEL_ENV == 'production' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }})
+          vercel pull --yes --environment="$VERCEL_ENV" --token="$VERCEL_TOKEN"
+          # Empaqueta build/web aplicando vercel.json (rewrites a index.html).
+          vercel build $VERCEL_PROD_FLAG --token="$VERCEL_TOKEN"
+          url=$(vercel deploy --prebuilt $VERCEL_PROD_FLAG --token="$VERCEL_TOKEN")
           echo "Desplegado en: $url"
           echo "### ${{ matrix.project }} → $url" >> "$GITHUB_STEP_SUMMARY"

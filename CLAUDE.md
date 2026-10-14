@@ -18,6 +18,8 @@ Lee docs/00-contexto-general-SISI.md, docs/01-reglas-de-negocio.md y docs/02-con
 - No subas secretos; usa variables de entorno (.env.example actualizado).
 - Límites de peticiones: reutiliza RateLimitStore / @RateLimit (ADR-0010).
 - El estado del trabajador solo cambia con WorkerStatusService.apply (ADR-0013).
+- Precio y comisión de una categoría siempre vía CategoryResolver (ADR-0016); el estado de una solicitud solo con RequestStatusService (ADR-0019).
+- Texto de usuarios (solicitudes, chat) se modera con ModerationService.check (ADR-0018).
 
 ## Comandos
 - Local: docker compose -f infra/docker-compose.yml up -d

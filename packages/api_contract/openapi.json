@@ -32,17 +32,846 @@
           "health"
         ]
       }
+    },
+    "/me": {
+      "get": {
+        "operationId": "MeController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mi cuenta",
+        "tags": [
+          "me"
+        ]
+      },
+      "patch": {
+        "operationId": "MeController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Actualiza mi nombre (la foto se cambia con /me/photo)",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/me/photo/upload-url": {
+      "post": {
+        "description": "Válida 5 minutos. Hacer PUT con el archivo y los headers indicados; luego confirmar con PUT /me/photo.",
+        "operationId": "MeController_photoUploadUrl",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresignedUploadDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "UPLOAD_TYPE_NOT_ALLOWED o UPLOAD_TOO_LARGE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "URL prefirmada para subir mi foto de perfil",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/me/photo": {
+      "put": {
+        "operationId": "MeController_confirmPhoto",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "UPLOAD_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "UPLOAD_KEY_FORBIDDEN",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Confirma la foto subida y la deja como foto de perfil",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/auth/otp/request": {
+      "post": {
+        "description": "La respuesta es la misma tenga o no cuenta el número. Límites: 1 código cada 60 s, 5 por hora y 10 por día por número; 20 por hora por IP.",
+        "operationId": "AuthController_requestOtp",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestOtpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OtpRequestedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PHONE_INVALID, PHONE_NOT_MOBILE o PHONE_COUNTRY_NOT_ALLOWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de intentos (Retry-After)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "OTP_SEND_FAILED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Envía un código de 6 dígitos al celular",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/otp/verify": {
+      "post": {
+        "description": "Crea la cuenta si el número no tenía una (modo employer, R1.2).",
+        "operationId": "AuthController_verifyOtp",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyOtpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "OTP_INVALID u OTP_TOO_MANY_ATTEMPTS",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de intentos (Retry-After)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Valida el código e inicia sesión",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "description": "Cada refresh se usa una sola vez. Reutilizar uno ya usado revoca todas las sesiones de esa familia.",
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokensDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "SESSION_INVALID, SESSION_REUSED, SESSION_REVOKED o SESSION_EXPIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de intentos (Retry-After)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Renueva la sesión (rota el refresh token)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "429": {
+            "description": "Límite de intentos (Retry-After)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cierra la sesión (revoca la familia del refresh token)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/me/mode": {
+      "patch": {
+        "description": "A employer siempre se puede cambiar. A worker solo con el perfil aprobado; si no, 409 con el motivo y la acción siguiente (R1.5, R1.6).",
+        "operationId": "WorkerMeController_switchMode",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwitchModeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "WORKER_NOT_REQUESTED, WORKER_UNDER_REVIEW, WORKER_REJECTED, WORKER_BLOCKED_DEBT o WORKER_SUSPENDED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModeDeniedDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Interruptor empleador / trabajador",
+        "tags": [
+          "worker"
+        ]
+      }
+    },
+    "/me/worker": {
+      "get": {
+        "operationId": "WorkerMeController_getProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerProfileDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mi perfil de trabajador y el estado de cada documento",
+        "tags": [
+          "worker"
+        ]
+      }
+    },
+    "/me/worker/documents/upload-url": {
+      "post": {
+        "description": "Válida 5 minutos. Luego confirmar con PUT /me/worker/documents/{type}.",
+        "operationId": "WorkerMeController_documentUploadUrl",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentUploadRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresignedUploadDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "UPLOAD_TYPE_NOT_ALLOWED o UPLOAD_TOO_LARGE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "WORKER_PROFILE_LOCKED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "URL prefirmada para subir un documento (CI anverso, reverso o selfie)",
+        "tags": [
+          "worker"
+        ]
+      }
+    },
+    "/me/worker/documents/{type}": {
+      "put": {
+        "operationId": "WorkerMeController_confirmDocument",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "ci_front",
+                "ci_back",
+                "selfie"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerProfileDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "UPLOAD_KEY_FORBIDDEN",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "WORKER_PROFILE_LOCKED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Confirma un documento subido",
+        "tags": [
+          "worker"
+        ]
+      }
+    },
+    "/me/worker/upgrade": {
+      "post": {
+        "description": "Requiere teléfono verificado, 18 años cumplidos (hora de Bolivia), CI ambos lados, selfie, categorías activas, transporte y radio de 1 a 10 km. El estado pasa a pendiente_revision.",
+        "operationId": "WorkerMeController_submitUpgrade",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitUpgradeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerProfileDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR, WORKER_UNDERAGE, WORKER_DOCUMENTS_MISSING, CATEGORY_NOT_AVAILABLE o PHONE_NOT_VERIFIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "WORKER_TRANSITION_NOT_ALLOWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Envía la solicitud para trabajar (R1.3)",
+        "tags": [
+          "worker"
+        ]
+      }
+    },
+    "/admin/workers/{userId}/documents/{documentId}/url": {
+      "get": {
+        "description": "Válido 5 minutos. Solo administradores.",
+        "operationId": "AdminWorkersController_documentUrl",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "documentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentUrlDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El documento no existe o no es de ese trabajador"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Enlace temporal a un documento de identidad (R9.5)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/categories": {
+      "get": {
+        "description": "Lista cerrada (R2.1). En la Fase 1 puede venir vacía: el seed llega en la Fase 2.",
+        "operationId": "CategoriesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Categorías activas",
+        "tags": [
+          "categories"
+        ]
+      }
     }
   },
   "info": {
     "title": "SISI API",
-    "description": "API de SISI: servicios inmediatos (Bolivia).",
-    "version": "0.1.0",
+    "description": "API de SISI: servicios inmediatos (Bolivia). Los errores tienen la forma {statusCode, code, message} con mensajes en español.",
+    "version": "0.2.0",
     "contact": {}
   },
   "tags": [],
   "servers": [],
   "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
     "schemas": {
       "HealthCheckDto": {
         "type": "object",
@@ -107,6 +936,620 @@
           "status",
           "checks",
           "timestamp"
+        ]
+      },
+      "ApiErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "code": {
+            "type": "string",
+            "example": "OTP_INVALID",
+            "description": "Código estable para la app"
+          },
+          "message": {
+            "type": "string",
+            "example": "Código incorrecto o vencido."
+          }
+        },
+        "required": [
+          "statusCode",
+          "code",
+          "message"
+        ]
+      },
+      "UserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "7b0a1c7e-5f1e-4c41-9a51-0f8e7f1f5a10"
+          },
+          "phone": {
+            "type": "string",
+            "example": "+59170012345"
+          },
+          "name": {
+            "type": "string",
+            "example": "María Pérez",
+            "nullable": true
+          },
+          "photoUrl": {
+            "type": "string",
+            "example": "https://...firmada...",
+            "nullable": true,
+            "description": "URL temporal de la foto de perfil"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "admin"
+            ],
+            "example": "user"
+          },
+          "activeMode": {
+            "type": "string",
+            "enum": [
+              "employer",
+              "worker"
+            ],
+            "example": "employer"
+          },
+          "cityId": {
+            "type": "string",
+            "example": "b1f0e1a2-3c4d-4e5f-8a9b-0c1d2e3f4a5b"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-10-14T12:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "phone",
+          "name",
+          "photoUrl",
+          "role",
+          "activeMode",
+          "cityId",
+          "createdAt"
+        ]
+      },
+      "UpdateMeDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "María Pérez",
+            "minLength": 2,
+            "maxLength": 60
+          }
+        }
+      },
+      "UploadRequestDto": {
+        "type": "object",
+        "properties": {
+          "contentType": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/heic"
+            ],
+            "example": "image/jpeg"
+          },
+          "sizeBytes": {
+            "type": "number",
+            "example": 245812,
+            "description": "Tamaño exacto del archivo en bytes (máx. 8 MB)"
+          }
+        },
+        "required": [
+          "contentType",
+          "sizeBytes"
+        ]
+      },
+      "PresignedUploadDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "avatars/7b0a.../c0ffee.jpg",
+            "description": "Clave para confirmar la subida"
+          },
+          "uploadUrl": {
+            "type": "string",
+            "example": "https://...?X-Amz-Signature=..."
+          },
+          "method": {
+            "type": "string",
+            "example": "PUT",
+            "enum": [
+              "PUT"
+            ]
+          },
+          "headers": {
+            "type": "object",
+            "example": {
+              "Content-Type": "image/jpeg"
+            },
+            "description": "Headers a enviar tal cual en el PUT"
+          },
+          "expiresAt": {
+            "type": "string",
+            "example": "2026-10-14T12:05:00.000Z"
+          }
+        },
+        "required": [
+          "key",
+          "uploadUrl",
+          "method",
+          "headers",
+          "expiresAt"
+        ]
+      },
+      "ConfirmUploadDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "avatars/7b0a.../c0ffee.jpg"
+          }
+        },
+        "required": [
+          "key"
+        ]
+      },
+      "RequestOtpDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "example": "70012345",
+            "description": "Celular. Sin prefijo se asume Bolivia (+591)."
+          }
+        },
+        "required": [
+          "phone"
+        ]
+      },
+      "OtpRequestedDto": {
+        "type": "object",
+        "properties": {
+          "expiresInSec": {
+            "type": "number",
+            "example": 300,
+            "description": "Segundos hasta que vence el código"
+          },
+          "resendInSec": {
+            "type": "number",
+            "example": 60,
+            "description": "Segundos hasta poder pedir otro código"
+          }
+        },
+        "required": [
+          "expiresInSec",
+          "resendInSec"
+        ]
+      },
+      "VerifyOtpDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "example": "70012345",
+            "description": "Celular. Sin prefijo se asume Bolivia (+591)."
+          },
+          "code": {
+            "type": "string",
+            "example": "482913",
+            "description": "Código de 6 dígitos recibido por SMS"
+          }
+        },
+        "required": [
+          "phone",
+          "code"
+        ]
+      },
+      "LoginResponseDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "refreshToken": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "tokenType": {
+            "type": "string",
+            "example": "Bearer",
+            "enum": [
+              "Bearer"
+            ]
+          },
+          "expiresIn": {
+            "type": "number",
+            "example": 900,
+            "description": "Vida del token de acceso, en segundos"
+          },
+          "refreshExpiresIn": {
+            "type": "number",
+            "example": 2592000,
+            "description": "Vida del refresh token, en segundos"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserDto"
+          },
+          "isNewUser": {
+            "type": "boolean",
+            "example": true,
+            "description": "La cuenta se creó en este login"
+          }
+        },
+        "required": [
+          "accessToken",
+          "refreshToken",
+          "tokenType",
+          "expiresIn",
+          "refreshExpiresIn",
+          "user",
+          "isNewUser"
+        ]
+      },
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "TokensDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "refreshToken": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "tokenType": {
+            "type": "string",
+            "example": "Bearer",
+            "enum": [
+              "Bearer"
+            ]
+          },
+          "expiresIn": {
+            "type": "number",
+            "example": 900,
+            "description": "Vida del token de acceso, en segundos"
+          },
+          "refreshExpiresIn": {
+            "type": "number",
+            "example": 2592000,
+            "description": "Vida del refresh token, en segundos"
+          }
+        },
+        "required": [
+          "accessToken",
+          "refreshToken",
+          "tokenType",
+          "expiresIn",
+          "refreshExpiresIn"
+        ]
+      },
+      "SwitchModeDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "employer",
+              "worker"
+            ],
+            "example": "worker"
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "ModeDeniedDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "code": {
+            "type": "string",
+            "example": "OTP_INVALID",
+            "description": "Código estable para la app"
+          },
+          "message": {
+            "type": "string",
+            "example": "Código incorrecto o vencido."
+          },
+          "nextAction": {
+            "type": "string",
+            "enum": [
+              "COMPLETE_VERIFICATION",
+              "VIEW_REVIEW_STATUS",
+              "RESUBMIT_VERIFICATION",
+              "PAY_COMMISSION",
+              "CONTACT_SUPPORT"
+            ],
+            "example": "COMPLETE_VERIFICATION"
+          },
+          "actionLabel": {
+            "type": "string",
+            "example": "Completa tu verificación"
+          }
+        },
+        "required": [
+          "statusCode",
+          "code",
+          "message",
+          "nextAction",
+          "actionLabel"
+        ]
+      },
+      "WorkerDocumentStatusDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ci_front",
+              "ci_back",
+              "selfie",
+              "cert"
+            ],
+            "example": "ci_front"
+          },
+          "reviewStatus": {
+            "type": "string",
+            "enum": [
+              "pendiente",
+              "aprobado",
+              "rechazado"
+            ],
+            "example": "pendiente"
+          },
+          "uploadedAt": {
+            "type": "string",
+            "example": "2026-10-14T12:00:00.000Z"
+          }
+        },
+        "required": [
+          "type",
+          "reviewStatus",
+          "uploadedAt"
+        ]
+      },
+      "WorkerProfileDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "sin_solicitar",
+              "pendiente_revision",
+              "aprobado",
+              "rechazado",
+              "bloqueado_deuda",
+              "suspendido_moderacion"
+            ],
+            "example": "sin_solicitar"
+          },
+          "rejectionReason": {
+            "type": "string",
+            "example": "La foto del carnet está borrosa.",
+            "nullable": true
+          },
+          "birthDate": {
+            "type": "string",
+            "example": "1995-04-21",
+            "nullable": true
+          },
+          "transport": {
+            "type": "string",
+            "enum": [
+              "a_pie",
+              "bicicleta",
+              "moto",
+              "auto",
+              "transporte_publico"
+            ],
+            "nullable": true
+          },
+          "maxRadiusKm": {
+            "type": "number",
+            "example": 5,
+            "nullable": true
+          },
+          "categoryIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "documents": {
+            "description": "Estado de cada documento. Nunca incluye la imagen (R9.5).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkerDocumentStatusDto"
+            }
+          },
+          "submittedAt": {
+            "type": "string",
+            "example": "2026-10-14T12:00:00.000Z",
+            "nullable": true
+          },
+          "editable": {
+            "type": "boolean",
+            "example": true,
+            "description": "Puede editar documentos y enviar la solicitud"
+          },
+          "missingDocuments": {
+            "example": [
+              "ci_back",
+              "selfie"
+            ],
+            "description": "Documentos que faltan subir",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "categoryIds",
+          "documents",
+          "editable",
+          "missingDocuments"
+        ]
+      },
+      "DocumentUploadRequestDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ci_front",
+              "ci_back",
+              "selfie"
+            ],
+            "example": "ci_front"
+          },
+          "contentType": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/heic"
+            ],
+            "example": "image/jpeg"
+          },
+          "sizeBytes": {
+            "type": "number",
+            "example": 1245812,
+            "description": "Tamaño exacto en bytes (máx. 8 MB)"
+          }
+        },
+        "required": [
+          "type",
+          "contentType",
+          "sizeBytes"
+        ]
+      },
+      "SubmitUpgradeDto": {
+        "type": "object",
+        "properties": {
+          "birthDate": {
+            "type": "string",
+            "example": "1995-04-21",
+            "description": "Fecha de nacimiento (AAAA-MM-DD)"
+          },
+          "categoryIds": {
+            "example": [
+              "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "transport": {
+            "type": "string",
+            "enum": [
+              "a_pie",
+              "bicicleta",
+              "moto",
+              "auto",
+              "transporte_publico"
+            ],
+            "example": "moto"
+          },
+          "maxRadiusKm": {
+            "type": "number",
+            "example": 5,
+            "minimum": 1,
+            "maximum": 10
+          }
+        },
+        "required": [
+          "birthDate",
+          "categoryIds",
+          "transport",
+          "maxRadiusKm"
+        ]
+      },
+      "DocumentUrlDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "example": "https://...?X-Amz-Signature=...",
+            "description": "Enlace temporal (5 min)"
+          },
+          "expiresAt": {
+            "type": "string",
+            "example": "2026-10-14T12:05:00.000Z"
+          }
+        },
+        "required": [
+          "url",
+          "expiresAt"
+        ]
+      },
+      "CategoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e"
+          },
+          "name": {
+            "type": "string",
+            "example": "Plomería"
+          },
+          "description": {
+            "type": "string",
+            "example": "Fugas, destapes, grifería",
+            "nullable": true
+          },
+          "priceMinBs": {
+            "type": "string",
+            "example": "80.00",
+            "description": "Precio mínimo de referencia en Bs"
+          },
+          "priceMaxBs": {
+            "type": "string",
+            "example": "250.00",
+            "description": "Precio máximo de referencia en Bs"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "priceMinBs",
+          "priceMaxBs"
         ]
       }
     }

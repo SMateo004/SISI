@@ -38,6 +38,8 @@ export class WorkerStatusService {
     userId: string,
     input: WorkerEventInput,
     actorId: string | null,
+    /** Cambios extra que deben quedar en la misma transacción (p. ej. datos del upgrade). */
+    alsoInTransaction?: (tx: Prisma.TransactionClient) => Promise<void>,
   ): Promise<StatusChange> {
     const event: WorkerEvent =
       input.type === 'LIFT_SUSPENSION'
@@ -50,6 +52,7 @@ export class WorkerStatusService {
         (await tx.workerProfile.create({ data: { userId } }));
       const next = nextWorkerStatus(current.status, event);
       const now = new Date();
+      if (alsoInTransaction) await alsoInTransaction(tx);
 
       const { count } = await tx.workerProfile.updateMany({
         where: { userId, status: current.status },

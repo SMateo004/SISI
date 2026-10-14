@@ -16,9 +16,13 @@ Lee docs/00-contexto-general-SISI.md, docs/01-reglas-de-negocio.md y docs/02-con
 - Toda entidad relevante lleva city_id.
 - Cada funcionalidad lleva tests; corre los tests y el linter antes de dar por terminado.
 - No subas secretos; usa variables de entorno (.env.example actualizado).
+- Límites de peticiones: reutiliza RateLimitStore / @RateLimit (ADR-0010).
+- El estado del trabajador solo cambia con WorkerStatusService.apply (ADR-0013).
 
 ## Comandos
 - Local: docker compose -f infra/docker-compose.yml up -d
-- Backend: cd backend && npm run start:dev / npm test / npm run test:e2e / npm run lint
+- Backend: cd backend && npm run start:dev / npm test / npm run test:e2e / npm run lint / npm run typecheck
+- Herramientas de desarrollo (nunca en producción): cd backend && npm run dev:tools -- <comando> (ver docs/runbook.md)
+- Contrato API: node packages/api_contract/generate.mjs (OpenAPI + cliente Dart)
 - App: cd apps/mobile && flutter run / flutter test
 - Admin: cd apps/admin && flutter run -d chrome / flutter test

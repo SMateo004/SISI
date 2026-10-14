@@ -21,11 +21,12 @@
     "test:e2e": "node --experimental-vm-modules --disable-warning=ExperimentalWarning node_modules/jest/bin/jest.js --config test/jest-e2e.json --runInBand",
     "test:cov": "npm test -- --coverage",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate": "prisma migrate dev && prisma generate",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "prisma db seed",
     "openapi:export": "npm run build && node dist/scripts/export-openapi.js",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "dev:tools": "npm run build && node dist/scripts/dev-tools.js"
   },
   "jest": {
     "moduleFileExtensions": [

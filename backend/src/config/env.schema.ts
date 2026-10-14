@@ -62,6 +62,8 @@ export const envSchema = z
     PHONE_ALLOWED_COUNTRY_CODES: commaList.default(['591']),
 
     // Rate limits (propuesta, docs/pendientes.md)
+    /** Límite general por IP para toda la API (excepto /health). */
+    RATE_GLOBAL_IP_PER_MIN: positiveInt(300),
     RATE_OTP_PHONE_COOLDOWN_SEC: positiveInt(60),
     RATE_OTP_PHONE_PER_HOUR: positiveInt(5),
     RATE_OTP_PHONE_PER_DAY: positiveInt(10),

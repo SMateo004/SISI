@@ -49,14 +49,12 @@ import 'package:sisi_api/sisi_api.dart';
 
 
 final api = SisiApi().getAdminApi();
-final String userId = userId_example; // String | 
-final String documentId = documentId_example; // String | 
 
 try {
-    final response = await api.adminWorkersControllerDocumentUrl(userId, documentId);
+    final response = await api.adminCategoriesControllerList();
     print(response);
 } on DioException catch (e) {
-    print("Exception when calling AdminApi->adminWorkersControllerDocumentUrl: $e\n");
+    print("Exception when calling AdminApi->adminCategoriesControllerList: $e\n");
 }
 
 ```
@@ -67,17 +65,38 @@ All URIs are relative to *http://localhost*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
+[*AdminApi*](doc/AdminApi.md) | [**adminCategoriesControllerList**](doc/AdminApi.md#admincategoriescontrollerlist) | **GET** /admin/categories | Todas las categorías con sus valores por ciudad
+[*AdminApi*](doc/AdminApi.md) | [**adminCategoriesControllerUpdate**](doc/AdminApi.md#admincategoriescontrollerupdate) | **PATCH** /admin/categories/{id} | Edita los valores base de una categoría
+[*AdminApi*](doc/AdminApi.md) | [**adminCategoriesControllerUpsertCity**](doc/AdminApi.md#admincategoriescontrollerupsertcity) | **PUT** /admin/categories/{id}/cities/{cityId} | Activa o ajusta una categoría en una ciudad
+[*AdminApi*](doc/AdminApi.md) | [**adminRequestsControllerList**](doc/AdminApi.md#adminrequestscontrollerlist) | **GET** /admin/requests | Solicitudes por estado (por defecto, las retenidas por moderación)
+[*AdminApi*](doc/AdminApi.md) | [**adminRequestsControllerReject**](doc/AdminApi.md#adminrequestscontrollerreject) | **POST** /admin/requests/{id}/reject | Rechaza una solicitud retenida
+[*AdminApi*](doc/AdminApi.md) | [**adminRequestsControllerRelease**](doc/AdminApi.md#adminrequestscontrollerrelease) | **POST** /admin/requests/{id}/release | Libera una solicitud retenida: pasa a \&quot;buscando\&quot;
 [*AdminApi*](doc/AdminApi.md) | [**adminWorkersControllerDocumentUrl**](doc/AdminApi.md#adminworkerscontrollerdocumenturl) | **GET** /admin/workers/{userId}/documents/{documentId}/url | Enlace temporal a un documento de identidad (R9.5)
+[*AdminApi*](doc/AdminApi.md) | [**featureFlagsControllerList**](doc/AdminApi.md#featureflagscontrollerlist) | **GET** /admin/feature-flags | Feature flags (globales y por ciudad)
+[*AdminApi*](doc/AdminApi.md) | [**featureFlagsControllerSet**](doc/AdminApi.md#featureflagscontrollerset) | **PUT** /admin/feature-flags/{key} | Enciende o apaga un flag
+[*AdminApi*](doc/AdminApi.md) | [**moderationTermsControllerCreate**](doc/AdminApi.md#moderationtermscontrollercreate) | **POST** /admin/moderation-terms | Agrega un término o patrón
+[*AdminApi*](doc/AdminApi.md) | [**moderationTermsControllerList**](doc/AdminApi.md#moderationtermscontrollerlist) | **GET** /admin/moderation-terms | Términos del filtro de moderación
+[*AdminApi*](doc/AdminApi.md) | [**moderationTermsControllerRemove**](doc/AdminApi.md#moderationtermscontrollerremove) | **DELETE** /admin/moderation-terms/{id} | Desactiva un término (baja lógica)
+[*AdminApi*](doc/AdminApi.md) | [**moderationTermsControllerUpdate**](doc/AdminApi.md#moderationtermscontrollerupdate) | **PATCH** /admin/moderation-terms/{id} | Cambia la categoría, la nota o reactiva un término
 [*AuthApi*](doc/AuthApi.md) | [**authControllerLogout**](doc/AuthApi.md#authcontrollerlogout) | **POST** /auth/logout | Cierra la sesión (revoca la familia del refresh token)
 [*AuthApi*](doc/AuthApi.md) | [**authControllerRefresh**](doc/AuthApi.md#authcontrollerrefresh) | **POST** /auth/refresh | Renueva la sesión (rota el refresh token)
 [*AuthApi*](doc/AuthApi.md) | [**authControllerRequestOtp**](doc/AuthApi.md#authcontrollerrequestotp) | **POST** /auth/otp/request | Envía un código de 6 dígitos al celular
 [*AuthApi*](doc/AuthApi.md) | [**authControllerVerifyOtp**](doc/AuthApi.md#authcontrollerverifyotp) | **POST** /auth/otp/verify | Valida el código e inicia sesión
-[*CategoriesApi*](doc/CategoriesApi.md) | [**categoriesControllerList**](doc/CategoriesApi.md#categoriescontrollerlist) | **GET** /categories | Categorías activas
+[*CategoriesApi*](doc/CategoriesApi.md) | [**categoriesControllerList**](doc/CategoriesApi.md#categoriescontrollerlist) | **GET** /categories | Categorías activas en mi ciudad
 [*HealthApi*](doc/HealthApi.md) | [**healthControllerCheck**](doc/HealthApi.md#healthcontrollercheck) | **GET** /health | Estado de la API, la base de datos (con PostGIS) y Redis
+[*MapsApi*](doc/MapsApi.md) | [**geocodingControllerReverse**](doc/MapsApi.md#geocodingcontrollerreverse) | **GET** /geocoding/reverse | Dirección sugerida para unas coordenadas
 [*MeApi*](doc/MeApi.md) | [**meControllerConfirmPhoto**](doc/MeApi.md#mecontrollerconfirmphoto) | **PUT** /me/photo | Confirma la foto subida y la deja como foto de perfil
 [*MeApi*](doc/MeApi.md) | [**meControllerMe**](doc/MeApi.md#mecontrollerme) | **GET** /me | Mi cuenta
 [*MeApi*](doc/MeApi.md) | [**meControllerPhotoUploadUrl**](doc/MeApi.md#mecontrollerphotouploadurl) | **POST** /me/photo/upload-url | URL prefirmada para subir mi foto de perfil
 [*MeApi*](doc/MeApi.md) | [**meControllerUpdate**](doc/MeApi.md#mecontrollerupdate) | **PATCH** /me | Actualiza mi nombre (la foto se cambia con /me/photo)
+[*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerCancel**](doc/RequestsApi.md#requestscontrollercancel) | **POST** /requests/{id}/cancel | Cancela la solicitud (mientras no esté asignada)
+[*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerConfirmPhoto**](doc/RequestsApi.md#requestscontrollerconfirmphoto) | **PUT** /requests/{id}/photos | Confirma una foto subida (verifica el objeto con HEAD)
+[*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerCreate**](doc/RequestsApi.md#requestscontrollercreate) | **POST** /requests | Crea una solicitud en borrador
+[*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerDeletePhoto**](doc/RequestsApi.md#requestscontrollerdeletephoto) | **DELETE** /requests/{id}/photos/{photoId} | Quita una foto del borrador
+[*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerGet**](doc/RequestsApi.md#requestscontrollerget) | **GET** /requests/{id} | Detalle de una solicitud propia
+[*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerListMine**](doc/RequestsApi.md#requestscontrollerlistmine) | **GET** /requests/mine | Mis solicitudes (más recientes primero)
+[*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerPhotoUploadUrl**](doc/RequestsApi.md#requestscontrollerphotouploadurl) | **POST** /requests/{id}/photos/upload-url | URL prefirmada para subir una foto (máx. 4, solo en borrador)
+[*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerPublish**](doc/RequestsApi.md#requestscontrollerpublish) | **POST** /requests/{id}/publish | Publica la solicitud
 [*WorkerApi*](doc/WorkerApi.md) | [**workerMeControllerConfirmDocument**](doc/WorkerApi.md#workermecontrollerconfirmdocument) | **PUT** /me/worker/documents/{type} | Confirma un documento subido
 [*WorkerApi*](doc/WorkerApi.md) | [**workerMeControllerDocumentUploadUrl**](doc/WorkerApi.md#workermecontrollerdocumentuploadurl) | **POST** /me/worker/documents/upload-url | URL prefirmada para subir un documento (CI anverso, reverso o selfie)
 [*WorkerApi*](doc/WorkerApi.md) | [**workerMeControllerGetProfile**](doc/WorkerApi.md#workermecontrollergetprofile) | **GET** /me/worker | Mi perfil de trabajador y el estado de cada documento
@@ -87,25 +106,45 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
+ - [AdminCategoryCityDto](doc/AdminCategoryCityDto.md)
+ - [AdminCategoryDto](doc/AdminCategoryDto.md)
+ - [AdminHeldRequestDto](doc/AdminHeldRequestDto.md)
  - [ApiErrorBody](doc/ApiErrorBody.md)
  - [CategoryDto](doc/CategoryDto.md)
  - [ConfirmUploadDto](doc/ConfirmUploadDto.md)
+ - [CreateModerationTermDto](doc/CreateModerationTermDto.md)
+ - [CreateRequestDto](doc/CreateRequestDto.md)
+ - [CreatedRequestDto](doc/CreatedRequestDto.md)
  - [DocumentUploadRequestDto](doc/DocumentUploadRequestDto.md)
  - [DocumentUrlDto](doc/DocumentUrlDto.md)
+ - [FeatureFlagDto](doc/FeatureFlagDto.md)
  - [HealthCheckDto](doc/HealthCheckDto.md)
  - [HealthChecksDto](doc/HealthChecksDto.md)
  - [HealthResponseDto](doc/HealthResponseDto.md)
  - [LoginResponseDto](doc/LoginResponseDto.md)
  - [ModeDeniedDto](doc/ModeDeniedDto.md)
+ - [ModerationTermDto](doc/ModerationTermDto.md)
  - [OtpRequestedDto](doc/OtpRequestedDto.md)
  - [PresignedUploadDto](doc/PresignedUploadDto.md)
+ - [PublishResultDto](doc/PublishResultDto.md)
  - [RefreshTokenDto](doc/RefreshTokenDto.md)
+ - [RejectRequestDto](doc/RejectRequestDto.md)
+ - [RequestCategoryDto](doc/RequestCategoryDto.md)
+ - [RequestDto](doc/RequestDto.md)
  - [RequestOtpDto](doc/RequestOtpDto.md)
+ - [RequestPageDto](doc/RequestPageDto.md)
+ - [RequestPhotoDto](doc/RequestPhotoDto.md)
+ - [RequestWarningDto](doc/RequestWarningDto.md)
+ - [ReverseGeocodeDto](doc/ReverseGeocodeDto.md)
+ - [SetFeatureFlagDto](doc/SetFeatureFlagDto.md)
  - [SubmitUpgradeDto](doc/SubmitUpgradeDto.md)
  - [SwitchModeDto](doc/SwitchModeDto.md)
  - [TokensDto](doc/TokensDto.md)
+ - [UpdateCategoryDto](doc/UpdateCategoryDto.md)
  - [UpdateMeDto](doc/UpdateMeDto.md)
+ - [UpdateModerationTermDto](doc/UpdateModerationTermDto.md)
  - [UploadRequestDto](doc/UploadRequestDto.md)
+ - [UpsertCategoryCityDto](doc/UpsertCategoryCityDto.md)
  - [UserDto](doc/UserDto.md)
  - [VerifyOtpDto](doc/VerifyOtpDto.md)
  - [WorkerDocumentStatusDto](doc/WorkerDocumentStatusDto.md)

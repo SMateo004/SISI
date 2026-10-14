@@ -9,15 +9,15 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**categoriesControllerList**](CategoriesApi.md#categoriescontrollerlist) | **GET** /categories | Categorías activas
+[**categoriesControllerList**](CategoriesApi.md#categoriescontrollerlist) | **GET** /categories | Categorías activas en mi ciudad
 
 
 # **categoriesControllerList**
 > List<CategoryDto> categoriesControllerList()
 
-Categorías activas
+Categorías activas en mi ciudad
 
-Lista cerrada (R2.1). En la Fase 1 puede venir vacía: el seed llega en la Fase 2.
+Lista cerrada (R2.1) con el rango de referencia efectivo de la ciudad (R2.2, R10.1).
 
 ### Example
 ```dart

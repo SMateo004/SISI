@@ -22,6 +22,8 @@ class CategoryDto {
 
     required  this.id,
 
+    required  this.slug,
+
     required  this.name,
 
     required  this.description,
@@ -40,6 +42,19 @@ class CategoryDto {
 
 
   final String id;
+
+
+
+      /// Identificador estable (ícono en la app)
+  @JsonKey(
+    
+    name: r'slug',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final String slug;
 
 
 
@@ -67,7 +82,7 @@ class CategoryDto {
 
 
 
-      /// Precio mínimo de referencia en Bs
+      /// Mínimo de referencia en Bs para tu ciudad
   @JsonKey(
     
     name: r'priceMinBs',
@@ -80,7 +95,7 @@ class CategoryDto {
 
 
 
-      /// Precio máximo de referencia en Bs
+      /// Máximo de referencia en Bs para tu ciudad
   @JsonKey(
     
     name: r'priceMaxBs',
@@ -98,6 +113,7 @@ class CategoryDto {
     @override
     bool operator ==(Object other) => identical(this, other) || other is CategoryDto &&
       other.id == id &&
+      other.slug == slug &&
       other.name == name &&
       other.description == description &&
       other.priceMinBs == priceMinBs &&
@@ -106,6 +122,7 @@ class CategoryDto {
     @override
     int get hashCode =>
         id.hashCode +
+        slug.hashCode +
         name.hashCode +
         (description == null ? 0 : description.hashCode) +
         priceMinBs.hashCode +

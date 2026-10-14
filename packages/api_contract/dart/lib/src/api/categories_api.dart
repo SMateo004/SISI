@@ -17,8 +17,8 @@ class CategoriesApi {
 
   const CategoriesApi(this._dio);
 
-  /// Categorías activas
-  /// Lista cerrada (R2.1). En la Fase 1 puede venir vacía: el seed llega en la Fase 2.
+  /// Categorías activas en mi ciudad
+  /// Lista cerrada (R2.1) con el rango de referencia efectivo de la ciudad (R2.2, R10.1).
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation

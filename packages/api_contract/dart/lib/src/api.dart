@@ -11,7 +11,9 @@ import 'package:sisi_api/src/api/admin_api.dart';
 import 'package:sisi_api/src/api/auth_api.dart';
 import 'package:sisi_api/src/api/categories_api.dart';
 import 'package:sisi_api/src/api/health_api.dart';
+import 'package:sisi_api/src/api/maps_api.dart';
 import 'package:sisi_api/src/api/me_api.dart';
+import 'package:sisi_api/src/api/requests_api.dart';
 import 'package:sisi_api/src/api/worker_api.dart';
 
 class SisiApi {
@@ -129,10 +131,22 @@ class SisiApi {
     return HealthApi(dio);
   }
 
+  /// Get MapsApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  MapsApi getMapsApi() {
+    return MapsApi(dio);
+  }
+
   /// Get MeApi instance, base route and serializer can be overridden by a given but be careful,
   /// by doing that all interceptors will not be executed
   MeApi getMeApi() {
     return MeApi(dio);
+  }
+
+  /// Get RequestsApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  RequestsApi getRequestsApi() {
+    return RequestsApi(dio);
   }
 
   /// Get WorkerApi instance, base route and serializer can be overridden by a given but be careful,

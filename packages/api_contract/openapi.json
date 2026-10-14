@@ -1,6 +1,113 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/admin/feature-flags": {
+      "get": {
+        "operationId": "FeatureFlagsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FeatureFlagDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Feature flags (globales y por ciudad)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/feature-flags/{key}": {
+      "put": {
+        "description": "Con cityId solo afecta a esa ciudad; sin cityId es el valor global (R10.2).",
+        "operationId": "FeatureFlagsController_set",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetFeatureFlagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureFlagDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "FLAG_KEY_INVALID o VALIDATION_ERROR",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Enciende o apaga un flag",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/health": {
       "get": {
         "operationId": "HealthController_check",
@@ -826,7 +933,7 @@
     },
     "/categories": {
       "get": {
-        "description": "Lista cerrada (R2.1). En la Fase 1 puede venir vacía: el seed llega en la Fase 2.",
+        "description": "Lista cerrada (R2.1) con el rango de referencia efectivo de la ciudad (R2.2, R10.1).",
         "operationId": "CategoriesController_list",
         "parameters": [],
         "responses": {
@@ -849,9 +956,1028 @@
             "bearer": []
           }
         ],
-        "summary": "Categorías activas",
+        "summary": "Categorías activas en mi ciudad",
         "tags": [
           "categories"
+        ]
+      }
+    },
+    "/admin/categories": {
+      "get": {
+        "operationId": "AdminCategoriesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminCategoryDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Todas las categorías con sus valores por ciudad",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/categories/{id}": {
+      "patch": {
+        "operationId": "AdminCategoriesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminCategoryDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PRICE_RANGE_INVALID o VALIDATION_ERROR",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Edita los valores base de una categoría",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/categories/{id}/cities/{cityId}": {
+      "put": {
+        "description": "Los valores null heredan los de la categoría base.",
+        "operationId": "AdminCategoriesController_upsertCity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cityId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertCategoryCityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminCategoryDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PRICE_RANGE_INVALID o VALIDATION_ERROR",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Activa o ajusta una categoría en una ciudad",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/moderation-terms": {
+      "get": {
+        "operationId": "ModerationTermsController_list",
+        "parameters": [
+          {
+            "name": "incluirInactivos",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ModerationTermDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Términos del filtro de moderación",
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "description": "Los regex se validan: máx. 100 caracteres, sin referencias, lookaround ni cuantificadores anidados, y se prueban contra entradas lentas (ADR-0018).",
+        "operationId": "ModerationTermsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateModerationTermDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationTermDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "MODERATION_PATTERN_INVALID o MODERATION_TERM_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "MODERATION_TERM_EXISTS",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Agrega un término o patrón",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/moderation-terms/{id}": {
+      "patch": {
+        "operationId": "ModerationTermsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateModerationTermDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationTermDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cambia la categoría, la nota o reactiva un término",
+        "tags": [
+          "admin"
+        ]
+      },
+      "delete": {
+        "operationId": "ModerationTermsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Desactiva un término (baja lógica)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/requests": {
+      "post": {
+        "description": "Solo en modo empleador. Categoría activa en la ciudad, descripción de 20 a 1000 caracteres, ubicación dentro de la zona de servicio, dirección y precio > 0. Si el precio está bajo el mínimo de referencia, se crea igual y la respuesta trae una advertencia (R3.2).",
+        "operationId": "RequestsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedRequestDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR, DESCRIPTION_LENGTH, CATEGORY_NOT_AVAILABLE, LOCATION_OUTSIDE_CITY, LOCATION_INVALID, PRICE_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "EMPLOYER_MODE_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Crea una solicitud en borrador",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/requests/{id}/photos/upload-url": {
+      "post": {
+        "operationId": "RequestsController_photoUploadUrl",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresignedUploadDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "TOO_MANY_PHOTOS, UPLOAD_TYPE_NOT_ALLOWED, UPLOAD_TOO_LARGE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "REQUEST_NOT_DRAFT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "URL prefirmada para subir una foto (máx. 4, solo en borrador)",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/requests/{id}/photos": {
+      "put": {
+        "operationId": "RequestsController_confirmPhoto",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "UPLOAD_KEY_FORBIDDEN",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Confirma una foto subida (verifica el objeto con HEAD)",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/requests/{id}/photos/{photoId}": {
+      "delete": {
+        "operationId": "RequestsController_deletePhoto",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "photoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Quita una foto del borrador",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/requests/{id}/publish": {
+      "post": {
+        "description": "Pasa por moderación (R3.3). Si hay coincidencias queda \"retenida\" con un mensaje neutral; si no, pasa a \"buscando\" y empieza la búsqueda de trabajadores. Límite: 10 por hora y 30 por día por usuario.",
+        "operationId": "RequestsController_publish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishResultDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "REQUEST_NOT_DRAFT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Publica la solicitud",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/requests/{id}/cancel": {
+      "post": {
+        "operationId": "RequestsController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "REQUEST_TRANSITION_NOT_ALLOWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cancela la solicitud (mientras no esté asignada)",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/requests/mine": {
+      "get": {
+        "operationId": "RequestsController_listMine",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mis solicitudes (más recientes primero)",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/requests/{id}": {
+      "get": {
+        "operationId": "RequestsController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "REQUEST_NOT_FOUND (también si es de otra persona)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Detalle de una solicitud propia",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/admin/requests": {
+      "get": {
+        "operationId": "AdminRequestsController_list",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "borrador",
+                "retenida",
+                "buscando",
+                "con_ofertas",
+                "asignada",
+                "cancelada",
+                "expirada"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminHeldRequestDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Solicitudes por estado (por defecto, las retenidas por moderación)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/requests/{id}/release": {
+      "post": {
+        "operationId": "AdminRequestsController_release",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "REQUEST_TRANSITION_NOT_ALLOWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Libera una solicitud retenida: pasa a \"buscando\"",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/requests/{id}/reject": {
+      "post": {
+        "description": "Queda \"cancelada\" con motivo de moderación (sin estados nuevos en R3.4).",
+        "operationId": "AdminRequestsController_reject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rechaza una solicitud retenida",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/geocoding/reverse": {
+      "get": {
+        "description": "La geocodificación se hace en el backend: la llave de Maps nunca llega a la app.",
+        "operationId": "GeocodingController_reverse",
+        "parameters": [
+          {
+            "name": "lat",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": -17.7834,
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": -63.1821,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReverseGeocodeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dirección sugerida para unas coordenadas",
+        "tags": [
+          "maps"
         ]
       }
     }
@@ -873,6 +1999,84 @@
       }
     },
     "schemas": {
+      "ApiErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "code": {
+            "type": "string",
+            "example": "OTP_INVALID",
+            "description": "Código estable para la app"
+          },
+          "message": {
+            "type": "string",
+            "example": "Código incorrecto o vencido."
+          }
+        },
+        "required": [
+          "statusCode",
+          "code",
+          "message"
+        ]
+      },
+      "FeatureFlagDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "payments.in_app"
+          },
+          "cityId": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "enabled": {
+            "type": "boolean",
+            "example": false
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "example": "2026-10-15T12:00:00.000Z"
+          }
+        },
+        "required": [
+          "key",
+          "cityId",
+          "enabled",
+          "description",
+          "updatedAt"
+        ]
+      },
+      "SetFeatureFlagDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "example": true
+          },
+          "cityId": {
+            "type": "string",
+            "example": null,
+            "nullable": true,
+            "description": "null u omitido = valor global"
+          },
+          "description": {
+            "type": "string",
+            "example": "Pago dentro de la app (etapa 2)"
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
       "HealthCheckDto": {
         "type": "object",
         "properties": {
@@ -936,29 +2140,6 @@
           "status",
           "checks",
           "timestamp"
-        ]
-      },
-      "ApiErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "example": 400
-          },
-          "code": {
-            "type": "string",
-            "example": "OTP_INVALID",
-            "description": "Código estable para la app"
-          },
-          "message": {
-            "type": "string",
-            "example": "Código incorrecto o vencido."
-          }
-        },
-        "required": [
-          "statusCode",
-          "code",
-          "message"
         ]
       },
       "UserDto": {
@@ -1524,6 +2705,11 @@
             "type": "string",
             "example": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e"
           },
+          "slug": {
+            "type": "string",
+            "example": "plomeria",
+            "description": "Identificador estable (ícono en la app)"
+          },
           "name": {
             "type": "string",
             "example": "Plomería"
@@ -1536,21 +2722,657 @@
           "priceMinBs": {
             "type": "string",
             "example": "80.00",
-            "description": "Precio mínimo de referencia en Bs"
+            "description": "Mínimo de referencia en Bs para tu ciudad"
           },
           "priceMaxBs": {
             "type": "string",
-            "example": "250.00",
-            "description": "Precio máximo de referencia en Bs"
+            "example": "300.00",
+            "description": "Máximo de referencia en Bs para tu ciudad"
           }
         },
         "required": [
           "id",
+          "slug",
           "name",
           "description",
           "priceMinBs",
           "priceMaxBs"
         ]
+      },
+      "AdminCategoryCityDto": {
+        "type": "object",
+        "properties": {
+          "cityId": {
+            "type": "string"
+          },
+          "citySlug": {
+            "type": "string",
+            "example": "santa-cruz"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "priceMinBs": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "priceMaxBs": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "commissionPct": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "effectivePriceMinBs": {
+            "type": "string",
+            "example": "80.00",
+            "description": "Mínimo efectivo en la ciudad"
+          },
+          "effectivePriceMaxBs": {
+            "type": "string",
+            "example": "300.00"
+          },
+          "effectiveCommissionPct": {
+            "type": "string",
+            "example": "13.00"
+          }
+        },
+        "required": [
+          "cityId",
+          "citySlug",
+          "active",
+          "priceMinBs",
+          "priceMaxBs",
+          "commissionPct",
+          "effectivePriceMinBs",
+          "effectivePriceMaxBs",
+          "effectiveCommissionPct"
+        ]
+      },
+      "AdminCategoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "example": "plomeria"
+          },
+          "name": {
+            "type": "string",
+            "example": "Plomería"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "priceMinBs": {
+            "type": "string",
+            "example": "80.00"
+          },
+          "priceMaxBs": {
+            "type": "string",
+            "example": "300.00"
+          },
+          "commissionPct": {
+            "type": "string",
+            "example": "13.00"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "cities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminCategoryCityDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "description",
+          "priceMinBs",
+          "priceMaxBs",
+          "commissionPct",
+          "active",
+          "cities"
+        ]
+      },
+      "UpdateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Plomería"
+          },
+          "description": {
+            "type": "string",
+            "example": "Fugas, destapes, grifería",
+            "nullable": true
+          },
+          "priceMinBs": {
+            "type": "string",
+            "example": "80.00"
+          },
+          "priceMaxBs": {
+            "type": "string",
+            "example": "300.00"
+          },
+          "commissionPct": {
+            "type": "string",
+            "example": "13.00"
+          },
+          "active": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "UpsertCategoryCityDto": {
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "boolean",
+            "example": true,
+            "description": "Disponible en la ciudad"
+          },
+          "priceMinBs": {
+            "type": "string",
+            "example": "90.00",
+            "nullable": true,
+            "description": "null = usa el valor base"
+          },
+          "priceMaxBs": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "commissionPct": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          }
+        },
+        "required": [
+          "active"
+        ]
+      },
+      "ModerationTermDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "term": {
+            "type": "string",
+            "example": "cocain*"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "word",
+              "regex"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "sexual",
+              "drogas",
+              "armas",
+              "ilegal",
+              "inmoral",
+              "venta_productos"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "term",
+          "kind",
+          "category",
+          "active",
+          "note"
+        ]
+      },
+      "CreateModerationTermDto": {
+        "type": "object",
+        "properties": {
+          "term": {
+            "type": "string",
+            "example": "cocain*",
+            "description": "Palabra/frase (con * de prefijo) o regex"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "word",
+              "regex"
+            ],
+            "example": "word"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "sexual",
+              "drogas",
+              "armas",
+              "ilegal",
+              "inmoral",
+              "venta_productos"
+            ],
+            "example": "drogas"
+          },
+          "note": {
+            "type": "string",
+            "example": "Agregado por reporte del 15/10"
+          }
+        },
+        "required": [
+          "term",
+          "kind",
+          "category"
+        ]
+      },
+      "UpdateModerationTermDto": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "sexual",
+              "drogas",
+              "armas",
+              "ilegal",
+              "inmoral",
+              "venta_productos"
+            ]
+          },
+          "active": {
+            "type": "boolean",
+            "example": true
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateRequestDto": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "string",
+            "example": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e"
+          },
+          "description": {
+            "type": "string",
+            "example": "Tengo una fuga debajo del lavaplatos de la cocina, gotea constantemente.",
+            "description": "Entre 20 y 1000 caracteres (configurable)"
+          },
+          "latitude": {
+            "type": "number",
+            "example": -17.7834
+          },
+          "longitude": {
+            "type": "number",
+            "example": -63.1821
+          },
+          "address": {
+            "type": "string",
+            "example": "Calle Junín 150, entre Ayacucho y Sucre",
+            "description": "Dirección en texto"
+          },
+          "proposedPriceBs": {
+            "type": "string",
+            "example": "150.00",
+            "description": "Precio propuesto en Bs (incluye el traslado, R3.5)"
+          }
+        },
+        "required": [
+          "categoryId",
+          "description",
+          "latitude",
+          "longitude",
+          "address",
+          "proposedPriceBs"
+        ]
+      },
+      "RequestCategoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "example": "plomeria"
+          },
+          "name": {
+            "type": "string",
+            "example": "Plomería"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name"
+        ]
+      },
+      "RequestPhotoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number",
+            "example": 0
+          },
+          "url": {
+            "type": "string",
+            "description": "URL temporal (1 h)"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "url"
+        ]
+      },
+      "RequestDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "borrador",
+              "retenida",
+              "buscando",
+              "con_ofertas",
+              "asignada",
+              "cancelada",
+              "expirada"
+            ],
+            "example": "buscando"
+          },
+          "statusMessage": {
+            "type": "string",
+            "nullable": true,
+            "example": "Estamos revisando tu solicitud. Te avisaremos cuando se publique.",
+            "description": "Mensaje para el empleador según el estado (neutral si está retenida)"
+          },
+          "category": {
+            "$ref": "#/components/schemas/RequestCategoryDto"
+          },
+          "cityId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "example": -17.7834
+          },
+          "longitude": {
+            "type": "number",
+            "example": -63.1821
+          },
+          "address": {
+            "type": "string"
+          },
+          "proposedPriceBs": {
+            "type": "string",
+            "example": "150.00"
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestPhotoDto"
+            }
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "cancelledAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "category",
+          "cityId",
+          "description",
+          "latitude",
+          "longitude",
+          "address",
+          "proposedPriceBs",
+          "photos",
+          "createdAt"
+        ]
+      },
+      "RequestWarningDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "PRICE_BELOW_REFERENCE"
+          },
+          "message": {
+            "type": "string",
+            "example": "Tu precio está por debajo del mínimo de referencia para Plomería (Bs 80,00). Puedes publicar igual, pero podrías recibir menos ofertas."
+          },
+          "referenceMinBs": {
+            "type": "string",
+            "example": "80.00"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "referenceMinBs"
+        ]
+      },
+      "CreatedRequestDto": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "$ref": "#/components/schemas/RequestDto"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestWarningDto"
+            }
+          }
+        },
+        "required": [
+          "request",
+          "warnings"
+        ]
+      },
+      "PublishResultDto": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "$ref": "#/components/schemas/RequestDto"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestWarningDto"
+            }
+          },
+          "held": {
+            "type": "boolean",
+            "description": "Quedó retenida para revisión (R3.3)"
+          },
+          "message": {
+            "type": "string",
+            "example": "¡Listo! Estamos buscando trabajadores cerca de ti."
+          }
+        },
+        "required": [
+          "request",
+          "warnings",
+          "held",
+          "message"
+        ]
+      },
+      "RequestPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Cursor para la siguiente página"
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "AdminHeldRequestDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "borrador",
+              "retenida",
+              "buscando",
+              "con_ofertas",
+              "asignada",
+              "cancelada",
+              "expirada"
+            ],
+            "example": "buscando"
+          },
+          "statusMessage": {
+            "type": "string",
+            "nullable": true,
+            "example": "Estamos revisando tu solicitud. Te avisaremos cuando se publique.",
+            "description": "Mensaje para el empleador según el estado (neutral si está retenida)"
+          },
+          "category": {
+            "$ref": "#/components/schemas/RequestCategoryDto"
+          },
+          "cityId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "example": -17.7834
+          },
+          "longitude": {
+            "type": "number",
+            "example": -63.1821
+          },
+          "address": {
+            "type": "string"
+          },
+          "proposedPriceBs": {
+            "type": "string",
+            "example": "150.00"
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestPhotoDto"
+            }
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "cancelledAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "matches": {
+            "type": "object",
+            "description": "Términos que coincidieron (solo para el admin)"
+          },
+          "employerId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "category",
+          "cityId",
+          "description",
+          "latitude",
+          "longitude",
+          "address",
+          "proposedPriceBs",
+          "photos",
+          "createdAt",
+          "matches",
+          "employerId"
+        ]
+      },
+      "RejectRequestDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "Ofrece venta de productos, no un servicio."
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "ReverseGeocodeDto": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "nullable": true,
+            "example": "Calle Junín 150, Santa Cruz de la Sierra, Bolivia",
+            "description": "Sugerencia editable; null si no hay resultado"
+          }
+        }
       }
     }
   }

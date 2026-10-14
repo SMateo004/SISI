@@ -20,6 +20,10 @@ export default tseslint.config(
     rules: {
       // Los módulos de NestJS son clases vacías decoradas.
       '@typescript-eslint/no-extraneous-class': ['error', { allowWithDecorator: true }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true },
+      ],
       '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
     },
   },

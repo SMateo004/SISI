@@ -42,6 +42,43 @@ services:
       timeout: 3s
       retries: 20
 
+  # Almacenamiento compatible con S3 (en producción: Cloudflare R2). Ver docs/adr/0012.
+  # MinIO Community fue archivado y su imagen retirada; RustFS lo reemplaza en local.
+  storage:
+    image: rustfs/rustfs:1.0.1
+    restart: unless-stopped
+    environment:
+      RUSTFS_ACCESS_KEY: sisi-local
+      RUSTFS_SECRET_KEY: sisi-local-secret
+      RUSTFS_CONSOLE_ENABLE: "true"
+    ports:
+      - "${SISI_S3_PORT:-59000}:9000"
+      - "${SISI_S3_CONSOLE_PORT:-59001}:9001"
+    volumes:
+      - s3data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:9000/health || curl -fs http://127.0.0.1:9000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  # Crea los buckets (desarrollo y tests) con CORS para las apps web locales. Idempotente.
+  storage-init:
+    image: amazon/aws-cli:2.37.8
+    depends_on:
+      storage:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: sisi-local
+      AWS_SECRET_ACCESS_KEY: sisi-local-secret
+      AWS_DEFAULT_REGION: us-east-1
+    volumes:
+      - ./storage/init-buckets.sh:/init-buckets.sh:ro
+      - ./storage/cors.json:/cors.json:ro
+    entrypoint: ["sh", "/init-buckets.sh"]
+    restart: "no"
+
 volumes:
   pgdata:
   redisdata:
+  s3data:

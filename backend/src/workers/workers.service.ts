@@ -209,7 +209,7 @@ function toDto(profile: ProfileWithRelations | null): WorkerProfileDto {
     status,
     rejectionReason: status === 'rechazado' ? (profile?.rejectionReason ?? null) : null,
     birthDate: profile?.birthDate ? profile.birthDate.toISOString().slice(0, 10) : null,
-    transport: (profile?.transport ?? null),
+    transport: profile?.transport ?? null,
     maxRadiusKm: profile?.maxRadiusKm ?? null,
     categoryIds: profile?.categories.map((c) => c.categoryId) ?? [],
     documents: (profile?.documents ?? []).map((d) => ({

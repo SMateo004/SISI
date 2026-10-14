@@ -44,11 +44,26 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 20
+      storage:
+        image: rustfs/rustfs:1.0.1
+        env:
+          RUSTFS_ACCESS_KEY: sisi-ci
+          RUSTFS_SECRET_KEY: sisi-ci-secret
+        ports: ["9000:9000"]
+        options: >-
+          --health-cmd "curl -fs http://127.0.0.1:9000/health"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 30
 
     env:
-      # Los e2e leen estas URLs (ver backend/test/e2e-env.ts).
+      # Los e2e leen estas variables (ver backend/test/e2e-env.ts).
       E2E_DATABASE_URL: postgresql://sisi:sisi@localhost:5432/sisi_test
       E2E_REDIS_URL: redis://localhost:6379/1
+      E2E_STORAGE_ENDPOINT: http://localhost:9000
+      E2E_STORAGE_BUCKET: sisi-test
+      E2E_STORAGE_ACCESS_KEY: sisi-ci
+      E2E_STORAGE_SECRET_KEY: sisi-ci-secret
 
     steps:
       - uses: actions/checkout@v4
@@ -71,7 +86,14 @@ jobs:
       - name: Tests unitarios
         run: npm test
 
-      - name: Tests e2e (Postgres+PostGIS y Redis)
+      - name: Crear bucket de pruebas en RustFS
+        env:
+          AWS_ACCESS_KEY_ID: sisi-ci
+          AWS_SECRET_ACCESS_KEY: sisi-ci-secret
+          AWS_DEFAULT_REGION: us-east-1
+        run: aws --endpoint-url "$E2E_STORAGE_ENDPOINT" s3api create-bucket --bucket "$E2E_STORAGE_BUCKET"
+
+      - name: Tests e2e (Postgres+PostGIS, Redis y S3)
         run: npm run test:e2e
 
       - name: Build

@@ -16,6 +16,12 @@ projects:
             envVars:
               - key: NODE_ENV
                 value: production
+              - key: APP_ENV
+                value: staging
+              # ADVERTENCIA: OTP por consola (el código sale en los logs de Render).
+              # Staging NO debe publicarse a usuarios reales (docs/runbook.md).
+              - key: OTP_PROVIDER
+                value: console
               - key: NODE_VERSION
                 value: "24"
               - key: TZ_DEFAULT
@@ -53,8 +59,14 @@ projects:
                 sync: false
               - key: OTP_PROVIDER_KEY
                 sync: false
+              - key: OTP_SENDER
+                sync: false
               - key: FIREBASE_SERVICE_ACCOUNT
                 sync: false
+              - key: STORAGE_ENDPOINT # R2: https://<account_id>.r2.cloudflarestorage.com
+                sync: false
+              - key: STORAGE_REGION
+                value: auto
               - key: STORAGE_BUCKET
                 sync: false
               - key: STORAGE_ACCESS_KEY
@@ -144,6 +156,10 @@ projects:
             envVars:
               - key: NODE_ENV
                 value: production
+              - key: APP_ENV
+                value: production
+              - key: OTP_PROVIDER
+                value: bird
               - key: NODE_VERSION
                 value: "24"
               - key: TZ_DEFAULT
@@ -181,8 +197,14 @@ projects:
                 sync: false
               - key: OTP_PROVIDER_KEY
                 sync: false
+              - key: OTP_SENDER
+                sync: false
               - key: FIREBASE_SERVICE_ACCOUNT
                 sync: false
+              - key: STORAGE_ENDPOINT # R2: https://<account_id>.r2.cloudflarestorage.com
+                sync: false
+              - key: STORAGE_REGION
+                value: auto
               - key: STORAGE_BUCKET
                 sync: false
               - key: STORAGE_ACCESS_KEY

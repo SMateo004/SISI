@@ -34,4 +34,27 @@ describe('validateEnv', () => {
     expect(() => validateEnv({ ...base, JWT_SECRET: 'corto' })).toThrow(/JWT_SECRET/);
     expect(() => validateEnv({ ...base, TZ_DEFAULT: 'Marte/Olympus' })).toThrow(/TZ_DEFAULT/);
   });
+
+  it('aplica los valores propuestos de la Fase 1', () => {
+    const env = validateEnv(base);
+    expect(env.APP_ENV).toBe('local');
+    expect(env.OTP_PROVIDER).toBe('console');
+    expect(env.JWT_ACCESS_TTL_SEC).toBe(900);
+    expect(env.JWT_REFRESH_TTL_SEC).toBe(2_592_000);
+    expect(env.PHONE_ALLOWED_COUNTRY_CODES).toEqual(['591']);
+    expect(env.UPLOAD_MAX_BYTES).toBe(8 * 1024 * 1024);
+    expect(env.STORAGE_FORCE_PATH_STYLE).toBe(false);
+  });
+
+  it('infiere APP_ENV=test con NODE_ENV=test y lee booleanos', () => {
+    const env = validateEnv({ ...base, NODE_ENV: 'test', STORAGE_FORCE_PATH_STYLE: 'true' });
+    expect(env.APP_ENV).toBe('test');
+    expect(env.STORAGE_FORCE_PATH_STYLE).toBe(true);
+  });
+
+  it('exige APP_ENV explícito en un build de producción', () => {
+    expect(() => validateEnv({ ...base, NODE_ENV: 'production' })).toThrow(/APP_ENV/);
+    const env = validateEnv({ ...base, NODE_ENV: 'production', APP_ENV: 'staging' });
+    expect(env.APP_ENV).toBe('staging');
+  });
 });

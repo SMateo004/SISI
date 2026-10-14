@@ -1,7 +1,9 @@
 import { z } from 'zod';
 
 /** Una cadena vacía en .env significa "no configurada". */
-const optionalString = z.preprocess((v) => (v === '' ? undefined : v), z.string().optional());
+const emptyAsUndefined = (v: unknown): unknown => (v === '' ? undefined : v);
+const optionalString = z.preprocess(emptyAsUndefined, z.string().optional());
+const positiveInt = (fallback: number) => z.coerce.number().int().positive().default(fallback);
 
 const isValidTimeZone = (tz: string): boolean => {
   try {
@@ -12,44 +14,106 @@ const isValidTimeZone = (tz: string): boolean => {
   }
 };
 
+const commaList = z
+  .string()
+  .default('')
+  .transform((value) =>
+    value
+      .split(',')
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0),
+  );
+
 /**
  * Variables de entorno del backend (doc 02 §11, ADR-0002).
- * Las de servicios externos son opcionales hasta la fase que las usa.
+ * Las de servicios externos son opcionales aquí; cada módulo que las usa
+ * (auth/OTP, storage) valida al arrancar lo que necesita, para que worker y
+ * billing-cron no las exijan.
  */
-export const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  PORT: z.coerce.number().int().positive().default(3000),
-
-  DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
-  REDIS_URL: z.url({ protocol: /^rediss?$/ }),
-
-  JWT_SECRET: z.string().min(32),
-  JWT_REFRESH_SECRET: z.string().min(32),
-
-  OTP_PROVIDER_KEY: optionalString,
-  FIREBASE_SERVICE_ACCOUNT: optionalString,
-  STORAGE_BUCKET: optionalString,
-  STORAGE_ACCESS_KEY: optionalString,
-  STORAGE_SECRET_KEY: optionalString,
-  MAPS_API_KEY: optionalString,
-  SENTRY_DSN: z.preprocess((v) => (v === '' ? undefined : v), z.url().optional()),
-
-  CORS_ORIGINS: z
-    .string()
-    .default('')
-    .transform((value) =>
-      value
-        .split(',')
-        .map((origin) => origin.trim())
-        .filter((origin) => origin.length > 0),
+export const envSchema = z
+  .object({
+    NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+    /** Ambiente lógico. Staging corre con NODE_ENV=production pero APP_ENV=staging (ADR-0011). */
+    APP_ENV: z.preprocess(
+      emptyAsUndefined,
+      z.enum(['local', 'test', 'staging', 'production']).optional(),
     ),
-  TZ_DEFAULT: z
-    .string()
-    .default('America/La_Paz')
-    .refine(isValidTimeZone, 'Zona horaria IANA inválida'),
-});
+    PORT: z.coerce.number().int().positive().default(3000),
+
+    DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+    REDIS_URL: z.url({ protocol: /^rediss?$/ }),
+
+    JWT_SECRET: z.string().min(32),
+    JWT_REFRESH_SECRET: z.string().min(32),
+    /** Propuesta: 15 minutos (docs/pendientes.md). */
+    JWT_ACCESS_TTL_SEC: positiveInt(900),
+    /** Propuesta: 30 días (docs/pendientes.md). */
+    JWT_REFRESH_TTL_SEC: positiveInt(2_592_000),
+
+    // OTP (ADR-0009, ADR-0011)
+    OTP_PROVIDER: z.enum(['console', 'bird']).default('console'),
+    /** Clave de API de Bird (bk_{región}_...). */
+    OTP_PROVIDER_KEY: optionalString,
+    /** Remitente del SMS en Bird: número propio o sender ID alfanumérico. */
+    OTP_SENDER: optionalString,
+    OTP_TTL_SEC: positiveInt(300),
+    OTP_MAX_ATTEMPTS: positiveInt(5),
+    /** Prefijos de país permitidos, sin "+". MVP: solo Bolivia (docs/pendientes.md). */
+    PHONE_ALLOWED_COUNTRY_CODES: commaList.default(['591']),
+
+    // Rate limits (propuesta, docs/pendientes.md)
+    RATE_OTP_PHONE_COOLDOWN_SEC: positiveInt(60),
+    RATE_OTP_PHONE_PER_HOUR: positiveInt(5),
+    RATE_OTP_PHONE_PER_DAY: positiveInt(10),
+    RATE_OTP_IP_PER_HOUR: positiveInt(20),
+    RATE_OTP_VERIFY_IP_PER_15MIN: positiveInt(30),
+    RATE_AUTH_IP_PER_MIN: positiveInt(30),
+
+    // Almacenamiento S3 (ADR-0012)
+    STORAGE_ENDPOINT: z.preprocess(emptyAsUndefined, z.url().optional()),
+    STORAGE_REGION: z.string().default('auto'),
+    STORAGE_FORCE_PATH_STYLE: z
+      .preprocess(emptyAsUndefined, z.stringbool().optional())
+      .transform((v) => v ?? false),
+    STORAGE_BUCKET: optionalString,
+    STORAGE_ACCESS_KEY: optionalString,
+    STORAGE_SECRET_KEY: optionalString,
+    /** Propuesta: 8 MB (docs/pendientes.md). */
+    UPLOAD_MAX_BYTES: positiveInt(8 * 1024 * 1024),
+    UPLOAD_URL_TTL_SEC: positiveInt(300),
+    DOCUMENT_URL_TTL_SEC: positiveInt(300),
+    AVATAR_URL_TTL_SEC: positiveInt(3600),
+
+    DEFAULT_CITY_SLUG: z.string().default('santa-cruz'),
+
+    FIREBASE_SERVICE_ACCOUNT: optionalString,
+    MAPS_API_KEY: optionalString,
+    SENTRY_DSN: z.preprocess(emptyAsUndefined, z.url().optional()),
+
+    CORS_ORIGINS: commaList,
+    TZ_DEFAULT: z
+      .string()
+      .default('America/La_Paz')
+      .refine(isValidTimeZone, 'Zona horaria IANA inválida'),
+  })
+  .superRefine((env, ctx) => {
+    // En un build de producción el ambiente lógico debe ser explícito: si faltara,
+    // caeríamos en "local" y se podría activar el OTP por consola.
+    if (env.NODE_ENV === 'production' && env.APP_ENV === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['APP_ENV'],
+        message: 'Obligatorio cuando NODE_ENV=production (staging o production)',
+      });
+    }
+  })
+  .transform((env) => ({
+    ...env,
+    APP_ENV: env.APP_ENV ?? (env.NODE_ENV === 'test' ? ('test' as const) : ('local' as const)),
+  }));
 
 export type Env = z.infer<typeof envSchema>;
+export type AppEnv = Env['APP_ENV'];
 
 export function validateEnv(config: Record<string, unknown>): Env {
   const result = envSchema.safeParse(config);

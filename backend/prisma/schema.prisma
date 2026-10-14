@@ -58,8 +58,12 @@ model User {
   createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  city          City           @relation(fields: [cityId], references: [id])
-  refreshTokens RefreshToken[]
+  city                   City                @relation(fields: [cityId], references: [id])
+  refreshTokens          RefreshToken[]
+  workerProfile          WorkerProfile?      @relation("WorkerProfileUser")
+  reviewedWorkerProfiles WorkerProfile[]     @relation("WorkerProfileReviewer")
+  reviewedDocuments      WorkerDocument[]    @relation("WorkerDocumentReviewer")
+  workerStatusEvents     WorkerStatusEvent[] @relation("WorkerStatusEventActor")
 
   @@index([cityId])
   @@map("users")
@@ -83,4 +87,149 @@ model RefreshToken {
   @@index([familyId])
   @@index([userId])
   @@map("refresh_tokens")
+}
+
+/// Lista cerrada de categorías administrada por la empresa (R2). Sin seed hasta la Fase 2.
+model Category {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  description       String?
+  priceMinBs        Decimal  @map("price_min_bs") @db.Decimal(10, 2)
+  priceMaxBs        Decimal  @map("price_max_bs") @db.Decimal(10, 2)
+  commissionPct     Decimal  @default(13.00) @map("commission_pct") @db.Decimal(5, 2)
+  /// Requisitos extra de verificación (lista de claves; Fase 2).
+  extraRequirements Json     @default("[]") @map("extra_requirements")
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  workers WorkerCategory[]
+
+  @@map("categories")
+}
+
+/// Estados del perfil de trabajador, exactamente los de R1.4 (lista cerrada).
+enum WorkerStatus {
+  sin_solicitar
+  pendiente_revision
+  aprobado
+  rechazado
+  bloqueado_deuda
+  suspendido_moderacion
+
+  @@map("worker_status")
+}
+
+/// Medio de transporte (propuesta aprobada para el MVP, docs/pendientes.md).
+enum TransportMode {
+  a_pie
+  bicicleta
+  moto
+  auto
+  transporte_publico
+
+  @@map("transport_mode")
+}
+
+enum WorkerDocumentType {
+  ci_front
+  ci_back
+  selfie
+  cert
+
+  @@map("worker_document_type")
+}
+
+enum DocumentReviewStatus {
+  pendiente
+  aprobado
+  rechazado
+
+  @@map("document_review_status")
+}
+
+/// Perfil de trabajador (1:1 con users; la ciudad es la de la cuenta, R10.1).
+model WorkerProfile {
+  userId               String         @id @map("user_id") @db.Uuid
+  status               WorkerStatus   @default(sin_solicitar)
+  birthDate            DateTime?      @map("birth_date") @db.Date
+  transport            TransportMode?
+  /// Radio máximo de trabajo en km (propuesta: 1 a 10, validado en la API).
+  maxRadiusKm          Int?           @map("max_radius_km") @db.SmallInt
+  ratingAvg            Decimal        @default(0) @map("rating_avg") @db.Decimal(3, 2)
+  ratingCount          Int            @default(0) @map("rating_count")
+  /// Sin lógica en el MVP (niveles: etapa 2).
+  level                Int            @default(1)
+  submittedAt          DateTime?      @map("submitted_at") @db.Timestamptz(3)
+  reviewedAt           DateTime?      @map("reviewed_at") @db.Timestamptz(3)
+  reviewedById         String?        @map("reviewed_by") @db.Uuid
+  rejectionReason      String?        @map("rejection_reason")
+  /// Resolución de la última revisión de moderación (suspensión confirmada o levantada).
+  moderationResolution String?        @map("moderation_resolution")
+  statusChangedAt      DateTime       @default(now()) @map("status_changed_at") @db.Timestamptz(3)
+  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user       User                @relation("WorkerProfileUser", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy User?               @relation("WorkerProfileReviewer", fields: [reviewedById], references: [id])
+  categories WorkerCategory[]
+  documents  WorkerDocument[]
+  events     WorkerStatusEvent[]
+
+  @@index([status])
+  @@map("worker_profiles")
+}
+
+model WorkerCategory {
+  workerId   String   @map("worker_id") @db.Uuid
+  categoryId String   @map("category_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  worker   WorkerProfile @relation(fields: [workerId], references: [userId], onDelete: Cascade)
+  category Category      @relation(fields: [categoryId], references: [id])
+
+  @@id([workerId, categoryId])
+  @@index([categoryId])
+  @@map("worker_categories")
+}
+
+/// Documentos de identidad (R9.5): solo la clave del objeto privado; nunca URLs públicas.
+model WorkerDocument {
+  id           String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workerId     String               @map("worker_id") @db.Uuid
+  type         WorkerDocumentType
+  fileKey      String               @map("file_key")
+  contentType  String               @map("content_type")
+  sizeBytes    Int                  @map("size_bytes")
+  reviewStatus DocumentReviewStatus @default(pendiente) @map("review_status")
+  reviewedById String?              @map("reviewed_by") @db.Uuid
+  reviewedAt   DateTime?            @map("reviewed_at") @db.Timestamptz(3)
+  createdAt    DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  worker     WorkerProfile @relation(fields: [workerId], references: [userId], onDelete: Cascade)
+  reviewedBy User?         @relation("WorkerDocumentReviewer", fields: [reviewedById], references: [id])
+
+  /// Un documento vigente por tipo.
+  @@unique([workerId, type])
+  @@map("worker_documents")
+}
+
+/// Historial de cambios de estado del trabajador (append-only): quién, cuándo y por qué.
+model WorkerStatusEvent {
+  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workerId   String       @map("worker_id") @db.Uuid
+  event      String
+  fromStatus WorkerStatus @map("from_status")
+  toStatus   WorkerStatus @map("to_status")
+  reason     String?
+  /// null = sistema (p. ej. billing-cron).
+  actorId    String?      @map("actor_id") @db.Uuid
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  worker WorkerProfile @relation(fields: [workerId], references: [userId], onDelete: Cascade)
+  actor  User?         @relation("WorkerStatusEventActor", fields: [actorId], references: [id])
+
+  @@index([workerId, createdAt])
+  @@map("worker_status_events")
 }

@@ -11,6 +11,7 @@ import { AppConfigModule } from './config/config.module';
 import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
+import { StorageModule } from './storage/storage.module';
 import { UsersModule } from './users/users.module';
 import { WorkersModule } from './workers/workers.module';
 
@@ -20,6 +21,7 @@ import { WorkersModule } from './workers/workers.module';
     PrismaModule,
     RedisModule,
     RateLimitModule,
+    StorageModule,
     HealthModule,
     UsersModule,
     AuthModule,

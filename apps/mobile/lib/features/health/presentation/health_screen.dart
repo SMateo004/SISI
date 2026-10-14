@@ -13,7 +13,7 @@ class HealthScreen extends ConsumerWidget {
     final health = ref.watch(healthStatusProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('SISI')),
+      appBar: AppBar(title: const Text('Estado del servidor')),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),

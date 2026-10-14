@@ -2,10 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>SISI usa la cámara para tomar la foto de tu carnet, tu selfie y tu foto de perfil.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>SISI necesita acceso a tus fotos para que elijas la foto de tu carnet o de tu perfil.</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>es</string>
+	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<string>es</string>
 	<key>CFBundleDisplayName</key>
 	<string>SISI</string>
 	<key>CFBundleExecutable</key>

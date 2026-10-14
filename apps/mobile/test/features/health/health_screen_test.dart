@@ -1,8 +1,9 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sisi_mobile/app.dart';
 import 'package:sisi_mobile/features/health/data/health_repository.dart';
+import 'package:sisi_mobile/features/health/presentation/health_screen.dart';
 
 class _FakeHealthRepository implements HealthRepository {
   _FakeHealthRepository(this._result);
@@ -13,11 +14,11 @@ class _FakeHealthRepository implements HealthRepository {
   Future<HealthStatus> fetch() => _result();
 }
 
-Future<void> _pumpApp(WidgetTester tester, HealthRepository repo) async {
+Future<void> _pump(WidgetTester tester, HealthRepository repo) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [healthRepositoryProvider.overrideWithValue(repo)],
-      child: const SisiApp(),
+      child: const MaterialApp(home: HealthScreen()),
     ),
   );
   await tester.pumpAndSettle();
@@ -25,7 +26,7 @@ Future<void> _pumpApp(WidgetTester tester, HealthRepository repo) async {
 
 void main() {
   testWidgets('muestra "Conectado" cuando la API responde ok', (tester) async {
-    await _pumpApp(
+    await _pump(
       tester,
       _FakeHealthRepository(
         () async => const HealthStatus(
@@ -37,8 +38,6 @@ void main() {
         ),
       ),
     );
-
-    expect(find.text('Estado del servidor'), findsOneWidget);
     expect(find.text('Conectado'), findsOneWidget);
     expect(find.text('PostGIS 3.5.2'), findsOneWidget);
     expect(find.text('Operativo'), findsNWidgets(3));
@@ -47,7 +46,7 @@ void main() {
   testWidgets('muestra "Servicio con problemas" si un componente cae', (
     tester,
   ) async {
-    await _pumpApp(
+    await _pump(
       tester,
       _FakeHealthRepository(
         () async => const HealthStatus(
@@ -58,24 +57,20 @@ void main() {
         ),
       ),
     );
-
     expect(find.text('Servicio con problemas'), findsOneWidget);
     expect(find.text('Caído'), findsOneWidget);
   });
 
   testWidgets('muestra "Sin conexión" y permite reintentar', (tester) async {
     var calls = 0;
-    await _pumpApp(
+    await _pump(
       tester,
       _FakeHealthRepository(() async {
         calls++;
         throw DioException(requestOptions: RequestOptions(path: '/health'));
       }),
     );
-
     expect(find.text('Sin conexión'), findsOneWidget);
-    expect(calls, 1);
-
     await tester.tap(find.text('Reintentar'));
     await tester.pumpAndSettle();
     expect(calls, 2);

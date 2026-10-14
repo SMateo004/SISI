@@ -40,7 +40,28 @@ node dist/scripts/dev-tools.js make-admin --phone 70012345
 
 En Windows, si el argumento lleva paréntesis u otros caracteres especiales, usar `node dist/scripts/dev-tools.js …` directamente: `npm run` en Windows pasa los argumentos por `cmd` y les agrega `^`.
 
-**Categorías:** hasta la Fase 2 no hay seed de categorías. Sin al menos una categoría activa nadie puede enviar la solicitud de upgrade. En staging, crear una de prueba con `create-category`.
+**Categorías:** el seed crea las 6 categorías de Santa Cruz (rangos provisionales). `create-category` crea una extra de prueba (slug `prueba-<fecha>`) activa en `DEFAULT_CITY_SLUG`.
+
+## Solicitudes retenidas por moderación (R3.3)
+
+Hasta el panel admin (Fase 6) se revisan por API con un usuario admin:
+
+1. Dar rol admin: `node dist/scripts/dev-tools.js make-admin --phone 70012345`. El rol entra en el token siguiente: volver a ingresar o renovar con `POST /auth/refresh`.
+2. Ver las retenidas y qué término las retuvo (`matches`):
+   ```bash
+   curl -H "Authorization: Bearer $TOKEN" "$API/admin/requests?status=retenida"
+   ```
+3. Liberar (pasa a `buscando` y emite `request.searching`) o rechazar (pasa a `cancelada` con `cancel_reason=moderacion`):
+   ```bash
+   curl -X POST -H "Authorization: Bearer $TOKEN" "$API/admin/requests/<id>/release"
+   curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json"      -d '{"reason":"Ofrece venta de sustancias"}' "$API/admin/requests/<id>/reject"
+   ```
+
+El empleador nunca ve el término que disparó la retención, solo el mensaje neutral.
+
+**Términos:** `GET/POST/PATCH/DELETE /admin/moderation-terms` (DELETE es baja lógica). Las regex se validan al guardar (ADR-0018). Los cambios se aplican en todas las instancias sin reiniciar.
+
+**Feature flags:** `PUT /admin/feature-flags/<clave>` con `{"enabled":true,"cityId":"…"}` (sin `cityId` = global). Se ven de inmediato.
 
 ## Secretos y rotación
 

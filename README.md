@@ -52,7 +52,7 @@ cd backend
 cp .env.example .env          # valores de desarrollo; ajusta si cambiaste puertos
 npm install                   # también genera el cliente Prisma
 npx prisma migrate deploy     # habilita PostGIS y crea las tablas
-npm run prisma:seed           # Santa Cruz de la Sierra (America/La_Paz)
+npm run prisma:seed           # Santa Cruz, 6 categorías (rangos provisionales) y términos de moderación; idempotente
 npm run start:dev             # http://localhost:3000
 ```
 
@@ -80,12 +80,18 @@ Para regenerar el contrato completo (OpenAPI y cliente Dart; necesita Docker): `
 
 ### Probar el flujo completo en local
 
-1. Crear una categoría de prueba (no hay seed de categorías hasta la Fase 2):
-   `cd backend && npm run build && node dist/scripts/dev-tools.js create-category --name "Plomeria prueba" --min 80 --max 250`
-2. Abrir la app web (paso 3), ingresar un celular (p. ej. 70012345) y copiar el código de la consola de la API.
-3. En "¿Quieres trabajar en SISI?" completar los 5 pasos y enviar.
-4. Aprobar: `node dist/scripts/dev-tools.js review-worker --phone 70012345 --approve`.
-5. En la app, mover el interruptor a **Trabajador**.
+Cuentas y trabajador (Fase 1):
+
+1. Abrir la app web (paso 3), ingresar un celular (p. ej. 70012345) y copiar el código de la consola de la API.
+2. En "¿Quieres trabajar en SISI?" completar los 5 pasos y enviar (las categorías vienen del seed).
+3. Aprobar: `cd backend && npm run build && node dist/scripts/dev-tools.js review-worker --phone 70012345 --approve`.
+4. En la app, mover el interruptor a **Trabajador**.
+
+Solicitudes (Fase 2), en modo **Empleador**:
+
+1. "Pedir un servicio": categoría → descripción (mín. 20 caracteres) y fotos → mapa (sin llave de Maps aparece un mapa de prueba que se arrastra; la dirección la sugiere el geocodificador falso) → precio → Publicar. Queda en **Buscando trabajador**.
+2. Repetir con un término prohibido en la descripción (p. ej. "marihuana" o "m4rihuana"): queda **En revisión** con un mensaje neutral.
+3. Liberarla como admin por API (ver `docs/runbook.md`, "Solicitudes retenidas"). En "Mis solicitudes" pasa a **Buscando trabajador**.
 
 ### 3. App (empleador + trabajador)
 
@@ -112,8 +118,23 @@ Los puertos web 8080 y 8081 coinciden con `CORS_ORIGINS` del `.env` del backend.
 ## Configuración
 
 - Backend: variables en `backend/.env.example`, validadas al arrancar con zod (`backend/src/config/env.schema.ts`). Si falta una obligatoria la API no arranca y dice cuál.
-- Apps: `--dart-define` `API_URL`, `SOCKET_URL`, `APP_ENV` (ver `apps/*/.env.example`).
+- Apps: `--dart-define` `API_URL`, `SOCKET_URL`, `APP_ENV` y, en la app, `MAPS_API_KEY` (ver `apps/*/.env.example`).
 - Nunca subas secretos: `.env` está en `.gitignore`.
+
+### Llaves de Google Maps (ADR-0021)
+
+Sin llaves todo funciona en local: el backend usa `GEOCODING_PROVIDER=fake` y la app muestra un mapa de prueba. Para usar Google hacen falta **llaves separadas**, creadas en Google Cloud Console → APIs y servicios → Credenciales, cada una restringida:
+
+| Llave | Dónde va | Restricción de aplicación | Restricción de API |
+| --- | --- | --- | --- |
+| Servidor | Render: `MAPS_API_KEY` (sync:false) en `api` (y `api-staging` si se usa `google`) | Direcciones IP de salida de Render, si el plan las ofrece fijas; si no, ninguna | Solo **Geocoding API** |
+| Web | GitHub Environments: variable `MAPS_API_KEY_WEB` | Sitios web (HTTP referrer): dominios de Vercel de la app | Solo **Maps JavaScript API** |
+| Android | GitHub secret `MAPS_API_KEY_ANDROID`; en local `-PMAPS_API_KEY=…` o variable de entorno `MAPS_API_KEY` | Apps de Android: paquete + huella SHA-1 (debug, upload y la de Play App Signing) | Solo **Maps SDK for Android** |
+| iOS | Xcode: build setting `MAPS_API_KEY` (llega a `Info.plist` → `GMSApiKey`) | Apps de iOS: bundle id | Solo **Maps SDK for iOS** |
+
+La llave del servidor **nunca** se manda a la app. Las de la app son visibles para cualquiera; su protección son las restricciones. Poner alertas de presupuesto en el proyecto de Google Cloud.
+
+Correr la app con llave: `flutter run -d chrome --web-port 8080 --dart-define=MAPS_API_KEY=<llave web>`.
 
 ## Ramas y despliegue
 

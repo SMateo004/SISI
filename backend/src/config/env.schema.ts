@@ -98,7 +98,11 @@ export const envSchema = z
     RATE_REQUEST_CREATE_IP_PER_HOUR: positiveInt(30),
 
     FIREBASE_SERVICE_ACCOUNT: optionalString,
+
+    // Mapas (ADR-0021). La llave del backend nunca se envía a la app.
+    GEOCODING_PROVIDER: z.enum(['fake', 'google']).default('fake'),
     MAPS_API_KEY: optionalString,
+    RATE_GEOCODE_IP_PER_MIN: positiveInt(60),
     SENTRY_DSN: z.preprocess(emptyAsUndefined, z.url().optional()),
 
     CORS_ORIGINS: commaList,

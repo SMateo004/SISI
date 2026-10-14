@@ -13,6 +13,7 @@ export function applyE2eEnv(): void {
   process.env.JWT_REFRESH_SECRET ??= 'e2e-solo-pruebas-secreto-refresh-00';
   process.env.CORS_ORIGINS ??= 'http://localhost:8080';
   process.env.OTP_PROVIDER = 'console';
+  process.env.GEOCODING_PROVIDER = 'fake';
 
   process.env.STORAGE_ENDPOINT = process.env.E2E_STORAGE_ENDPOINT ?? 'http://localhost:59000';
   process.env.STORAGE_REGION = 'us-east-1';

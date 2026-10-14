@@ -1,6 +1,6 @@
 import { HttpStatus, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CategoriesService } from '../categories/categories.service';
+import { CategoryResolver } from '../categories/category-resolver';
 import { ApiError } from '../common/errors/api-error';
 import { isAdult, parseIsoDate } from '../common/time/age';
 import type { AppConfigService } from '../config/app-config';
@@ -36,7 +36,7 @@ export class WorkersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
-    private readonly categories: CategoriesService,
+    private readonly categories: CategoryResolver,
     private readonly status: WorkerStatusService,
     @Inject(ConfigService) private readonly config: AppConfigService,
   ) {}
@@ -140,7 +140,7 @@ export class WorkersService {
         { missingDocuments: missing },
       );
     }
-    await this.categories.assertActive(dto.categoryIds);
+    await this.categories.requireAllActive(dto.categoryIds, user.cityId);
 
     await this.status.apply(userId, { type: 'SUBMIT' }, userId, async (tx) => {
       await tx.workerProfile.update({

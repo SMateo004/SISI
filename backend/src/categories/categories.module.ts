@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common';
-import { CategoriesController } from './categories.controller';
-import { CategoriesService } from './categories.service';
+import { UsersModule } from '../users/users.module';
+import { AdminCategoriesService } from './admin-categories.service';
+import { AdminCategoriesController, CategoriesController } from './categories.controller';
+import { CategoryResolver } from './category-resolver';
 
 @Module({
-  controllers: [CategoriesController],
-  providers: [CategoriesService],
-  exports: [CategoriesService],
+  imports: [UsersModule],
+  controllers: [CategoriesController, AdminCategoriesController],
+  providers: [CategoryResolver, AdminCategoriesService],
+  exports: [CategoryResolver],
 })
 export class CategoriesModule {}

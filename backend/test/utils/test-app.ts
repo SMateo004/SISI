@@ -77,4 +77,41 @@ export async function resetPhoneCooldowns(t: TestApp): Promise<void> {
   if (keys.length > 0) await redis.del(...keys);
 }
 
+/** Categoría de prueba (slug único) habilitada en Santa Cruz, salvo que se indique otra cosa. */
+export async function createCategory(
+  t: TestApp,
+  opts: { active?: boolean; activeInCity?: boolean; cityId?: string; priceMinBs?: string } = {},
+): Promise<{ id: string; slug: string }> {
+  const cityId =
+    opts.cityId ?? (await t.prisma.city.findUniqueOrThrow({ where: { slug: 'santa-cruz' } })).id;
+  const slug = `e2e-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+  return t.prisma.category.create({
+    data: {
+      slug,
+      name: `Categoría ${slug}`,
+      priceMinBs: opts.priceMinBs ?? '80.00',
+      priceMaxBs: '300.00',
+      active: opts.active ?? true,
+      cities: { create: { cityId, active: opts.activeInCity ?? true } },
+    },
+    select: { id: true, slug: true },
+  });
+}
+
+/** Sesión con rol admin: el rol viaja en el token, así que se renueva tras asignarlo. */
+export async function loginAsAdmin(t: TestApp): Promise<LoginResponseDto> {
+  const session = await login(t);
+  await t.prisma.user.update({ where: { id: session.user.id }, data: { role: 'admin' } });
+  const res = await request(t.app.getHttpServer())
+    .post('/auth/refresh')
+    .set('X-Forwarded-For', uniqueIp())
+    .send({ refreshToken: session.refreshToken })
+    .expect(200);
+  const tokens = res.body as { accessToken: string; refreshToken: string };
+  session.accessToken = tokens.accessToken;
+  session.refreshToken = tokens.refreshToken;
+  session.user.role = 'admin';
+  return session;
+}
+
 export const bearer = (token: string): [string, string] => ['Authorization', `Bearer ${token}`];

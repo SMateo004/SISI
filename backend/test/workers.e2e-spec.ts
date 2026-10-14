@@ -10,7 +10,7 @@ import {
   type WorkerNotifier,
 } from '../src/workers/worker.ports';
 import { WorkerStatusService } from '../src/workers/worker-status.service';
-import { bearer, createTestApp, login, type TestApp } from './utils/test-app';
+import { bearer, createCategory, createTestApp, login, type TestApp } from './utils/test-app';
 import { fakeJpeg, putPresigned } from './utils/upload';
 
 type DocType = 'ci_front' | 'ci_back' | 'selfie';
@@ -67,9 +67,8 @@ describe('Trabajador: upgrade, documentos e interruptor (e2e)', () => {
 
   beforeAll(async () => {
     t = await createTestApp();
-    const category = await t.prisma.category.create({
-      data: { name: `Plomería e2e ${Date.now()}`, priceMinBs: '80.00', priceMaxBs: '250.00' },
-    });
+    // Categoría del seed (Fase 2): el upgrade trabaja con las categorías reales.
+    const category = await t.prisma.category.findUniqueOrThrow({ where: { slug: 'plomeria' } });
     categoryId = category.id;
   });
 
@@ -173,9 +172,7 @@ describe('Trabajador: upgrade, documentos e interruptor (e2e)', () => {
       message: 'Elige al menos una categoría.',
     });
 
-    const inactive = await t.prisma.category.create({
-      data: { name: `Inactiva ${Date.now()}`, priceMinBs: '1', priceMaxBs: '2', active: false },
-    });
+    const inactive = await createCategory(t, { active: false });
     expect((await send({ ...validUpgrade(), categoryIds: [inactive.id] })).body).toMatchObject({
       code: 'CATEGORY_NOT_AVAILABLE',
     });

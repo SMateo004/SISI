@@ -13,18 +13,25 @@ datasource db {
 
 /// Ciudades donde opera la plataforma (R10.1: toda entidad relevante lleva city_id).
 model City {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug        String   @unique
-  name        String
+  id              String                                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug            String                                  @unique
+  name            String
   /// Código de país ISO 3166-1 alfa-2 (BO).
-  countryCode String   @map("country_code") @db.Char(2)
+  countryCode     String                                  @map("country_code") @db.Char(2)
   /// Zona horaria IANA (America/La_Paz).
-  timezone    String
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  timezone        String
+  active          Boolean                                 @default(true)
+  /// Centro de la ciudad (validación de ubicación por radio; ADR-0019). Se lee y escribe con SQL.
+  center          Unsupported("geography(Point,4326)")?
+  /// Radio de servicio en km desde el centro (provisional: zonas exactas pendientes).
+  serviceRadiusKm Decimal?                                @map("service_radius_km") @db.Decimal(5, 2)
+  /// Área de servicio opcional; si existe tiene prioridad sobre el radio.
+  serviceArea     Unsupported("geography(Polygon,4326)")? @map("service_area")
+  createdAt       DateTime                                @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime                                @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  users User[]
+  users      User[]
+  categories CategoryCity[]
 
   @@map("cities")
 }
@@ -92,6 +99,8 @@ model RefreshToken {
 /// Lista cerrada de categorías administrada por la empresa (R2). Sin seed hasta la Fase 2.
 model Category {
   id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Identificador estable (la app elige el ícono por slug).
+  slug              String   @unique
   name              String
   description       String?
   priceMinBs        Decimal  @map("price_min_bs") @db.Decimal(10, 2)
@@ -104,8 +113,29 @@ model Category {
   updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   workers WorkerCategory[]
+  cities  CategoryCity[]
 
   @@map("categories")
+}
+
+/// Disponibilidad y valores por ciudad (R2.2, R10.1). null = usa el valor de la categoría.
+/// Una categoría solo está activa en una ciudad si existe esta fila y active = true.
+model CategoryCity {
+  categoryId    String   @map("category_id") @db.Uuid
+  cityId        String   @map("city_id") @db.Uuid
+  active        Boolean  @default(true)
+  priceMinBs    Decimal? @map("price_min_bs") @db.Decimal(10, 2)
+  priceMaxBs    Decimal? @map("price_max_bs") @db.Decimal(10, 2)
+  commissionPct Decimal? @map("commission_pct") @db.Decimal(5, 2)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  city     City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@id([categoryId, cityId])
+  @@index([cityId])
+  @@map("category_cities")
 }
 
 /// Estados del perfil de trabajador, exactamente los de R1.4 (lista cerrada).

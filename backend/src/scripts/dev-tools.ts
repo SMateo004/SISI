@@ -109,8 +109,18 @@ async function main(): Promise<void> {
         if (!values.name || !values.min || !values.max) {
           throw new Error('Usa --name, --min y --max (en Bs)');
         }
+        const slug = `prueba-${Date.now().toString(36)}`;
+        const city = await prisma.city.findUniqueOrThrow({
+          where: { slug: config.get('DEFAULT_CITY_SLUG', { infer: true }) },
+        });
         const category = await prisma.category.create({
-          data: { name: values.name, priceMinBs: values.min, priceMaxBs: values.max },
+          data: {
+            slug,
+            name: values.name,
+            priceMinBs: values.min,
+            priceMaxBs: values.max,
+            cities: { create: { cityId: city.id } },
+          },
         });
         logger.log(`Categoría de prueba creada: ${category.name} (${category.id})`);
         break;

@@ -3,6 +3,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client';
 import { CATEGORIES } from './seed-data/categories';
 import { CITIES } from './seed-data/cities';
+import { MODERATION_TERMS } from './seed-data/moderation-terms';
 
 /**
  * Datos de referencia. Idempotente: solo crea lo que falta y nunca pisa cambios
@@ -40,6 +41,16 @@ async function main(): Promise<void> {
       }
       console.log(`Categoría creada: ${category.name}`);
     }
+    let added = 0;
+    for (const term of MODERATION_TERMS) {
+      const exists = await prisma.moderationTerm.findUnique({
+        where: { term_kind: { term: term.term, kind: term.kind } },
+      });
+      if (exists) continue;
+      await prisma.moderationTerm.create({ data: term });
+      added++;
+    }
+    console.log(`Términos de moderación agregados: ${added}`);
   } finally {
     await prisma.$disconnect();
   }

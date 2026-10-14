@@ -281,3 +281,38 @@ model FeatureFlag {
   @@unique([key, cityId])
   @@map("feature_flags")
 }
+
+enum ModerationTermKind {
+  word
+  regex
+
+  @@map("moderation_term_kind")
+}
+
+/// Categorías de prohibición de R9.1.
+enum ProhibitedCategory {
+  sexual
+  drogas
+  armas
+  ilegal
+  inmoral
+  venta_productos
+
+  @@map("prohibited_category")
+}
+
+/// Términos o patrones del filtro de moderación (R3.3, R9.2, ADR-0018). Baja lógica con active=false.
+model ModerationTerm {
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  term        String
+  kind        ModerationTermKind
+  category    ProhibitedCategory
+  active      Boolean            @default(true)
+  note        String?
+  createdById String?            @map("created_by") @db.Uuid
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([term, kind])
+  @@map("moderation_terms")
+}

@@ -10,6 +10,7 @@ import { SisiThrottlerGuard } from './common/rate-limit/sisi-throttler.guard';
 import { AppConfigModule } from './config/config.module';
 import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
 import { HealthModule } from './health/health.module';
+import { ModerationModule } from './moderation/moderation.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
 import { StorageModule } from './storage/storage.module';
@@ -28,6 +29,7 @@ import { WorkersModule } from './workers/workers.module';
     UsersModule,
     AuthModule,
     WorkersModule,
+    ModerationModule,
   ],
   providers: [
     // Orden: límites por IP antes que la autenticación (frena fuerza bruta sin tocar la BD).

@@ -22,6 +22,9 @@ projects:
               # Staging NO debe publicarse a usuarios reales (docs/runbook.md).
               - key: OTP_PROVIDER
                 value: console
+              # Geocodificación de prueba hasta tener la llave de Maps de servidor (ADR-0021).
+              - key: GEOCODING_PROVIDER
+                value: fake
               - key: NODE_VERSION
                 value: "24"
               - key: TZ_DEFAULT
@@ -73,7 +76,7 @@ projects:
                 sync: false
               - key: STORAGE_SECRET_KEY
                 sync: false
-              - key: MAPS_API_KEY
+              - key: MAPS_API_KEY # llave de SERVIDOR (Geocoding API), distinta de la de la app
                 sync: false
               - key: SENTRY_DSN
                 sync: false
@@ -160,6 +163,8 @@ projects:
                 value: production
               - key: OTP_PROVIDER
                 value: bird
+              - key: GEOCODING_PROVIDER
+                value: google
               - key: NODE_VERSION
                 value: "24"
               - key: TZ_DEFAULT
@@ -211,7 +216,7 @@ projects:
                 sync: false
               - key: STORAGE_SECRET_KEY
                 sync: false
-              - key: MAPS_API_KEY
+              - key: MAPS_API_KEY # llave de SERVIDOR (Geocoding API), distinta de la de la app
                 sync: false
               - key: SENTRY_DSN
                 sync: false

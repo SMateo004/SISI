@@ -88,6 +88,15 @@ export const envSchema = z
 
     DEFAULT_CITY_SLUG: z.string().default('santa-cruz'),
 
+    // Solicitudes (R3, ADR-0019). Propuestas en docs/pendientes.md.
+    REQUEST_DESCRIPTION_MIN: positiveInt(20),
+    REQUEST_DESCRIPTION_MAX: positiveInt(1000),
+    REQUEST_MAX_PHOTOS: positiveInt(4),
+    REQUEST_PHOTO_URL_TTL_SEC: positiveInt(3600),
+    RATE_REQUEST_PUBLISH_PER_HOUR: positiveInt(10),
+    RATE_REQUEST_PUBLISH_PER_DAY: positiveInt(30),
+    RATE_REQUEST_CREATE_IP_PER_HOUR: positiveInt(30),
+
     FIREBASE_SERVICE_ACCOUNT: optionalString,
     MAPS_API_KEY: optionalString,
     SENTRY_DSN: z.preprocess(emptyAsUndefined, z.url().optional()),

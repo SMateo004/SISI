@@ -33,6 +33,7 @@ model City {
   users        User[]
   categories   CategoryCity[]
   featureFlags FeatureFlag[]
+  requests     ServiceRequest[]
 
   @@map("cities")
 }
@@ -72,6 +73,7 @@ model User {
   reviewedWorkerProfiles WorkerProfile[]     @relation("WorkerProfileReviewer")
   reviewedDocuments      WorkerDocument[]    @relation("WorkerDocumentReviewer")
   workerStatusEvents     WorkerStatusEvent[] @relation("WorkerStatusEventActor")
+  serviceRequests        ServiceRequest[]    @relation("ServiceRequestEmployer")
 
   @@index([cityId])
   @@map("users")
@@ -113,8 +115,9 @@ model Category {
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  workers WorkerCategory[]
-  cities  CategoryCity[]
+  workers  WorkerCategory[]
+  cities   CategoryCity[]
+  requests ServiceRequest[]
 
   @@map("categories")
 }
@@ -315,4 +318,89 @@ model ModerationTerm {
 
   @@unique([term, kind])
   @@map("moderation_terms")
+}
+
+/// Estados de una solicitud, exactamente los de R3.4 (ADR-0019).
+enum ServiceRequestStatus {
+  borrador
+  retenida
+  buscando
+  con_ofertas
+  asignada
+  cancelada
+  expirada
+
+  @@map("service_request_status")
+}
+
+/// Solicitud de servicio (R3). geog se escribe y lee con SQL directo (PostGIS).
+model ServiceRequest {
+  id                String                               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employerId        String                               @map("employer_id") @db.Uuid
+  categoryId        String                               @map("category_id") @db.Uuid
+  cityId            String                               @map("city_id") @db.Uuid
+  description       String
+  geog              Unsupported("geography(Point,4326)")
+  address           String
+  proposedPriceBs   Decimal                              @map("proposed_price_bs") @db.Decimal(10, 2)
+  status            ServiceRequestStatus                 @default(borrador)
+  /// Anillo de búsqueda actual (R4.2); se usa desde la Fase 3.
+  ring              Int?                                 @db.SmallInt
+  /// Términos que coincidieron en moderación (solo para revisión del admin, R3.3).
+  moderationMatches Json?                                @map("moderation_matches")
+  reviewedById      String?                              @map("reviewed_by") @db.Uuid
+  reviewedAt        DateTime?                            @map("reviewed_at") @db.Timestamptz(3)
+  /// empleador | moderacion
+  cancelReason      String?                              @map("cancel_reason")
+  cancelNote        String?                              @map("cancel_note")
+  publishedAt       DateTime?                            @map("published_at") @db.Timestamptz(3)
+  cancelledAt       DateTime?                            @map("cancelled_at") @db.Timestamptz(3)
+  createdAt         DateTime                             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime                             @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  employer User                  @relation("ServiceRequestEmployer", fields: [employerId], references: [id])
+  category Category              @relation(fields: [categoryId], references: [id])
+  city     City                  @relation(fields: [cityId], references: [id])
+  photos   ServiceRequestPhoto[]
+  events   ServiceRequestEvent[]
+
+  @@index([employerId, createdAt])
+  @@index([status, cityId])
+  @@index([geog], type: Gist)
+  @@map("service_requests")
+}
+
+/// Fotos de una solicitud (máx. 4). Visibles para el empleador y, desde la Fase 3, los trabajadores notificados.
+model ServiceRequestPhoto {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  requestId   String   @map("request_id") @db.Uuid
+  fileKey     String   @map("file_key")
+  contentType String   @map("content_type")
+  sizeBytes   Int      @map("size_bytes")
+  position    Int      @db.SmallInt
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  request ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, position])
+  @@index([requestId])
+  @@map("service_request_photos")
+}
+
+/// Historial de estados de una solicitud (append-only).
+model ServiceRequestEvent {
+  id         String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  requestId  String                @map("request_id") @db.Uuid
+  event      String
+  fromStatus ServiceRequestStatus? @map("from_status")
+  toStatus   ServiceRequestStatus  @map("to_status")
+  reason     String?
+  /// null = sistema.
+  actorId    String?               @map("actor_id") @db.Uuid
+  createdAt  DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  request ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, createdAt])
+  @@map("service_request_events")
 }

@@ -17,6 +17,8 @@ const EXTENSIONS: Record<AllowedImageType, string> = {
 export const STORAGE_PREFIX = {
   identity: (userId: string) => `identity/${userId}/`,
   avatars: (userId: string) => `avatars/${userId}/`,
+  /** Fotos de solicitudes: el empleador y, desde la Fase 3, los trabajadores notificados. */
+  requests: (requestId: string) => `requests/${requestId}/`,
 } as const;
 
 export function isAllowedImageType(value: string): value is AllowedImageType {

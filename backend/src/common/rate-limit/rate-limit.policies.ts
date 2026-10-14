@@ -18,6 +18,7 @@ export const RATE_LIMIT_POLICIES = {
   otpRequestIp: { limitFrom: 'RATE_OTP_IP_PER_HOUR', windowSec: 3600 },
   otpVerifyIp: { limitFrom: 'RATE_OTP_VERIFY_IP_PER_15MIN', windowSec: 900 },
   authIp: { limitFrom: 'RATE_AUTH_IP_PER_MIN', windowSec: 60 },
+  requestCreateIp: { limitFrom: 'RATE_REQUEST_CREATE_IP_PER_HOUR', windowSec: 3600 },
 } satisfies Record<string, RateLimitPolicyDef>;
 
 export type RateLimitPolicy = keyof typeof RATE_LIMIT_POLICIES;

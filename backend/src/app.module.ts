@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
@@ -13,6 +14,7 @@ import { HealthModule } from './health/health.module';
 import { ModerationModule } from './moderation/moderation.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
+import { RequestsModule } from './requests/requests.module';
 import { StorageModule } from './storage/storage.module';
 import { UsersModule } from './users/users.module';
 import { WorkersModule } from './workers/workers.module';
@@ -20,6 +22,8 @@ import { WorkersModule } from './workers/workers.module';
 @Module({
   imports: [
     AppConfigModule,
+    // Bus de eventos de dominio en proceso (ADR-0020).
+    EventEmitterModule.forRoot(),
     PrismaModule,
     RedisModule,
     RateLimitModule,
@@ -30,6 +34,7 @@ import { WorkersModule } from './workers/workers.module';
     AuthModule,
     WorkersModule,
     ModerationModule,
+    RequestsModule,
   ],
   providers: [
     // Orden: límites por IP antes que la autenticación (frena fuerza bruta sin tocar la BD).

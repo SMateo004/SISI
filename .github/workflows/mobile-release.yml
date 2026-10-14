@@ -25,6 +25,9 @@ jobs:
     defaults:
       run:
         working-directory: apps/mobile
+    env:
+      # Llave de Maps de Android (restringida a paquete + SHA-1); Gradle la pone en el manifiesto.
+      MAPS_API_KEY: ${{ secrets.MAPS_API_KEY_ANDROID }}
 
     steps:
       - uses: actions/checkout@v4
@@ -52,6 +55,7 @@ jobs:
           --dart-define=API_URL=${{ vars.API_URL }}
           --dart-define=SOCKET_URL=${{ vars.SOCKET_URL }}
           --dart-define=APP_ENV=production
+          --dart-define=MAPS_API_KEY=${{ secrets.MAPS_API_KEY_ANDROID }}
 
       - name: Build AAB
         run: >-
@@ -59,6 +63,7 @@ jobs:
           --dart-define=API_URL=${{ vars.API_URL }}
           --dart-define=SOCKET_URL=${{ vars.SOCKET_URL }}
           --dart-define=APP_ENV=production
+          --dart-define=MAPS_API_KEY=${{ secrets.MAPS_API_KEY_ANDROID }}
 
       - uses: actions/upload-artifact@v4
         with:

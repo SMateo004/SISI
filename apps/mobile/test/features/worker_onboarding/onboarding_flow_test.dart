@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sisi_mobile/features/worker_onboarding/application/onboarding_draft.dart';
 import 'package:sisi_mobile/features/worker_onboarding/domain/worker_models.dart';
-import 'package:sisi_mobile/features/worker_onboarding/presentation/onboarding_flow_screen.dart';
+import 'package:sisi_mobile/shared/money.dart';
 
 import '../../helpers/fakes.dart';
 

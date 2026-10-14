@@ -23,6 +23,10 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Llave de Maps de la APP restringida a este paquete y su huella SHA-1 (ADR-0021).
+        // Se pasa al compilar: -PMAPS_API_KEY=... o la variable de entorno MAPS_API_KEY.
+        manifestPlaceholders["mapsApiKey"] =
+            (project.findProperty("MAPS_API_KEY") as String?) ?: System.getenv("MAPS_API_KEY") ?: ""
     }
 
     buildTypes {

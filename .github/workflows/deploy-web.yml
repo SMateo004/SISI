@@ -4,7 +4,7 @@ name: deploy-web
 #   develop → staging (deployment preview)
 #   main    → production (--prod)
 # Requiere GitHub Environments "staging" y "production" con:
-#   vars:    API_URL, SOCKET_URL
+#   vars:    API_URL, SOCKET_URL, MAPS_API_KEY_WEB (llave de Maps de la app web, restringida por dominio)
 #   secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID_APP_WEB, VERCEL_PROJECT_ID_ADMIN
 
 on:
@@ -71,6 +71,7 @@ jobs:
           --dart-define=API_URL=${{ vars.API_URL }}
           --dart-define=SOCKET_URL=${{ vars.SOCKET_URL }}
           --dart-define=APP_ENV=${{ env.APP_ENV }}
+          --dart-define=MAPS_API_KEY=${{ vars.MAPS_API_KEY_WEB }}
 
       - uses: actions/setup-node@v4
         with:

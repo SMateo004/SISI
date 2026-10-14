@@ -6,6 +6,7 @@ import '../../../core/files/image_source_sheet.dart';
 import '../../../core/files/picked_image.dart';
 import '../../../core/http/api_exception.dart';
 import '../../../core/router/routes.dart';
+import '../../../shared/money.dart';
 import '../application/onboarding_draft.dart';
 import '../data/worker_repository.dart';
 import '../domain/worker_models.dart';
@@ -196,10 +197,6 @@ class _Message extends StatelessWidget {
   );
 }
 
-/// Monto en bolivianos con coma decimal, como se escribe en Bolivia: "Bs 19,50".
-/// La API envía el Decimal como texto con punto ("19.50").
-String formatBs(String amount) => 'Bs ${amount.replaceAll('.', ',')}';
-
 String formatDate(DateTime date) =>
     '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
 
@@ -364,6 +361,7 @@ class _CategoriesStep extends ConsumerWidget {
           const SizedBox(height: 8),
           for (final category in categories)
             CheckboxListTile(
+              secondary: Icon(category.icon),
               value: draft.categoryIds.contains(category.id),
               onChanged: (_) => ref
                   .read(onboardingProvider.notifier)

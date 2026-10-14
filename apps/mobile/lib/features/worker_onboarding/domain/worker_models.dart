@@ -1,3 +1,5 @@
+export '../../../shared/categories/category.dart';
+
 /// Estados del perfil de trabajador (R1.4).
 enum WorkerStatus {
   sinSolicitar('sin_solicitar'),
@@ -131,28 +133,4 @@ class WorkerProfile {
   final bool editable;
 
   bool hasDocument(DocumentType type) => documents.any((d) => d.type == type);
-}
-
-class Category {
-  const Category({
-    required this.id,
-    required this.name,
-    required this.priceMinBs,
-    required this.priceMaxBs,
-    this.description,
-  });
-
-  factory Category.fromJson(Map<String, dynamic> json) => Category(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    description: json['description'] as String?,
-    priceMinBs: json['priceMinBs'] as String,
-    priceMaxBs: json['priceMaxBs'] as String,
-  );
-
-  final String id;
-  final String name;
-  final String? description;
-  final String priceMinBs;
-  final String priceMaxBs;
 }

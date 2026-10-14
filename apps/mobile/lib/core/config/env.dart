@@ -21,5 +21,9 @@ abstract final class Env {
     defaultValue: 'local',
   );
 
+  /// Llave de Google Maps de la APP (distinta de la del backend), restringida por
+  /// plataforma o dominio (ADR-0021). Vacía = mapa sin proveedor (PlaceholderMapView).
+  static const String mapsApiKey = String.fromEnvironment('MAPS_API_KEY');
+
   static bool get isProduction => appEnv == 'production';
 }

@@ -45,28 +45,32 @@ class MapView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final builder = ref.watch(mapViewBuilderProvider);
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Positioned.fill(
-          child: builder(
-            initialCenter: initialCenter,
-            onCenterChanged: onCenterChanged,
-          ),
-        ),
-        // Pin fijo: la ubicación elegida es el centro del mapa.
-        IgnorePointer(
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 36),
-            child: Icon(
-              Icons.location_on,
-              size: 44,
-              color: Theme.of(context).colorScheme.error,
-              semanticLabel: 'Ubicación del trabajo',
+    // SizedBox.expand: sin esto el Stack toma el tamaño del pin (su único hijo no
+    // posicionado) y el mapa queda como una columna angosta.
+    return SizedBox.expand(
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned.fill(
+            child: builder(
+              initialCenter: initialCenter,
+              onCenterChanged: onCenterChanged,
             ),
           ),
-        ),
-      ],
+          // Pin fijo: la ubicación elegida es el centro del mapa.
+          IgnorePointer(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 36),
+              child: Icon(
+                Icons.location_on,
+                size: 44,
+                color: Theme.of(context).colorScheme.error,
+                semanticLabel: 'Ubicación del trabajo',
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

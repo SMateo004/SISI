@@ -90,6 +90,11 @@ void main() {
 
       // 3. Mapa con la dirección sugerida (editable).
       expect(find.byKey(const Key('placeholder-map')), findsOneWidget);
+      // El mapa ocupa todo el ancho (no solo el del pin).
+      expect(
+        tester.getSize(find.byKey(const Key('placeholder-map'))).width,
+        greaterThan(300),
+      );
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pumpAndSettle();
       expect(

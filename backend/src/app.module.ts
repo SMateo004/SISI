@@ -8,6 +8,7 @@ import { RateLimitModule } from './common/rate-limit/rate-limit.module';
 import { RateLimitedFilter } from './common/rate-limit/rate-limited.filter';
 import { SisiThrottlerGuard } from './common/rate-limit/sisi-throttler.guard';
 import { AppConfigModule } from './config/config.module';
+import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
 import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
@@ -22,6 +23,7 @@ import { WorkersModule } from './workers/workers.module';
     RedisModule,
     RateLimitModule,
     StorageModule,
+    FeatureFlagsModule,
     HealthModule,
     UsersModule,
     AuthModule,

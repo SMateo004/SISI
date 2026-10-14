@@ -30,8 +30,9 @@ model City {
   createdAt       DateTime                                @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime                                @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  users      User[]
-  categories CategoryCity[]
+  users        User[]
+  categories   CategoryCity[]
+  featureFlags FeatureFlag[]
 
   @@map("cities")
 }
@@ -262,4 +263,21 @@ model WorkerStatusEvent {
 
   @@index([workerId, createdAt])
   @@map("worker_status_events")
+}
+
+/// Feature flags (R10.2). city_id null = valor global; una fila por ciudad lo sobreescribe.
+model FeatureFlag {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key         String
+  cityId      String?  @map("city_id") @db.Uuid
+  enabled     Boolean  @default(false)
+  description String?
+  updatedById String?  @map("updated_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  city City? @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@unique([key, cityId])
+  @@map("feature_flags")
 }

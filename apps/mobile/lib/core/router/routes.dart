@@ -8,6 +8,11 @@ abstract final class Routes {
   static const serverStatus = '/estado-servidor';
   static const workerOnboarding = '/trabajador/solicitud';
   static const workerStatus = '/trabajador/estado';
+  static const myRequests = '/solicitudes';
+  static const newRequest = '/solicitudes/nueva';
+  static const requestDetailPath = '/solicitudes/:id';
+
+  static String requestDetail(String id) => '/solicitudes/$id';
 
   static String otp(String phoneDigits, int resendInSec) =>
       '$otpPath?telefono=$phoneDigits&espera=$resendInSec';

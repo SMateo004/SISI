@@ -11,6 +11,9 @@ import 'package:sisi_mobile/features/auth/data/auth_repository.dart';
 import 'package:sisi_mobile/features/mode_switch/domain/mode_denial.dart';
 import 'package:sisi_mobile/features/profile/data/me_repository.dart';
 import 'package:sisi_mobile/features/profile/domain/app_user.dart';
+import 'package:sisi_mobile/core/maps/geo_point.dart';
+import 'package:sisi_mobile/features/requests/data/requests_repository.dart';
+import 'package:sisi_mobile/features/requests/domain/service_request.dart';
 import 'package:sisi_mobile/features/worker_onboarding/data/worker_repository.dart';
 import 'package:sisi_mobile/features/worker_onboarding/domain/worker_models.dart';
 
@@ -141,6 +144,113 @@ class FakeImagePicker implements ImagePickerService {
   );
 }
 
+const plomeria = Category(
+  id: 'c-plomeria',
+  slug: 'plomeria',
+  name: 'Plomería',
+  priceMinBs: '80.00',
+  priceMaxBs: '300.00',
+);
+const electricidad = Category(
+  id: 'c-electricidad',
+  slug: 'electricidad',
+  name: 'Electricidad',
+  priceMinBs: '80.00',
+  priceMaxBs: '300.00',
+);
+
+ServiceRequest testRequest({
+  String id = 'r1',
+  RequestStatus status = RequestStatus.buscando,
+  String? statusMessage = 'Buscando trabajadores cerca de ti.',
+  String price = '150.00',
+}) => ServiceRequest(
+  id: id,
+  status: status,
+  statusMessage: statusMessage,
+  category: const RequestCategory(
+    id: 'c-plomeria',
+    slug: 'plomeria',
+    name: 'Plomería',
+  ),
+  description: 'Tengo una fuga debajo del lavaplatos de la cocina.',
+  location: santaCruzCenter,
+  address: 'Calle Junín 150',
+  proposedPriceBs: price,
+  createdAt: DateTime(2026, 10, 15, 10),
+);
+
+class FakeRequestsRepository implements RequestsRepository {
+  FakeRequestsRepository({
+    this.categories = const [plomeria, electricidad],
+    this.held = false,
+    List<ServiceRequest>? mine,
+  }) : mine = mine ?? [];
+
+  List<Category> categories;
+  bool held;
+  List<ServiceRequest> mine;
+  NewRequestInput? created;
+  int uploadedPhotos = 0;
+  final cancelled = <String>[];
+
+  @override
+  Future<List<Category>> listCategories() async => categories;
+
+  @override
+  Future<String?> reverseGeocode(GeoPoint point) async =>
+      'Calle sugerida 123, Santa Cruz de la Sierra';
+
+  @override
+  Future<ServiceRequest> createDraft(NewRequestInput input) async {
+    created = input;
+    return testRequest(id: 'r-nueva', status: RequestStatus.borrador);
+  }
+
+  @override
+  Future<void> uploadPhoto(String requestId, PickedImage image) async =>
+      uploadedPhotos++;
+
+  @override
+  Future<PublishResult> publish(String requestId) async {
+    final request = testRequest(
+      id: requestId,
+      status: held ? RequestStatus.retenida : RequestStatus.buscando,
+      statusMessage: held
+          ? 'Recibimos tu solicitud. La estamos revisando y te avisaremos cuando se publique.'
+          : 'Buscando trabajadores cerca de ti.',
+    );
+    mine = [request, ...mine];
+    return PublishResult(
+      request: request,
+      held: held,
+      message: held
+          ? 'Recibimos tu solicitud. La estamos revisando y te avisaremos cuando se publique.'
+          : '¡Listo! Estamos buscando trabajadores cerca de ti.',
+    );
+  }
+
+  @override
+  Future<ServiceRequest> cancel(String requestId) async {
+    cancelled.add(requestId);
+    final updated = testRequest(
+      id: requestId,
+      status: RequestStatus.cancelada,
+      statusMessage: 'Cancelaste esta solicitud.',
+    );
+    mine = [for (final r in mine) r.id == requestId ? updated : r];
+    return updated;
+  }
+
+  @override
+  Future<RequestPage> listMine({String? cursor}) async =>
+      RequestPage(items: mine);
+
+  @override
+  Future<ServiceRequest> get(String requestId) async =>
+      mine.firstWhere((r) => r.id == requestId);
+}
+
 /// Monta la app completa (router real) con repositorios falsos.
 Future<void> pumpSisiApp(
   WidgetTester tester, {
@@ -148,6 +258,7 @@ Future<void> pumpSisiApp(
   FakeAuthRepository? auth,
   FakeMeRepository? me,
   FakeWorkerRepository? worker,
+  FakeRequestsRepository? requests,
 }) async {
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 2.6;
@@ -164,6 +275,9 @@ Future<void> pumpSisiApp(
           worker ?? FakeWorkerRepository(),
         ),
         imagePickerProvider.overrideWithValue(FakeImagePicker()),
+        requestsRepositoryProvider.overrideWithValue(
+          requests ?? FakeRequestsRepository(),
+        ),
       ],
       child: const SisiApp(),
     ),

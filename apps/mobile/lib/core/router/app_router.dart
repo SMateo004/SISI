@@ -7,6 +7,9 @@ import '../../features/auth/presentation/phone_screen.dart';
 import '../../features/health/presentation/health_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/requests/presentation/my_requests_screen.dart';
+import '../../features/requests/presentation/new_request_flow_screen.dart';
+import '../../features/requests/presentation/request_detail_screen.dart';
 import '../../features/worker_onboarding/presentation/onboarding_flow_screen.dart';
 import '../../features/worker_onboarding/presentation/review_status_screen.dart';
 import '../auth/session_controller.dart';
@@ -70,6 +73,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.workerStatus,
         builder: (context, state) => const ReviewStatusScreen(),
+      ),
+      GoRoute(
+        path: Routes.myRequests,
+        builder: (context, state) => const MyRequestsScreen(),
+      ),
+      // Antes que /solicitudes/:id para que "nueva" no se tome como id.
+      GoRoute(
+        path: Routes.newRequest,
+        builder: (context, state) => const NewRequestFlowScreen(),
+      ),
+      GoRoute(
+        path: Routes.requestDetailPath,
+        builder: (context, state) => RequestDetailScreen(
+          requestId: state.pathParameters['id']!,
+          notice: state.extra as String?,
+        ),
       ),
     ],
   );

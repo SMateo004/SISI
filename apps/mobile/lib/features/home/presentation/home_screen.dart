@@ -71,34 +71,67 @@ class _HomeBody extends StatelessWidget {
               onTap: () => context.push(Routes.profile),
             ),
           ),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  isWorker ? Icons.handyman_outlined : Icons.search,
-                  size: 32,
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  isWorker
-                      ? 'Estás en modo trabajador'
-                      : '¿Qué servicio necesitas?',
-                  style: theme.textTheme.titleMedium,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  isWorker
-                      ? 'Muy pronto recibirás aquí las solicitudes cercanas de tus categorías.'
-                      : 'Muy pronto podrás publicar solicitudes y recibir ofertas de trabajadores cerca de ti.',
-                ),
-              ],
+        if (isWorker)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.handyman_outlined,
+                    size: 32,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Estás en modo trabajador',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Muy pronto recibirás aquí las solicitudes cercanas de tus categorías.',
+                  ),
+                ],
+              ),
+            ),
+          )
+        else ...[
+          // R1.2/R3: solo el modo empleador publica solicitudes.
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    '¿Qué servicio necesitas?',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Publica lo que necesitas y recibe ofertas de trabajadores cerca de ti.',
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    key: const Key('new-request'),
+                    onPressed: () => context.push(Routes.newRequest),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Pedir un servicio'),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.list_alt),
+              title: const Text('Mis solicitudes'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(Routes.myRequests),
+            ),
+          ),
+        ],
         if (!isWorker)
           Card(
             child: ListTile(

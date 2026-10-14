@@ -36,6 +36,18 @@ void main() {
     expect(find.text('¿Qué servicio necesitas?'), findsOneWidget);
   });
 
+  testWidgets('sin nombre el avatar muestra un ícono, no el + del teléfono', (
+    tester,
+  ) async {
+    await pumpSisiApp(
+      tester,
+      storedTokens: testTokens,
+      me: FakeMeRepository(user: testUser(name: null)),
+    );
+    expect(find.byIcon(Icons.person), findsOneWidget);
+    expect(find.text('+'), findsNothing);
+  });
+
   testWidgets('también se cambia deslizando', (tester) async {
     final me = FakeMeRepository();
     await pumpSisiApp(tester, storedTokens: testTokens, me: me);

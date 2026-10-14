@@ -196,6 +196,10 @@ class _Message extends StatelessWidget {
   );
 }
 
+/// Monto en bolivianos con coma decimal, como se escribe en Bolivia: "Bs 19,50".
+/// La API envía el Decimal como texto con punto ("19.50").
+String formatBs(String amount) => 'Bs ${amount.replaceAll('.', ',')}';
+
 String formatDate(DateTime date) =>
     '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
 
@@ -366,7 +370,7 @@ class _CategoriesStep extends ConsumerWidget {
                   .toggleCategory(category.id),
               title: Text(category.name),
               subtitle: Text(
-                'Referencia: Bs ${category.priceMinBs} a Bs ${category.priceMaxBs}',
+                'Referencia: ${formatBs(category.priceMinBs)} a ${formatBs(category.priceMaxBs)}',
               ),
             ),
         ],

@@ -10,13 +10,18 @@ class UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initial = user.displayName.characters.first.toUpperCase();
+    final name = user.name?.trim() ?? '';
     return CircleAvatar(
       radius: radius,
       foregroundImage: user.photoUrl == null
           ? null
           : NetworkImage(user.photoUrl!),
-      child: Text(initial, style: TextStyle(fontSize: radius * 0.8)),
+      child: name.isEmpty
+          ? Icon(Icons.person, size: radius * 1.1)
+          : Text(
+              name.characters.first.toUpperCase(),
+              style: TextStyle(fontSize: radius * 0.8),
+            ),
     );
   }
 }

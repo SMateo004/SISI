@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sisi_mobile/features/worker_onboarding/application/onboarding_draft.dart';
 import 'package:sisi_mobile/features/worker_onboarding/domain/worker_models.dart';
+import 'package:sisi_mobile/features/worker_onboarding/presentation/onboarding_flow_screen.dart';
 
 import '../../helpers/fakes.dart';
 
@@ -43,6 +44,11 @@ Future<void> _uploadAllDocuments(WidgetTester tester) async {
 }
 
 void main() {
+  test('formatBs usa coma decimal', () {
+    expect(formatBs('80.00'), 'Bs 80,00');
+    expect(formatBs('19.50'), 'Bs 19,50');
+  });
+
   test('ageOn respeta el día del cumpleaños', () {
     final birth = DateTime(2008, 10, 15);
     expect(ageOn(birth, DateTime(2026, 10, 14)), 17);
@@ -106,6 +112,10 @@ void main() {
       'maxRadiusKm': 5,
     });
     expect(find.text('Tu solicitud está en revisión'), findsOneWidget);
+    // Se llegó con go(): hay un botón para volver al inicio.
+    await tester.tap(find.byTooltip('Ir al inicio'));
+    await tester.pumpAndSettle();
+    expect(find.text('¿Quieres trabajar en SISI?'), findsOneWidget);
   });
 
   testWidgets('Atrás vuelve al paso anterior conservando los datos', (

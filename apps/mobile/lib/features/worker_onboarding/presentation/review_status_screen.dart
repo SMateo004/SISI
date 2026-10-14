@@ -15,7 +15,17 @@ class ReviewStatusScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(workerProfileProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Tu verificación')),
+      appBar: AppBar(
+        title: const Text('Tu verificación'),
+        // Tras enviar la solicitud se llega aquí con go(): sin pantalla anterior.
+        leading: context.canPop()
+            ? null
+            : IconButton(
+                tooltip: 'Ir al inicio',
+                icon: const Icon(Icons.home_outlined),
+                onPressed: () => context.go(Routes.home),
+              ),
+      ),
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(workerProfileProvider.future),
         child: ListView(

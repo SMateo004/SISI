@@ -89,6 +89,16 @@ Class | Method | HTTP request | Description
 [*MeApi*](doc/MeApi.md) | [**meControllerMe**](doc/MeApi.md#mecontrollerme) | **GET** /me | Mi cuenta
 [*MeApi*](doc/MeApi.md) | [**meControllerPhotoUploadUrl**](doc/MeApi.md#mecontrollerphotouploadurl) | **POST** /me/photo/upload-url | URL prefirmada para subir mi foto de perfil
 [*MeApi*](doc/MeApi.md) | [**meControllerUpdate**](doc/MeApi.md#mecontrollerupdate) | **PATCH** /me | Actualiza mi nombre (la foto se cambia con /me/photo)
+[*NotificacionesApi*](doc/NotificacionesApi.md) | [**notificationsControllerList**](doc/NotificacionesApi.md#notificationscontrollerlist) | **GET** /me/notifications | Mis avisos, del más reciente al más antiguo
+[*NotificacionesApi*](doc/NotificacionesApi.md) | [**notificationsControllerMarkRead**](doc/NotificacionesApi.md#notificationscontrollermarkread) | **POST** /me/notifications/{id}/read | Marcar un aviso como leído
+[*NotificacionesApi*](doc/NotificacionesApi.md) | [**notificationsControllerRegisterDevice**](doc/NotificacionesApi.md#notificationscontrollerregisterdevice) | **POST** /me/devices | Registrar el token de push (FCM) de este dispositivo
+[*NotificacionesApi*](doc/NotificacionesApi.md) | [**notificationsControllerUnregisterDevice**](doc/NotificacionesApi.md#notificationscontrollerunregisterdevice) | **DELETE** /me/devices/{token} | Dar de baja el token de push (al cerrar sesión)
+[*OfertasApi*](doc/OfertasApi.md) | [**offersControllerAccept**](doc/OfertasApi.md#offerscontrolleraccept) | **POST** /requests/{id}/offers/{offerId}/accept | Elegir una oferta (R5.4)
+[*OfertasApi*](doc/OfertasApi.md) | [**offersControllerContact**](doc/OfertasApi.md#offerscontrollercontact) | **GET** /jobs/{id}/contact | Contacto de la contraparte (R5.4, R9.4)
+[*OfertasApi*](doc/OfertasApi.md) | [**offersControllerIncoming**](doc/OfertasApi.md#offerscontrollerincoming) | **GET** /worker/requests | Solicitudes que me llegaron (últimas 24 h)
+[*OfertasApi*](doc/OfertasApi.md) | [**offersControllerIncomingOne**](doc/OfertasApi.md#offerscontrollerincomingone) | **GET** /worker/requests/{id} | Detalle de una solicitud que me llegó (R5.1)
+[*OfertasApi*](doc/OfertasApi.md) | [**offersControllerList**](doc/OfertasApi.md#offerscontrollerlist) | **GET** /requests/{id}/offers | Ofertas de mi solicitud (R5.3)
+[*OfertasApi*](doc/OfertasApi.md) | [**offersControllerOffer**](doc/OfertasApi.md#offerscontrolleroffer) | **POST** /requests/{id}/offers | Ofertar: aceptar el precio o contraofertar (R5.2)
 [*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerCancel**](doc/RequestsApi.md#requestscontrollercancel) | **POST** /requests/{id}/cancel | Cancela la solicitud (mientras no esté asignada)
 [*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerConfirmPhoto**](doc/RequestsApi.md#requestscontrollerconfirmphoto) | **PUT** /requests/{id}/photos | Confirma una foto subida (verifica el objeto con HEAD)
 [*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerCreate**](doc/RequestsApi.md#requestscontrollercreate) | **POST** /requests | Crea una solicitud en borrador
@@ -97,6 +107,9 @@ Class | Method | HTTP request | Description
 [*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerListMine**](doc/RequestsApi.md#requestscontrollerlistmine) | **GET** /requests/mine | Mis solicitudes (más recientes primero)
 [*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerPhotoUploadUrl**](doc/RequestsApi.md#requestscontrollerphotouploadurl) | **POST** /requests/{id}/photos/upload-url | URL prefirmada para subir una foto (máx. 4, solo en borrador)
 [*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerPublish**](doc/RequestsApi.md#requestscontrollerpublish) | **POST** /requests/{id}/publish | Publica la solicitud
+[*WorkerApi*](doc/WorkerApi.md) | [**workerLocationsControllerGet**](doc/WorkerApi.md#workerlocationscontrollerget) | **GET** /worker/availability | Mi disponibilidad y última ubicación recibida
+[*WorkerApi*](doc/WorkerApi.md) | [**workerLocationsControllerSet**](doc/WorkerApi.md#workerlocationscontrollerset) | **PUT** /worker/availability | Toggle \&quot;Disponible\&quot;
+[*WorkerApi*](doc/WorkerApi.md) | [**workerLocationsControllerUpdate**](doc/WorkerApi.md#workerlocationscontrollerupdate) | **POST** /worker/location | Ubicación en vivo (solo con \&quot;Disponible\&quot; y la app en primer plano)
 [*WorkerApi*](doc/WorkerApi.md) | [**workerMeControllerConfirmDocument**](doc/WorkerApi.md#workermecontrollerconfirmdocument) | **PUT** /me/worker/documents/{type} | Confirma un documento subido
 [*WorkerApi*](doc/WorkerApi.md) | [**workerMeControllerDocumentUploadUrl**](doc/WorkerApi.md#workermecontrollerdocumentuploadurl) | **POST** /me/worker/documents/upload-url | URL prefirmada para subir un documento (CI anverso, reverso o selfie)
 [*WorkerApi*](doc/WorkerApi.md) | [**workerMeControllerGetProfile**](doc/WorkerApi.md#workermecontrollergetprofile) | **GET** /me/worker | Mi perfil de trabajador y el estado de cada documento
@@ -106,28 +119,43 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
+ - [AcceptOfferResultDto](doc/AcceptOfferResultDto.md)
  - [AdminCategoryCityDto](doc/AdminCategoryCityDto.md)
  - [AdminCategoryDto](doc/AdminCategoryDto.md)
  - [AdminHeldRequestDto](doc/AdminHeldRequestDto.md)
  - [ApiErrorBody](doc/ApiErrorBody.md)
+ - [AvailabilityDto](doc/AvailabilityDto.md)
  - [CategoryDto](doc/CategoryDto.md)
  - [ConfirmUploadDto](doc/ConfirmUploadDto.md)
  - [CreateModerationTermDto](doc/CreateModerationTermDto.md)
+ - [CreateOfferDto](doc/CreateOfferDto.md)
  - [CreateRequestDto](doc/CreateRequestDto.md)
  - [CreatedRequestDto](doc/CreatedRequestDto.md)
  - [DocumentUploadRequestDto](doc/DocumentUploadRequestDto.md)
  - [DocumentUrlDto](doc/DocumentUrlDto.md)
+ - [EmployerOfferDto](doc/EmployerOfferDto.md)
  - [FeatureFlagDto](doc/FeatureFlagDto.md)
  - [HealthCheckDto](doc/HealthCheckDto.md)
  - [HealthChecksDto](doc/HealthChecksDto.md)
  - [HealthResponseDto](doc/HealthResponseDto.md)
+ - [IncomingPhotoDto](doc/IncomingPhotoDto.md)
+ - [IncomingRequestDto](doc/IncomingRequestDto.md)
+ - [JobContactDto](doc/JobContactDto.md)
+ - [LocationUpdateDto](doc/LocationUpdateDto.md)
+ - [LocationUpdateResultDto](doc/LocationUpdateResultDto.md)
  - [LoginResponseDto](doc/LoginResponseDto.md)
  - [ModeDeniedDto](doc/ModeDeniedDto.md)
  - [ModerationTermDto](doc/ModerationTermDto.md)
+ - [MyOfferDto](doc/MyOfferDto.md)
+ - [NotificationDto](doc/NotificationDto.md)
+ - [NotificationPageDto](doc/NotificationPageDto.md)
+ - [OfferWorkerDto](doc/OfferWorkerDto.md)
  - [OtpRequestedDto](doc/OtpRequestedDto.md)
  - [PresignedUploadDto](doc/PresignedUploadDto.md)
+ - [PriceRangeDto](doc/PriceRangeDto.md)
  - [PublishResultDto](doc/PublishResultDto.md)
  - [RefreshTokenDto](doc/RefreshTokenDto.md)
+ - [RegisterDeviceDto](doc/RegisterDeviceDto.md)
  - [RejectRequestDto](doc/RejectRequestDto.md)
  - [RequestCategoryDto](doc/RequestCategoryDto.md)
  - [RequestDto](doc/RequestDto.md)
@@ -136,6 +164,7 @@ Class | Method | HTTP request | Description
  - [RequestPhotoDto](doc/RequestPhotoDto.md)
  - [RequestWarningDto](doc/RequestWarningDto.md)
  - [ReverseGeocodeDto](doc/ReverseGeocodeDto.md)
+ - [SetAvailabilityDto](doc/SetAvailabilityDto.md)
  - [SetFeatureFlagDto](doc/SetFeatureFlagDto.md)
  - [SubmitUpgradeDto](doc/SubmitUpgradeDto.md)
  - [SwitchModeDto](doc/SwitchModeDto.md)

@@ -22,6 +22,10 @@ Name | Type | Description | Notes
 **createdAt** | **String** |  | 
 **publishedAt** | **String** |  | [optional] 
 **cancelledAt** | **String** |  | [optional] 
+**ring** | **num** | Anillo de búsqueda actual (R4.2); null si el matching aún no empezó | 
+**totalRings** | **num** | Cantidad de anillos configurados | 
+**jobId** | **String** | Trabajo asignado (contacto en GET /jobs/{jobId}/contact) | 
+**expiresAt** | **String** | Con ofertas sin elegir tras el último anillo: hasta cuándo se puede elegir | 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

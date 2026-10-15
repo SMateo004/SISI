@@ -1980,6 +1980,727 @@
           "maps"
         ]
       }
+    },
+    "/worker/availability": {
+      "get": {
+        "operationId": "WorkerLocationsController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mi disponibilidad y última ubicación recibida",
+        "tags": [
+          "worker"
+        ]
+      },
+      "put": {
+        "description": "Activar exige modo trabajador, perfil aprobado y la ubicación actual. Sin ubicación en `staleAfterSec`, deja de estar disponible solo (ADR-0024).",
+        "operationId": "WorkerLocationsController_set",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetAvailabilityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "LOCATION_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "WORKER_MODE_REQUIRED o el motivo del estado (WORKER_UNDER_REVIEW, WORKER_BLOCKED_DEBT...)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Toggle \"Disponible\"",
+        "tags": [
+          "worker"
+        ]
+      }
+    },
+    "/worker/location": {
+      "post": {
+        "description": "Enviar cada `sendEverySec` o al moverse. Postgres se actualiza con throttling.",
+        "operationId": "WorkerLocationsController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationUpdateResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "NOT_AVAILABLE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ubicación en vivo (solo con \"Disponible\" y la app en primer plano)",
+        "tags": [
+          "worker"
+        ]
+      }
+    },
+    "/me/devices": {
+      "post": {
+        "description": "Idempotente. Si el token era de otra cuenta (cambio de sesión), pasa a esta.",
+        "operationId": "NotificationsController_registerDevice",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDeviceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registrar el token de push (FCM) de este dispositivo",
+        "tags": [
+          "notificaciones"
+        ]
+      }
+    },
+    "/me/devices/{token}": {
+      "delete": {
+        "operationId": "NotificationsController_unregisterDevice",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dar de baja el token de push (al cerrar sesión)",
+        "tags": [
+          "notificaciones"
+        ]
+      }
+    },
+    "/me/notifications": {
+      "get": {
+        "operationId": "NotificationsController_list",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mis avisos, del más reciente al más antiguo",
+        "tags": [
+          "notificaciones"
+        ]
+      }
+    },
+    "/me/notifications/{id}/read": {
+      "post": {
+        "operationId": "NotificationsController_markRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Marcar un aviso como leído",
+        "tags": [
+          "notificaciones"
+        ]
+      }
+    },
+    "/worker/requests": {
+      "get": {
+        "description": "Bandeja del trabajador y resincronización al reconectar el socket. Incluye el estado de mi oferta y si me eligieron.",
+        "operationId": "OffersController_incoming",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IncomingRequestDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Solicitudes que me llegaron (últimas 24 h)",
+        "tags": [
+          "ofertas"
+        ]
+      }
+    },
+    "/worker/requests/{id}": {
+      "get": {
+        "description": "Solo para trabajadores notificados: a los demás les responde 404.",
+        "operationId": "OffersController_incomingOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncomingRequestDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "REQUEST_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Detalle de una solicitud que me llegó (R5.1)",
+        "tags": [
+          "ofertas"
+        ]
+      }
+    },
+    "/requests/{id}/offers": {
+      "post": {
+        "description": "Solo trabajadores notificados y que sigan elegibles. Una oferta por trabajador: enviar otra la reemplaza mientras no se haya elegido ninguna.",
+        "operationId": "OffersController_offer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOfferDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyOfferDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "OFFER_AMOUNT_INVALID u OFFER_AMOUNT_TOO_HIGH (trae maxBs)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "REQUEST_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "OFFERS_CLOSED o NOT_ELIGIBLE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ofertar: aceptar el precio o contraofertar (R5.2)",
+        "tags": [
+          "ofertas"
+        ]
+      },
+      "get": {
+        "description": "Precio, calificación, tiempo estimado de llegada y nombre corto del trabajador.",
+        "operationId": "OffersController_list",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EmployerOfferDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "REQUEST_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ofertas de mi solicitud (R5.3)",
+        "tags": [
+          "ofertas"
+        ]
+      }
+    },
+    "/requests/{id}/offers/{offerId}/accept": {
+      "post": {
+        "description": "Crea el trabajo, asigna la solicitud y cierra las demás ofertas. Después, el contacto se pide con GET /jobs/{jobId}/contact.",
+        "operationId": "OffersController_accept",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptOfferResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "REQUEST_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "REQUEST_ALREADY_ASSIGNED, OFFERS_CLOSED u OFFER_NOT_AVAILABLE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Elegir una oferta (R5.4)",
+        "tags": [
+          "ofertas"
+        ]
+      }
+    },
+    "/jobs/{id}/contact": {
+      "get": {
+        "description": "Solo para el empleador y el trabajador del trabajo. Al trabajador también le da la dirección.",
+        "operationId": "OffersController_contact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobContactDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JOB_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Contacto de la contraparte (R5.4, R9.4)",
+        "tags": [
+          "ofertas"
+        ]
+      }
     }
   },
   "info": {
@@ -3158,6 +3879,26 @@
           "cancelledAt": {
             "type": "string",
             "nullable": true
+          },
+          "ring": {
+            "type": "number",
+            "nullable": true,
+            "description": "Anillo de búsqueda actual (R4.2); null si el matching aún no empezó"
+          },
+          "totalRings": {
+            "type": "number",
+            "description": "Cantidad de anillos configurados"
+          },
+          "jobId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "Trabajo asignado (contacto en GET /jobs/{jobId}/contact)"
+          },
+          "expiresAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Con ofertas sin elegir tras el último anillo: hasta cuándo se puede elegir"
           }
         },
         "required": [
@@ -3171,7 +3912,11 @@
           "address",
           "proposedPriceBs",
           "photos",
-          "createdAt"
+          "createdAt",
+          "ring",
+          "totalRings",
+          "jobId",
+          "expiresAt"
         ]
       },
       "RequestWarningDto": {
@@ -3327,6 +4072,26 @@
             "type": "string",
             "nullable": true
           },
+          "ring": {
+            "type": "number",
+            "nullable": true,
+            "description": "Anillo de búsqueda actual (R4.2); null si el matching aún no empezó"
+          },
+          "totalRings": {
+            "type": "number",
+            "description": "Cantidad de anillos configurados"
+          },
+          "jobId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "Trabajo asignado (contacto en GET /jobs/{jobId}/contact)"
+          },
+          "expiresAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Con ofertas sin elegir tras el último anillo: hasta cuándo se puede elegir"
+          },
           "matches": {
             "type": "object",
             "description": "Términos que coincidieron (solo para el admin)"
@@ -3347,6 +4112,10 @@
           "proposedPriceBs",
           "photos",
           "createdAt",
+          "ring",
+          "totalRings",
+          "jobId",
+          "expiresAt",
           "matches",
           "employerId"
         ]
@@ -3373,6 +4142,511 @@
             "description": "Sugerencia editable; null si no hay resultado"
           }
         }
+      },
+      "AvailabilityDto": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "availableSince": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "locatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Última ubicación recibida por la API"
+          },
+          "sendEverySec": {
+            "type": "number",
+            "description": "Cada cuántos segundos debe la app enviar la ubicación mientras está disponible (en primer plano)"
+          },
+          "staleAfterSec": {
+            "type": "number",
+            "description": "Sin ubicación en este tiempo, deja de estar disponible"
+          }
+        },
+        "required": [
+          "available",
+          "availableSince",
+          "locatedAt",
+          "sendEverySec",
+          "staleAfterSec"
+        ]
+      },
+      "SetAvailabilityDto": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "description": "true = recibir solicitudes cercanas"
+          },
+          "latitude": {
+            "type": "number",
+            "example": -17.7834,
+            "description": "Obligatoria para activar"
+          },
+          "longitude": {
+            "type": "number",
+            "example": -63.1821,
+            "description": "Obligatoria para activar"
+          }
+        },
+        "required": [
+          "available"
+        ]
+      },
+      "LocationUpdateDto": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "example": -17.7834
+          },
+          "longitude": {
+            "type": "number",
+            "example": -63.1821
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ]
+      },
+      "LocationUpdateResultDto": {
+        "type": "object",
+        "properties": {
+          "persisted": {
+            "type": "boolean",
+            "description": "false si se guardó solo la copia en vivo (throttling)"
+          }
+        },
+        "required": [
+          "persisted"
+        ]
+      },
+      "RegisterDeviceDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Token de FCM del dispositivo"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "android",
+              "web",
+              "ios"
+            ]
+          }
+        },
+        "required": [
+          "token",
+          "platform"
+        ]
+      },
+      "NotificationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "example": "offer_new"
+          },
+          "title": {
+            "type": "string",
+            "example": "Recibiste una oferta"
+          },
+          "body": {
+            "type": "string",
+            "example": "María P. ofrece Bs 180,00. Revísala y elige."
+          },
+          "route": {
+            "type": "string",
+            "example": "/solicitudes/…",
+            "description": "Pantalla de la app a abrir"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "readAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "title",
+          "body",
+          "route",
+          "data",
+          "readAt",
+          "createdAt"
+        ]
+      },
+      "NotificationPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "PriceRangeDto": {
+        "type": "object",
+        "properties": {
+          "minBs": {
+            "type": "string",
+            "example": "80.00"
+          },
+          "maxBs": {
+            "type": "string",
+            "example": "300.00"
+          }
+        },
+        "required": [
+          "minBs",
+          "maxBs"
+        ]
+      },
+      "IncomingPhotoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number"
+          },
+          "url": {
+            "type": "string",
+            "description": "URL temporal firmada (solo para notificados)"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "url"
+        ]
+      },
+      "MyOfferDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "accept",
+              "counter"
+            ]
+          },
+          "amountBs": {
+            "type": "string",
+            "example": "180.00"
+          },
+          "etaMin": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "activa",
+              "aceptada",
+              "cerrada"
+            ]
+          },
+          "revision": {
+            "type": "number"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "amountBs",
+          "etaMin",
+          "status",
+          "revision",
+          "updatedAt"
+        ]
+      },
+      "IncomingRequestDto": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "abierta",
+              "elegido",
+              "elegida_otra",
+              "cancelada",
+              "expirada"
+            ],
+            "description": "abierta = puede ofertar; elegido = lo eligieron (ver contacto con jobId)"
+          },
+          "category": {
+            "type": "object",
+            "example": {
+              "slug": "plomeria",
+              "name": "Plomería"
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "distanceM": {
+            "type": "number",
+            "example": 850
+          },
+          "proposedPriceBs": {
+            "type": "string",
+            "example": "150.00"
+          },
+          "referenceRange": {
+            "$ref": "#/components/schemas/PriceRangeDto"
+          },
+          "maxCounterBs": {
+            "type": "string",
+            "example": "900.00",
+            "description": "Tope de la contraoferta"
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IncomingPhotoDto"
+            }
+          },
+          "ring": {
+            "type": "number",
+            "description": "Anillo en el que le llegó"
+          },
+          "respondBy": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fin del plazo de su anillo (cuenta regresiva en la app)"
+          },
+          "myOffer": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MyOfferDto"
+              }
+            ]
+          },
+          "jobId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "notifiedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "requestId",
+          "outcome",
+          "category",
+          "description",
+          "distanceM",
+          "proposedPriceBs",
+          "referenceRange",
+          "maxCounterBs",
+          "photos",
+          "ring",
+          "respondBy",
+          "myOffer",
+          "jobId",
+          "notifiedAt"
+        ]
+      },
+      "CreateOfferDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "accept",
+              "counter"
+            ],
+            "description": "accept = acepta el precio propuesto; counter = contraoferta (R5.2)"
+          },
+          "amountBs": {
+            "type": "string",
+            "example": "180.00",
+            "description": "Obligatorio en una contraoferta"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "OfferWorkerDto": {
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "type": "string",
+            "example": "María P."
+          },
+          "ratingAvg": {
+            "type": "string",
+            "example": "4.80"
+          },
+          "ratingCount": {
+            "type": "number",
+            "example": 25
+          }
+        },
+        "required": [
+          "shortName",
+          "ratingAvg",
+          "ratingCount"
+        ]
+      },
+      "EmployerOfferDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "accept",
+              "counter"
+            ]
+          },
+          "amountBs": {
+            "type": "string",
+            "example": "180.00"
+          },
+          "etaMin": {
+            "type": "number",
+            "example": 12,
+            "description": "Minutos estimados de llegada"
+          },
+          "distanceM": {
+            "type": "number",
+            "example": 850
+          },
+          "revision": {
+            "type": "number",
+            "description": "Sube cada vez que el trabajador reemplaza su oferta"
+          },
+          "worker": {
+            "$ref": "#/components/schemas/OfferWorkerDto"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "amountBs",
+          "etaMin",
+          "distanceM",
+          "revision",
+          "worker",
+          "updatedAt"
+        ]
+      },
+      "AcceptOfferResultDto": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "jobId",
+          "requestId"
+        ]
+      },
+      "JobContactDto": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "employer",
+              "worker"
+            ],
+            "description": "Rol de la contraparte"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "example": "+59171234567"
+          },
+          "address": {
+            "type": "string",
+            "nullable": true,
+            "description": "Dirección del trabajo (solo para el trabajador)"
+          },
+          "finalPriceBs": {
+            "type": "string",
+            "example": "180.00"
+          }
+        },
+        "required": [
+          "jobId",
+          "role",
+          "name",
+          "phone",
+          "address",
+          "finalPriceBs"
+        ]
       }
     }
   }

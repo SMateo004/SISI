@@ -50,6 +50,14 @@ class AdminHeldRequestDto {
 
      this.cancelledAt,
 
+    required  this.ring,
+
+    required  this.totalRings,
+
+    required  this.jobId,
+
+    required  this.expiresAt,
+
     required  this.matches,
 
     required  this.employerId,
@@ -224,6 +232,58 @@ class AdminHeldRequestDto {
 
 
 
+      /// Anillo de búsqueda actual (R4.2); null si el matching aún no empezó
+  @JsonKey(
+    
+    name: r'ring',
+    required: true,
+    includeIfNull: true,
+  )
+
+
+  final num? ring;
+
+
+
+      /// Cantidad de anillos configurados
+  @JsonKey(
+    
+    name: r'totalRings',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final num totalRings;
+
+
+
+      /// Trabajo asignado (contacto en GET /jobs/{jobId}/contact)
+  @JsonKey(
+    
+    name: r'jobId',
+    required: true,
+    includeIfNull: true,
+  )
+
+
+  final String? jobId;
+
+
+
+      /// Con ofertas sin elegir tras el último anillo: hasta cuándo se puede elegir
+  @JsonKey(
+    
+    name: r'expiresAt',
+    required: true,
+    includeIfNull: true,
+  )
+
+
+  final String? expiresAt;
+
+
+
       /// Términos que coincidieron (solo para el admin)
   @JsonKey(
     
@@ -267,6 +327,10 @@ class AdminHeldRequestDto {
       other.createdAt == createdAt &&
       other.publishedAt == publishedAt &&
       other.cancelledAt == cancelledAt &&
+      other.ring == ring &&
+      other.totalRings == totalRings &&
+      other.jobId == jobId &&
+      other.expiresAt == expiresAt &&
       other.matches == matches &&
       other.employerId == employerId;
 
@@ -286,6 +350,10 @@ class AdminHeldRequestDto {
         createdAt.hashCode +
         (publishedAt == null ? 0 : publishedAt.hashCode) +
         (cancelledAt == null ? 0 : cancelledAt.hashCode) +
+        (ring == null ? 0 : ring.hashCode) +
+        totalRings.hashCode +
+        (jobId == null ? 0 : jobId.hashCode) +
+        (expiresAt == null ? 0 : expiresAt.hashCode) +
         matches.hashCode +
         employerId.hashCode;
 

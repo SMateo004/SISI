@@ -1,25 +1,40 @@
+import 'package:sisi_api/src/model/accept_offer_result_dto.dart';
 import 'package:sisi_api/src/model/admin_category_city_dto.dart';
 import 'package:sisi_api/src/model/admin_category_dto.dart';
 import 'package:sisi_api/src/model/admin_held_request_dto.dart';
 import 'package:sisi_api/src/model/api_error_body.dart';
+import 'package:sisi_api/src/model/availability_dto.dart';
 import 'package:sisi_api/src/model/category_dto.dart';
 import 'package:sisi_api/src/model/confirm_upload_dto.dart';
 import 'package:sisi_api/src/model/create_moderation_term_dto.dart';
+import 'package:sisi_api/src/model/create_offer_dto.dart';
 import 'package:sisi_api/src/model/create_request_dto.dart';
 import 'package:sisi_api/src/model/created_request_dto.dart';
 import 'package:sisi_api/src/model/document_upload_request_dto.dart';
 import 'package:sisi_api/src/model/document_url_dto.dart';
+import 'package:sisi_api/src/model/employer_offer_dto.dart';
 import 'package:sisi_api/src/model/feature_flag_dto.dart';
 import 'package:sisi_api/src/model/health_check_dto.dart';
 import 'package:sisi_api/src/model/health_checks_dto.dart';
 import 'package:sisi_api/src/model/health_response_dto.dart';
+import 'package:sisi_api/src/model/incoming_photo_dto.dart';
+import 'package:sisi_api/src/model/incoming_request_dto.dart';
+import 'package:sisi_api/src/model/job_contact_dto.dart';
+import 'package:sisi_api/src/model/location_update_dto.dart';
+import 'package:sisi_api/src/model/location_update_result_dto.dart';
 import 'package:sisi_api/src/model/login_response_dto.dart';
 import 'package:sisi_api/src/model/mode_denied_dto.dart';
 import 'package:sisi_api/src/model/moderation_term_dto.dart';
+import 'package:sisi_api/src/model/my_offer_dto.dart';
+import 'package:sisi_api/src/model/notification_dto.dart';
+import 'package:sisi_api/src/model/notification_page_dto.dart';
+import 'package:sisi_api/src/model/offer_worker_dto.dart';
 import 'package:sisi_api/src/model/otp_requested_dto.dart';
 import 'package:sisi_api/src/model/presigned_upload_dto.dart';
+import 'package:sisi_api/src/model/price_range_dto.dart';
 import 'package:sisi_api/src/model/publish_result_dto.dart';
 import 'package:sisi_api/src/model/refresh_token_dto.dart';
+import 'package:sisi_api/src/model/register_device_dto.dart';
 import 'package:sisi_api/src/model/reject_request_dto.dart';
 import 'package:sisi_api/src/model/request_category_dto.dart';
 import 'package:sisi_api/src/model/request_dto.dart';
@@ -28,6 +43,7 @@ import 'package:sisi_api/src/model/request_page_dto.dart';
 import 'package:sisi_api/src/model/request_photo_dto.dart';
 import 'package:sisi_api/src/model/request_warning_dto.dart';
 import 'package:sisi_api/src/model/reverse_geocode_dto.dart';
+import 'package:sisi_api/src/model/set_availability_dto.dart';
 import 'package:sisi_api/src/model/set_feature_flag_dto.dart';
 import 'package:sisi_api/src/model/submit_upgrade_dto.dart';
 import 'package:sisi_api/src/model/switch_mode_dto.dart';
@@ -60,6 +76,8 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
           return (valueString == 'true' || valueString == '1') as ReturnType;
         case 'double':
           return (value is double ? value : double.parse('$value')) as ReturnType;
+        case 'AcceptOfferResultDto':
+          return AcceptOfferResultDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'AdminCategoryCityDto':
           return AdminCategoryCityDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'AdminCategoryDto':
@@ -68,12 +86,16 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
           return AdminHeldRequestDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ApiErrorBody':
           return ApiErrorBody.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'AvailabilityDto':
+          return AvailabilityDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'CategoryDto':
           return CategoryDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ConfirmUploadDto':
           return ConfirmUploadDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'CreateModerationTermDto':
           return CreateModerationTermDto.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'CreateOfferDto':
+          return CreateOfferDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'CreateRequestDto':
           return CreateRequestDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'CreatedRequestDto':
@@ -82,6 +104,8 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
           return DocumentUploadRequestDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'DocumentUrlDto':
           return DocumentUrlDto.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'EmployerOfferDto':
+          return EmployerOfferDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'FeatureFlagDto':
           return FeatureFlagDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'HealthCheckDto':
@@ -90,20 +114,42 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
           return HealthChecksDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'HealthResponseDto':
           return HealthResponseDto.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'IncomingPhotoDto':
+          return IncomingPhotoDto.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'IncomingRequestDto':
+          return IncomingRequestDto.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'JobContactDto':
+          return JobContactDto.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'LocationUpdateDto':
+          return LocationUpdateDto.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'LocationUpdateResultDto':
+          return LocationUpdateResultDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'LoginResponseDto':
           return LoginResponseDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ModeDeniedDto':
           return ModeDeniedDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ModerationTermDto':
           return ModerationTermDto.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MyOfferDto':
+          return MyOfferDto.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'NotificationDto':
+          return NotificationDto.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'NotificationPageDto':
+          return NotificationPageDto.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'OfferWorkerDto':
+          return OfferWorkerDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'OtpRequestedDto':
           return OtpRequestedDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'PresignedUploadDto':
           return PresignedUploadDto.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'PriceRangeDto':
+          return PriceRangeDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'PublishResultDto':
           return PublishResultDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'RefreshTokenDto':
           return RefreshTokenDto.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'RegisterDeviceDto':
+          return RegisterDeviceDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'RejectRequestDto':
           return RejectRequestDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'RequestCategoryDto':
@@ -120,6 +166,8 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
           return RequestWarningDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ReverseGeocodeDto':
           return ReverseGeocodeDto.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'SetAvailabilityDto':
+          return SetAvailabilityDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'SetFeatureFlagDto':
           return SetFeatureFlagDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'SubmitUpgradeDto':

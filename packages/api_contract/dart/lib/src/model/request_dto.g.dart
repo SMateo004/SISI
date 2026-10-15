@@ -35,6 +35,14 @@ abstract class _$RequestDtoCWProxy {
 
   RequestDto cancelledAt(String? cancelledAt);
 
+  RequestDto ring(num? ring);
+
+  RequestDto totalRings(num totalRings);
+
+  RequestDto jobId(String? jobId);
+
+  RequestDto expiresAt(String? expiresAt);
+
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `RequestDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -56,6 +64,10 @@ abstract class _$RequestDtoCWProxy {
     String createdAt,
     String? publishedAt,
     String? cancelledAt,
+    num? ring,
+    num totalRings,
+    String? jobId,
+    String? expiresAt,
   });
 }
 
@@ -110,6 +122,18 @@ class _$RequestDtoCWProxyImpl implements _$RequestDtoCWProxy {
   RequestDto cancelledAt(String? cancelledAt) => this(cancelledAt: cancelledAt);
 
   @override
+  RequestDto ring(num? ring) => this(ring: ring);
+
+  @override
+  RequestDto totalRings(num totalRings) => this(totalRings: totalRings);
+
+  @override
+  RequestDto jobId(String? jobId) => this(jobId: jobId);
+
+  @override
+  RequestDto expiresAt(String? expiresAt) => this(expiresAt: expiresAt);
+
+  @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `RequestDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -131,6 +155,10 @@ class _$RequestDtoCWProxyImpl implements _$RequestDtoCWProxy {
     Object? createdAt = const $CopyWithPlaceholder(),
     Object? publishedAt = const $CopyWithPlaceholder(),
     Object? cancelledAt = const $CopyWithPlaceholder(),
+    Object? ring = const $CopyWithPlaceholder(),
+    Object? totalRings = const $CopyWithPlaceholder(),
+    Object? jobId = const $CopyWithPlaceholder(),
+    Object? expiresAt = const $CopyWithPlaceholder(),
   }) {
     return RequestDto(
       id: id == const $CopyWithPlaceholder()
@@ -189,6 +217,22 @@ class _$RequestDtoCWProxyImpl implements _$RequestDtoCWProxy {
           ? _value.cancelledAt
           // ignore: cast_nullable_to_non_nullable
           : cancelledAt as String?,
+      ring: ring == const $CopyWithPlaceholder()
+          ? _value.ring
+          // ignore: cast_nullable_to_non_nullable
+          : ring as num?,
+      totalRings: totalRings == const $CopyWithPlaceholder()
+          ? _value.totalRings
+          // ignore: cast_nullable_to_non_nullable
+          : totalRings as num,
+      jobId: jobId == const $CopyWithPlaceholder()
+          ? _value.jobId
+          // ignore: cast_nullable_to_non_nullable
+          : jobId as String?,
+      expiresAt: expiresAt == const $CopyWithPlaceholder()
+          ? _value.expiresAt
+          // ignore: cast_nullable_to_non_nullable
+          : expiresAt as String?,
     );
   }
 }
@@ -219,6 +263,10 @@ RequestDto _$RequestDtoFromJson(Map<String, dynamic> json) =>
           'proposedPriceBs',
           'photos',
           'createdAt',
+          'ring',
+          'totalRings',
+          'jobId',
+          'expiresAt',
         ],
       );
       final val = RequestDto(
@@ -247,6 +295,10 @@ RequestDto _$RequestDtoFromJson(Map<String, dynamic> json) =>
         createdAt: $checkedConvert('createdAt', (v) => v as String),
         publishedAt: $checkedConvert('publishedAt', (v) => v as String?),
         cancelledAt: $checkedConvert('cancelledAt', (v) => v as String?),
+        ring: $checkedConvert('ring', (v) => v as num?),
+        totalRings: $checkedConvert('totalRings', (v) => v as num),
+        jobId: $checkedConvert('jobId', (v) => v as String?),
+        expiresAt: $checkedConvert('expiresAt', (v) => v as String?),
       );
       return val;
     });
@@ -267,6 +319,10 @@ Map<String, dynamic> _$RequestDtoToJson(RequestDto instance) =>
       'createdAt': instance.createdAt,
       'publishedAt': ?instance.publishedAt,
       'cancelledAt': ?instance.cancelledAt,
+      'ring': instance.ring,
+      'totalRings': instance.totalRings,
+      'jobId': instance.jobId,
+      'expiresAt': instance.expiresAt,
     };
 
 const _$RequestDtoStatusEnumEnumMap = {

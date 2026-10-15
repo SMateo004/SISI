@@ -35,6 +35,14 @@ abstract class _$AdminHeldRequestDtoCWProxy {
 
   AdminHeldRequestDto cancelledAt(String? cancelledAt);
 
+  AdminHeldRequestDto ring(num? ring);
+
+  AdminHeldRequestDto totalRings(num totalRings);
+
+  AdminHeldRequestDto jobId(String? jobId);
+
+  AdminHeldRequestDto expiresAt(String? expiresAt);
+
   AdminHeldRequestDto matches(Object matches);
 
   AdminHeldRequestDto employerId(String employerId);
@@ -60,6 +68,10 @@ abstract class _$AdminHeldRequestDtoCWProxy {
     String createdAt,
     String? publishedAt,
     String? cancelledAt,
+    num? ring,
+    num totalRings,
+    String? jobId,
+    String? expiresAt,
     Object matches,
     String employerId,
   });
@@ -122,6 +134,20 @@ class _$AdminHeldRequestDtoCWProxyImpl implements _$AdminHeldRequestDtoCWProxy {
       this(cancelledAt: cancelledAt);
 
   @override
+  AdminHeldRequestDto ring(num? ring) => this(ring: ring);
+
+  @override
+  AdminHeldRequestDto totalRings(num totalRings) =>
+      this(totalRings: totalRings);
+
+  @override
+  AdminHeldRequestDto jobId(String? jobId) => this(jobId: jobId);
+
+  @override
+  AdminHeldRequestDto expiresAt(String? expiresAt) =>
+      this(expiresAt: expiresAt);
+
+  @override
   AdminHeldRequestDto matches(Object matches) => this(matches: matches);
 
   @override
@@ -150,6 +176,10 @@ class _$AdminHeldRequestDtoCWProxyImpl implements _$AdminHeldRequestDtoCWProxy {
     Object? createdAt = const $CopyWithPlaceholder(),
     Object? publishedAt = const $CopyWithPlaceholder(),
     Object? cancelledAt = const $CopyWithPlaceholder(),
+    Object? ring = const $CopyWithPlaceholder(),
+    Object? totalRings = const $CopyWithPlaceholder(),
+    Object? jobId = const $CopyWithPlaceholder(),
+    Object? expiresAt = const $CopyWithPlaceholder(),
     Object? matches = const $CopyWithPlaceholder(),
     Object? employerId = const $CopyWithPlaceholder(),
   }) {
@@ -210,6 +240,22 @@ class _$AdminHeldRequestDtoCWProxyImpl implements _$AdminHeldRequestDtoCWProxy {
           ? _value.cancelledAt
           // ignore: cast_nullable_to_non_nullable
           : cancelledAt as String?,
+      ring: ring == const $CopyWithPlaceholder()
+          ? _value.ring
+          // ignore: cast_nullable_to_non_nullable
+          : ring as num?,
+      totalRings: totalRings == const $CopyWithPlaceholder()
+          ? _value.totalRings
+          // ignore: cast_nullable_to_non_nullable
+          : totalRings as num,
+      jobId: jobId == const $CopyWithPlaceholder()
+          ? _value.jobId
+          // ignore: cast_nullable_to_non_nullable
+          : jobId as String?,
+      expiresAt: expiresAt == const $CopyWithPlaceholder()
+          ? _value.expiresAt
+          // ignore: cast_nullable_to_non_nullable
+          : expiresAt as String?,
       matches: matches == const $CopyWithPlaceholder()
           ? _value.matches
           // ignore: cast_nullable_to_non_nullable
@@ -249,6 +295,10 @@ AdminHeldRequestDto _$AdminHeldRequestDtoFromJson(Map<String, dynamic> json) =>
           'proposedPriceBs',
           'photos',
           'createdAt',
+          'ring',
+          'totalRings',
+          'jobId',
+          'expiresAt',
           'matches',
           'employerId',
         ],
@@ -279,6 +329,10 @@ AdminHeldRequestDto _$AdminHeldRequestDtoFromJson(Map<String, dynamic> json) =>
         createdAt: $checkedConvert('createdAt', (v) => v as String),
         publishedAt: $checkedConvert('publishedAt', (v) => v as String?),
         cancelledAt: $checkedConvert('cancelledAt', (v) => v as String?),
+        ring: $checkedConvert('ring', (v) => v as num?),
+        totalRings: $checkedConvert('totalRings', (v) => v as num),
+        jobId: $checkedConvert('jobId', (v) => v as String?),
+        expiresAt: $checkedConvert('expiresAt', (v) => v as String?),
         matches: $checkedConvert('matches', (v) => v as Object),
         employerId: $checkedConvert('employerId', (v) => v as String),
       );
@@ -302,6 +356,10 @@ Map<String, dynamic> _$AdminHeldRequestDtoToJson(
   'createdAt': instance.createdAt,
   'publishedAt': ?instance.publishedAt,
   'cancelledAt': ?instance.cancelledAt,
+  'ring': instance.ring,
+  'totalRings': instance.totalRings,
+  'jobId': instance.jobId,
+  'expiresAt': instance.expiresAt,
   'matches': instance.matches,
   'employerId': instance.employerId,
 };

@@ -90,6 +90,23 @@ export class RequestDto {
   @ApiProperty() createdAt!: string;
   @ApiPropertyOptional({ nullable: true, type: String }) publishedAt!: string | null;
   @ApiPropertyOptional({ nullable: true, type: String }) cancelledAt!: string | null;
+
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description: 'Anillo de búsqueda actual (R4.2); null si el matching aún no empezó',
+  })
+  ring!: number | null;
+
+  @ApiProperty({ description: 'Cantidad de anillos configurados' })
+  totalRings!: number;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'Con ofertas sin elegir tras el último anillo: hasta cuándo se puede elegir',
+  })
+  expiresAt!: string | null;
 }
 
 export class CreatedRequestDto {

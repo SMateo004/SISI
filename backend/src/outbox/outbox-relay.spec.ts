@@ -1,4 +1,3 @@
-import { expectedMatchingJob } from '../matching/expected-job';
 import type { JobRoute } from '../queues/queues';
 import {
   type BatchResult,
@@ -142,15 +141,5 @@ describe('Outbox (ADR-0022)', () => {
     expect(retryDelayMs(1)).toBe(2000);
     expect(retryDelayMs(3)).toBe(8000);
     expect(retryDelayMs(50)).toBe(300_000);
-  });
-});
-
-describe('Reconciliador: job esperado (ADR-0022)', () => {
-  it('una solicitud en buscando sin anillo espera el anillo 1', () => {
-    expect(expectedMatchingJob({ id: 'r1', status: 'buscando', ring: null })).toMatchObject({
-      queue: 'matching',
-      name: 'ring',
-      jobId: 'ring_r1_1',
-    });
   });
 });

@@ -3,7 +3,7 @@ import {
   Injectable,
   Logger,
   type OnApplicationBootstrap,
-  type OnApplicationShutdown,
+  type BeforeApplicationShutdown,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { AppConfigService } from '../config/app-config';
@@ -17,7 +17,7 @@ import { PrismaOutboxStore } from './prisma-outbox.store';
  * reinicio en los e2e.
  */
 @Injectable()
-export class OutboxRelay implements OnApplicationBootstrap, OnApplicationShutdown {
+export class OutboxRelay implements OnApplicationBootstrap, BeforeApplicationShutdown {
   private readonly logger = new Logger('OutboxRelay');
   private readonly core: OutboxRelayCore;
   private readonly pollMs: number;
@@ -40,7 +40,8 @@ export class OutboxRelay implements OnApplicationBootstrap, OnApplicationShutdow
     this.start();
   }
 
-  async onApplicationShutdown(): Promise<void> {
+  /** Antes de cerrar conexiones: termina el lote en curso y no toma otro. */
+  async beforeApplicationShutdown(): Promise<void> {
     await this.stop();
   }
 

@@ -7,6 +7,7 @@ import { RateLimitStore } from '../common/rate-limit/rate-limit.store';
 import { RateLimitedException } from '../common/rate-limit/rate-limited.exception';
 import type { AppConfigService } from '../config/app-config';
 import type { Prisma } from '../generated/prisma/client';
+import { parseRings } from '../matching/matching.config';
 import { ModerationService } from '../moderation/moderation.service';
 import { OutboxService } from '../outbox/outbox.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -54,6 +55,10 @@ function statusMessage(row: Pick<RequestRow, 'status' | 'cancelReason'>): string
       return MESSAGES.held;
     case 'buscando':
       return 'Buscando trabajadores cerca de ti.';
+    case 'con_ofertas':
+      return 'Tienes ofertas. Elige la que prefieras.';
+    case 'asignada':
+      return 'Ya tienes un trabajador asignado.';
     case 'cancelada':
       return row.cancelReason === 'moderacion'
         ? 'Tu solicitud no pudo publicarse porque no cumple las normas de uso de SISI.'
@@ -81,7 +86,11 @@ export class RequestsService {
     private readonly rateLimits: RateLimitStore,
     private readonly outbox: OutboxService,
     @Inject(ConfigService) private readonly config: AppConfigService,
-  ) {}
+  ) {
+    this.totalRings = parseRings(config.get('MATCHING_RINGS', { infer: true })).length;
+  }
+
+  private readonly totalRings: number;
 
   /** Crea el borrador (R3.1). Advierte si el precio está bajo el mínimo (R3.2). */
   async create(userId: string, dto: CreateRequestDto): Promise<CreatedRequestDto> {
@@ -262,6 +271,11 @@ export class RequestsService {
         { data: { cancelReason: 'empleador', cancelledAt: new Date() } },
         tx,
       );
+      // Las ofertas se cierran con la solicitud; el worker avisa con offer:closed.
+      await tx.offer.updateMany({
+        where: { requestId, status: 'activa' },
+        data: { status: 'cerrada' },
+      });
       await this.outbox.add(tx, 'request.cancelled', requestId, { requestId });
     });
     return this.getOwn(userId, requestId);
@@ -434,6 +448,9 @@ export class RequestsService {
           createdAt: row.createdAt.toISOString(),
           publishedAt: row.publishedAt?.toISOString() ?? null,
           cancelledAt: row.cancelledAt?.toISOString() ?? null,
+          ring: row.ring,
+          totalRings: this.totalRings,
+          expiresAt: row.expiresAt?.toISOString() ?? null,
         };
       }),
     );

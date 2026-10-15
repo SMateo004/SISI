@@ -15,6 +15,10 @@ export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
 
 export const MATCHING_JOBS = {
   ring: 'ring',
+  /** Fin de la búsqueda: expira o da plazo para elegir (R4.5). */
+  close: 'close',
+  /** Vence el plazo para elegir entre las ofertas. */
+  expire: 'expire',
   reconcile: 'reconcile',
   /** Barrido de ubicaciones vencidas (ADR-0024). */
   sweepLocations: 'sweep_locations',
@@ -22,6 +26,8 @@ export const MATCHING_JOBS = {
 
 export const jobIds = {
   ring: (requestId: string, ring: number): string => `ring_${requestId}_${ring}`,
+  close: (requestId: string): string => `close_${requestId}`,
+  expire: (requestId: string): string => `expire_${requestId}`,
   event: (outboxId: bigint): string => `evt_${outboxId}`,
 };
 

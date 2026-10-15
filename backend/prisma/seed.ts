@@ -3,6 +3,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client';
 import { CATEGORIES } from './seed-data/categories';
 import { CITIES } from './seed-data/cities';
+import { FEATURE_FLAGS } from './seed-data/feature-flags';
 import { MODERATION_TERMS } from './seed-data/moderation-terms';
 
 /**
@@ -51,6 +52,17 @@ async function main(): Promise<void> {
       added++;
     }
     console.log(`Términos de moderación agregados: ${added}`);
+
+    for (const flag of FEATURE_FLAGS) {
+      const cityId = flag.citySlug ? citiesBySlug.get(flag.citySlug) : null;
+      if (cityId === undefined) throw new Error(`La ciudad ${flag.citySlug ?? ''} no existe`);
+      const exists = await prisma.featureFlag.findFirst({ where: { key: flag.key, cityId } });
+      if (exists) continue;
+      await prisma.featureFlag.create({
+        data: { key: flag.key, cityId, enabled: flag.enabled, description: flag.description },
+      });
+      console.log(`Flag creado: ${flag.key}${flag.citySlug ? ` (${flag.citySlug})` : ''}`);
+    }
   } finally {
     await prisma.$disconnect();
   }

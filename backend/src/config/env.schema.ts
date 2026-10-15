@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { parseRings } from '../matching/matching.config';
 
 /** Una cadena vacía en .env significa "no configurada". */
 const emptyAsUndefined = (v: unknown): unknown => (v === '' ? undefined : v);
@@ -107,6 +108,23 @@ export const envSchema = z
     /** Cuánto se guarda un job completado: mientras exista, su jobId no se repite. */
     QUEUE_KEEP_COMPLETED_SEC: positiveInt(86_400),
     MATCHING_RECONCILE_MS: positiveInt(60_000),
+
+    // Matching por anillos (R4, ADR-0025). Valores en propuesta: docs/pendientes.md.
+    /** km:límite por anillo, separados por coma. */
+    MATCHING_RINGS: z
+      .string()
+      .default('2:5,5:10,10:10')
+      .refine((v) => {
+        try {
+          parseRings(v);
+          return true;
+        } catch {
+          return false;
+        }
+      }, 'Formato km:límite separado por comas, con radios crecientes (p. ej. 2:5,5:10,10:10)'),
+    MATCHING_RING_WAIT_MS: positiveInt(45_000),
+    MATCHING_ENOUGH_OFFERS: positiveInt(3),
+    MATCHING_OFFERS_GRACE_MS: positiveInt(600_000),
 
     // Ubicación y disponibilidad del trabajador (ADR-0024). Propuestas en docs/pendientes.md.
     WORKER_LOCATION_PERSIST_MS: positiveInt(30_000),

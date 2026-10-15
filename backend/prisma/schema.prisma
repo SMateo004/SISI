@@ -208,12 +208,14 @@ model WorkerProfile {
   createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt            DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  user       User                @relation("WorkerProfileUser", fields: [userId], references: [id], onDelete: Cascade)
-  reviewedBy User?               @relation("WorkerProfileReviewer", fields: [reviewedById], references: [id])
-  categories WorkerCategory[]
-  documents  WorkerDocument[]
-  events     WorkerStatusEvent[]
-  location   WorkerLocation?
+  user                 User                  @relation("WorkerProfileUser", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy           User?                 @relation("WorkerProfileReviewer", fields: [reviewedById], references: [id])
+  categories           WorkerCategory[]
+  documents            WorkerDocument[]
+  events               WorkerStatusEvent[]
+  location             WorkerLocation?
+  requestNotifications RequestNotification[]
+  offers               Offer[]
 
   @@index([status])
   @@map("worker_profiles")
@@ -349,8 +351,12 @@ model ServiceRequest {
   address           String
   proposedPriceBs   Decimal                              @map("proposed_price_bs") @db.Decimal(10, 2)
   status            ServiceRequestStatus                 @default(borrador)
-  /// Anillo de búsqueda actual (R4.2); se usa desde la Fase 3.
+  /// Anillo de búsqueda actual (R4.2, ADR-0025). null = el matching aún no empezó.
   ring              Int?                                 @db.SmallInt
+  /// Cuándo arrancó el anillo actual (los notificados tienen MATCHING_RING_WAIT_MS para ofertar).
+  ringStartedAt     DateTime?                            @map("ring_started_at") @db.Timestamptz(3)
+  /// Con ofertas sin elegir tras el último anillo: expira a esta hora (ADR-0025).
+  expiresAt         DateTime?                            @map("expires_at") @db.Timestamptz(3)
   /// Términos que coincidieron en moderación (solo para revisión del admin, R3.3).
   moderationMatches Json?                                @map("moderation_matches")
   reviewedById      String?                              @map("reviewed_by") @db.Uuid
@@ -363,11 +369,13 @@ model ServiceRequest {
   createdAt         DateTime                             @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt         DateTime                             @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  employer User                  @relation("ServiceRequestEmployer", fields: [employerId], references: [id])
-  category Category              @relation(fields: [categoryId], references: [id])
-  city     City                  @relation(fields: [cityId], references: [id])
-  photos   ServiceRequestPhoto[]
-  events   ServiceRequestEvent[]
+  employer      User                  @relation("ServiceRequestEmployer", fields: [employerId], references: [id])
+  category      Category              @relation(fields: [categoryId], references: [id])
+  city          City                  @relation(fields: [cityId], references: [id])
+  photos        ServiceRequestPhoto[]
+  events        ServiceRequestEvent[]
+  notifications RequestNotification[]
+  offers        Offer[]
 
   @@index([employerId, createdAt])
   @@index([status, cityId])
@@ -496,4 +504,65 @@ model DeviceToken {
 
   @@index([userId])
   @@map("device_tokens")
+}
+
+/// A qué trabajador se le avisó de una solicitud, en qué anillo y cuándo (ADR-0025).
+/// Sirve para no repetir avisos, para ver fotos y detalle (solo notificados) y para métricas.
+model RequestNotification {
+  requestId  String   @map("request_id") @db.Uuid
+  workerId   String   @map("worker_id") @db.Uuid
+  cityId     String   @map("city_id") @db.Uuid
+  ring       Int      @db.SmallInt
+  /// Distancia en línea recta al momento de avisar.
+  distanceM  Int      @map("distance_m")
+  notifiedAt DateTime @default(now()) @map("notified_at") @db.Timestamptz(3)
+
+  request ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  worker  WorkerProfile  @relation(fields: [workerId], references: [userId], onDelete: Cascade)
+
+  @@id([requestId, workerId])
+  @@index([workerId, notifiedAt])
+  @@map("request_notifications")
+}
+
+enum OfferType {
+  /// Acepta el precio propuesto por el empleador (R5.2).
+  accept
+  /// Contraoferta con otro monto (R5.2).
+  counter
+
+  @@map("offer_type")
+}
+
+enum OfferStatus {
+  activa
+  aceptada
+  cerrada
+
+  @@map("offer_status")
+}
+
+/// Oferta de un trabajador (R5, ADR-0026). Una por trabajador y solicitud: reemplazarla
+/// actualiza la fila y sube `revision`.
+model Offer {
+  id        String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  requestId String      @map("request_id") @db.Uuid
+  workerId  String      @map("worker_id") @db.Uuid
+  cityId    String      @map("city_id") @db.Uuid
+  type      OfferType
+  amountBs  Decimal     @map("amount_bs") @db.Decimal(10, 2)
+  /// Tiempo estimado de llegada en minutos (distancia y medio de transporte).
+  etaMin    Int         @map("eta_min")
+  distanceM Int         @map("distance_m")
+  status    OfferStatus @default(activa)
+  revision  Int         @default(1)
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  request ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  worker  WorkerProfile  @relation(fields: [workerId], references: [userId], onDelete: Cascade)
+
+  @@unique([requestId, workerId])
+  @@index([requestId, status])
+  @@map("offers")
 }

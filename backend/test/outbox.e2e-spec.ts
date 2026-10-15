@@ -73,27 +73,29 @@ describe('Outbox transaccional, relay y reconciliador (e2e, ADR-0022)', () => {
     expect(await relay.runOnce()).toBeGreaterThan(0);
 
     const jobs = await matching.getJobs(['waiting', 'delayed', 'active', 'completed']);
-    const forRequest = jobs.filter((j) => (j.data as { requestId?: string }).requestId === id);
-    expect(forRequest).toHaveLength(1);
-    expect(forRequest[0]?.timestamp).toBe(first.timestamp);
+    const ring1 = jobs.filter((j) => j.id === jobIds.ring(id, 1));
+    expect(ring1).toHaveLength(1);
+    expect(ring1[0]?.timestamp).toBe(first.timestamp);
   });
 
   it('el reconciliador vuelve a encolar una solicitud abierta sin su job', async () => {
+    // Se pierde el job (Redis restaurado, borrado a mano...): el outbox figura publicado,
+    // la solicitud sigue en buscando y no hay ningún job de matching para ella.
+    await relay.stop();
     const { accessToken } = await login(t);
     const id = await publishRequest(t, accessToken);
-    const job = await waitFor(ringJob.bind(null, id), { what: 'el job del anillo 1' });
-    await waitFor(async () => ((await job.isCompleted()) ? true : undefined), {
-      what: 'que el job termine',
+    await t.prisma.outboxEvent.updateMany({
+      where: { aggregateId: id },
+      data: { publishedAt: new Date() },
     });
+    expect(await ringJob(id)).toBeUndefined();
 
     const reconciler = t.app.get(MatchingReconciler);
-    // Con el job presente (aunque ya haya corrido) no hace nada.
-    expect(await reconciler.runOnce()).toBe(0);
+    await reconciler.runOnce();
+    const job = await waitFor(ringJob.bind(null, id), { what: 'el anillo 1 reencolado' });
 
-    // Se pierde el job (Redis restaurado, borrado a mano...): lo reprograma.
-    await job.remove();
-    expect(await ringJob(id)).toBeUndefined();
-    expect(await reconciler.runOnce()).toBe(1);
-    expect(await ringJob(id)).toBeDefined();
+    // Con el job presente (esperando, activo o ya completado) no lo vuelve a encolar.
+    await reconciler.runOnce();
+    expect((await ringJob(id))?.timestamp).toBe(job.timestamp);
   });
 });

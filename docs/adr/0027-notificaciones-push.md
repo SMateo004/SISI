@@ -21,6 +21,14 @@ El trabajador debe enterarse de una solicitud cercana aunque no tenga la app en 
 - **Bandeja:** `GET /me/notifications` (paginado) y `POST /me/notifications/:id/read`.
 - **Textos en español de Bolivia** en `notification-texts.ts`, con montos en "Bs 150,00".
 - **Los avisos se envían desde el worker,** a partir de eventos del outbox (ADR-0022). Cierra el pendiente de la Fase 2: `request.released` y `request.rejected` avisan al empleador.
+- **App (Android y web):** `firebase_core` 4.15.0 y `firebase_messaging` 16.7.0, inicializados con `FirebaseOptions` desde `--dart-define`.
+  - `FIREBASE_API_KEY`, `FIREBASE_APP_ID`, `FIREBASE_SENDER_ID`, `FIREBASE_PROJECT_ID` y, en web, `FIREBASE_VAPID_KEY`.
+  - No se versiona `google-services.json` ni `firebase_options.dart`. Sin valores, el push queda apagado, como Maps sin llave.
+  - Con sesión, pide permiso y registra el token (`POST /me/devices`) y sus rotaciones. Al cerrar sesión lo da de baja antes de borrar los tokens.
+  - Tocar un aviso abre `payload.route`, solo si es una ruta de avisos de la app (`/solicitudes/…`, `/trabajo/solicitudes/…`, `/trabajos/…`). Con la app abierta se muestra un SnackBar con "Ver".
+  - **Android:** canal `sisi_avisos` creado en `MainActivity` y declarado como canal por defecto de FCM.
+  - **Web:** `firebase-messaging-sw.js` (SDK compat 12.19.0 desde gstatic) importa `firebase-config.js`, que escribe el workflow deploy-web con la configuración pública del ambiente.
+  - iOS queda pendiente.
 - **Scripts de instalación de las dependencias de firebase-admin** (`@firebase/util`, `protobufjs`) denegados en `allowScripts`: no se necesitan en el servidor.
 
 ## Consecuencias

@@ -4,7 +4,9 @@ name: deploy-web
 #   develop → staging (deployment preview)
 #   main    → production (--prod)
 # Requiere GitHub Environments "staging" y "production" con:
-#   vars:    API_URL, SOCKET_URL, MAPS_API_KEY_WEB (llave de Maps de la app web, restringida por dominio)
+#   vars:    API_URL, SOCKET_URL, MAPS_API_KEY_WEB (llave de Maps de la app web, restringida por dominio),
+#            FIREBASE_API_KEY_WEB, FIREBASE_APP_ID_WEB, FIREBASE_SENDER_ID, FIREBASE_PROJECT_ID,
+#            FIREBASE_VAPID_KEY (configuración pública de Firebase para el push web, ADR-0027)
 #   secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID_APP_WEB, VERCEL_PROJECT_ID_ADMIN
 
 on:
@@ -72,6 +74,24 @@ jobs:
           --dart-define=SOCKET_URL=${{ vars.SOCKET_URL }}
           --dart-define=APP_ENV=${{ env.APP_ENV }}
           --dart-define=MAPS_API_KEY=${{ vars.MAPS_API_KEY_WEB }}
+          --dart-define=FIREBASE_API_KEY=${{ vars.FIREBASE_API_KEY_WEB }}
+          --dart-define=FIREBASE_APP_ID=${{ vars.FIREBASE_APP_ID_WEB }}
+          --dart-define=FIREBASE_SENDER_ID=${{ vars.FIREBASE_SENDER_ID }}
+          --dart-define=FIREBASE_PROJECT_ID=${{ vars.FIREBASE_PROJECT_ID }}
+          --dart-define=FIREBASE_VAPID_KEY=${{ vars.FIREBASE_VAPID_KEY }}
+
+      # El service worker del push web (firebase-messaging-sw.js) lee esta configuración.
+      - name: Configuración de Firebase para el service worker
+        if: matrix.project == 'app-web'
+        env:
+          FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY_WEB }}
+          FIREBASE_APP_ID: ${{ vars.FIREBASE_APP_ID_WEB }}
+          FIREBASE_SENDER_ID: ${{ vars.FIREBASE_SENDER_ID }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+        run: >-
+          node -e "const e=process.env;require('fs').writeFileSync('build/web/firebase-config.js',
+          'self.FIREBASE_CONFIG='+JSON.stringify({apiKey:e.FIREBASE_API_KEY,appId:e.FIREBASE_APP_ID,
+          messagingSenderId:e.FIREBASE_SENDER_ID,projectId:e.FIREBASE_PROJECT_ID})+';')"
 
       - uses: actions/setup-node@v4
         with:

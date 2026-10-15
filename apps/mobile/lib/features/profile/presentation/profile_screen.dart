@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/push/push_controller.dart';
 import '../../../core/auth/session_controller.dart';
 import '../../../core/files/image_source_sheet.dart';
 import '../../../core/files/picked_image.dart';
@@ -87,6 +88,8 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   }
 
   Future<void> _logout() async {
+    // Primero dar de baja el push (necesita la sesión vigente).
+    await ref.read(pushControllerProvider)?.unregister();
     final session = ref.read(sessionProvider.notifier);
     final refresh = session.tokens?.refreshToken;
     if (refresh != null) await ref.read(authRepositoryProvider).logout(refresh);

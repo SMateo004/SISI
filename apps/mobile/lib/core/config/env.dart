@@ -25,5 +25,29 @@ abstract final class Env {
   /// plataforma o dominio (ADR-0021). Vacía = mapa sin proveedor (PlaceholderMapView).
   static const String mapsApiKey = String.fromEnvironment('MAPS_API_KEY');
 
+  /// Firebase (push, ADR-0027). Cada build lleva los valores de su plataforma (web o
+  /// Android) y ambiente. Son configuración pública, no secretos. Vacío = push apagado.
+  static const String firebaseApiKey = String.fromEnvironment(
+    'FIREBASE_API_KEY',
+  );
+  static const String firebaseAppId = String.fromEnvironment('FIREBASE_APP_ID');
+  static const String firebaseSenderId = String.fromEnvironment(
+    'FIREBASE_SENDER_ID',
+  );
+  static const String firebaseProjectId = String.fromEnvironment(
+    'FIREBASE_PROJECT_ID',
+  );
+
+  /// Llave VAPID de Web Push (solo web).
+  static const String firebaseVapidKey = String.fromEnvironment(
+    'FIREBASE_VAPID_KEY',
+  );
+
+  static bool get pushConfigured =>
+      firebaseApiKey.isNotEmpty &&
+      firebaseAppId.isNotEmpty &&
+      firebaseSenderId.isNotEmpty &&
+      firebaseProjectId.isNotEmpty;
+
   static bool get isProduction => appEnv == 'production';
 }

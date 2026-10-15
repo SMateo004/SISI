@@ -16,6 +16,7 @@ import 'package:sisi_mobile/features/requests/data/requests_repository.dart';
 import 'package:sisi_mobile/features/requests/domain/service_request.dart';
 import 'package:sisi_mobile/features/worker_onboarding/data/worker_repository.dart';
 import 'package:sisi_mobile/features/worker_onboarding/domain/worker_models.dart';
+import 'package:sisi_mobile/core/push/push_controller.dart';
 import 'package:sisi_mobile/core/realtime/realtime_providers.dart';
 import 'package:sisi_mobile/features/matching/data/availability_repository.dart';
 import 'package:sisi_mobile/features/matching/data/location_service.dart';
@@ -23,6 +24,7 @@ import 'package:sisi_mobile/features/offers/application/employer_live.dart';
 import 'package:sisi_mobile/features/offers/data/offers_repository.dart';
 
 import 'fake_matching.dart';
+import 'fake_push.dart';
 import 'fake_realtime.dart';
 
 const testTokens = AuthTokens(accessToken: 'access', refreshToken: 'refresh');
@@ -277,6 +279,8 @@ Future<void> pumpSisiApp(
   FakeOffersRepository? offers,
   FakeAvailabilityRepository? availability,
   FakeLocationService? location,
+  FakePushService? push,
+  FakeDevicesApi? devices,
 }) async {
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 2.6;
@@ -310,6 +314,8 @@ Future<void> pumpSisiApp(
         ),
         // Sin refresco periódico: con él pumpAndSettle no termina nunca.
         searchRefreshIntervalProvider.overrideWithValue(null),
+        pushServiceProvider.overrideWithValue(push ?? FakePushService()),
+        devicesApiProvider.overrideWithValue(devices ?? FakeDevicesApi()),
       ],
       child: const SisiApp(),
     ),

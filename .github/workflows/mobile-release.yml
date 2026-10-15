@@ -56,6 +56,10 @@ jobs:
           --dart-define=SOCKET_URL=${{ vars.SOCKET_URL }}
           --dart-define=APP_ENV=production
           --dart-define=MAPS_API_KEY=${{ secrets.MAPS_API_KEY_ANDROID }}
+          --dart-define=FIREBASE_API_KEY=${{ vars.FIREBASE_API_KEY_ANDROID }}
+          --dart-define=FIREBASE_APP_ID=${{ vars.FIREBASE_APP_ID_ANDROID }}
+          --dart-define=FIREBASE_SENDER_ID=${{ vars.FIREBASE_SENDER_ID }}
+          --dart-define=FIREBASE_PROJECT_ID=${{ vars.FIREBASE_PROJECT_ID }}
 
       - name: Build AAB
         run: >-
@@ -64,6 +68,10 @@ jobs:
           --dart-define=SOCKET_URL=${{ vars.SOCKET_URL }}
           --dart-define=APP_ENV=production
           --dart-define=MAPS_API_KEY=${{ secrets.MAPS_API_KEY_ANDROID }}
+          --dart-define=FIREBASE_API_KEY=${{ vars.FIREBASE_API_KEY_ANDROID }}
+          --dart-define=FIREBASE_APP_ID=${{ vars.FIREBASE_APP_ID_ANDROID }}
+          --dart-define=FIREBASE_SENDER_ID=${{ vars.FIREBASE_SENDER_ID }}
+          --dart-define=FIREBASE_PROJECT_ID=${{ vars.FIREBASE_PROJECT_ID }}
 
       - uses: actions/upload-artifact@v4
         with:

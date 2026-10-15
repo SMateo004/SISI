@@ -21,6 +21,8 @@ export interface AccessPayload {
   sub: string;
   role: Role;
   typ: 'access';
+  /** Vencimiento (segundos Unix), lo agrega la firma. El socket se corta a esa hora. */
+  exp?: number;
 }
 
 /** Payload recién verificado: la firma es válida, pero el tipo aún no se comprobó. */

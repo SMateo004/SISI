@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import type { AppConfigService } from './config/app-config';
+import { RedisIoAdapter } from './realtime/redis-io.adapter';
 
 /** Primer mensaje de validación (en español, definido en cada DTO). */
 function firstMessage(errors: ValidationError[]): string {
@@ -42,6 +43,8 @@ export function setupApp(app: INestApplication): void {
         }),
     }),
   );
+  // Socket.IO con el mismo CORS y adapter de Redis para varias instancias (ADR-0023).
+  app.useWebSocketAdapter(new RedisIoAdapter(app));
   app.enableShutdownHooks();
 }
 

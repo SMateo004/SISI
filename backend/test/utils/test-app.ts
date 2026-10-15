@@ -1,3 +1,5 @@
+import type { Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { Redis } from 'ioredis';
@@ -17,6 +19,8 @@ export interface TestApp {
   prisma: PrismaService;
   /** Último código que el ConsoleOtpProvider "envió" a cada teléfono. */
   codes: Map<string, string>;
+  /** URL base del servidor HTTP (para clientes Socket.IO). */
+  url: string;
   close(): Promise<void>;
 }
 
@@ -30,7 +34,9 @@ export async function createTestApp(opts: { worker?: boolean } = {}): Promise<Te
   const moduleRef = await Test.createTestingModule({ imports }).compile();
   const app = moduleRef.createNestApplication<INestApplication<App>>({ logger: ['error'] });
   setupApp(app);
-  await app.init();
+  // Escucha en un puerto libre: los tests de tiempo real conectan clientes Socket.IO.
+  await app.listen(0, '127.0.0.1');
+  const address = (app.getHttpServer() as unknown as Server).address() as AddressInfo;
 
   const codes = new Map<string, string>();
   const provider = app.get<OtpProvider>(OTP_PROVIDER);
@@ -41,7 +47,13 @@ export async function createTestApp(opts: { worker?: boolean } = {}): Promise<Te
     await send(phone, code);
   });
 
-  return { app, prisma: app.get(PrismaService), codes, close: () => app.close() };
+  return {
+    app,
+    prisma: app.get(PrismaService),
+    codes,
+    url: `http://127.0.0.1:${address.port}`,
+    close: () => app.close(),
+  };
 }
 
 export { uniqueIp, uniquePhone, uniqueSuffix } from './unique';

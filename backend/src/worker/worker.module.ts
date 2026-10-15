@@ -4,6 +4,7 @@ import { MatchingWorkerModule } from '../matching/matching-worker.module';
 import { OutboxRelayModule } from '../outbox/outbox-relay.module';
 import { OutboxModule } from '../outbox/outbox.module';
 import { PrismaModule } from '../prisma/prisma.module';
+import { RealtimeEmitterModule } from '../realtime/realtime.module';
 import { RedisModule } from '../redis/redis.module';
 import { RequestEventsHandlers } from '../requests/request-events.handlers';
 
@@ -19,6 +20,7 @@ import { RequestEventsHandlers } from '../requests/request-events.handlers';
     OutboxModule,
     OutboxRelayModule,
     MatchingWorkerModule,
+    RealtimeEmitterModule,
   ],
   providers: [RequestEventsHandlers],
 })

@@ -14,6 +14,7 @@ import { MapsModule } from './maps/maps.module';
 import { ModerationModule } from './moderation/moderation.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { RealtimeModule } from './realtime/realtime.module';
 import { RedisModule } from './redis/redis.module';
 import { RequestsModule } from './requests/requests.module';
 import { StorageModule } from './storage/storage.module';
@@ -37,6 +38,7 @@ import { WorkersModule } from './workers/workers.module';
     ModerationModule,
     RequestsModule,
     MapsModule,
+    RealtimeModule,
   ],
   providers: [
     // Orden: límites por IP antes que la autenticación (frena fuerza bruta sin tocar la BD).

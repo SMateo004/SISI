@@ -21,6 +21,8 @@ key.properties
 google-services.json
 GoogleService-Info.plist
 firebase-service-account*.json
+# Configuración local del service worker de push web (en CI la genera deploy-web).
+apps/mobile/web/firebase-config.js
 
 # --- Node / backend ---
 node_modules/

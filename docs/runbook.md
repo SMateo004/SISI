@@ -36,6 +36,8 @@ node dist/scripts/dev-tools.js worker-event --phone 70012345 --event BLOCK_FOR_D
 node dist/scripts/dev-tools.js worker-event --phone 70012345 --event SUSPEND --reason "Prueba"
 node dist/scripts/dev-tools.js create-category --name "Plomería prueba" --min 80 --max 250
 node dist/scripts/dev-tools.js make-admin --phone 70012345
+# Trabajador aprobado para pruebas, sin subir carnet ni selfie (pasa igual por SUBMIT + APPROVE):
+node dist/scripts/dev-tools.js quick-worker --phone 71111111 --categories plomeria,limpieza --transport moto --radius 10
 ```
 
 En Windows, si el argumento lleva paréntesis u otros caracteres especiales, usar `node dist/scripts/dev-tools.js …` directamente: `npm run` en Windows pasa los argumentos por `cmd` y les agrega `^`.
@@ -63,6 +65,27 @@ El empleador nunca ve el término que disparó la retención, solo el mensaje ne
 
 **Feature flags:** `PUT /admin/feature-flags/<clave>` con `{"enabled":true,"cityId":"…"}` (sin `cityId` = global). Se ven de inmediato.
 
+## Worker: outbox, matching y avisos (Fase 3)
+
+El servicio `worker` de Render publica los eventos del outbox a BullMQ, corre los anillos de matching y envía los avisos (ADR-0022, ADR-0025, ADR-0027). Si está caído, las solicitudes quedan en `buscando` sin avisar a nadie, pero **no se pierden**: al volver, el relay publica lo pendiente y el reconciliador (cada 60 s) vuelve a encolar lo que falte.
+
+Diagnóstico rápido (SQL de solo lectura en la base del ambiente):
+```sql
+-- Eventos sin publicar (debería ser ~0; si crece, el worker no corre o Redis falla).
+SELECT type, count(*), min(created_at), max(attempts), max(last_error)
+FROM outbox_events WHERE published_at IS NULL GROUP BY type;
+
+-- Solicitudes abiertas y su anillo.
+SELECT id, status, ring, ring_started_at, expires_at FROM service_requests
+WHERE status IN ('buscando', 'con_ofertas') ORDER BY published_at;
+```
+
+**Pausar el matching en una ciudad** (interruptor de emergencia): `PUT /admin/feature-flags/matching.enabled` con `{"enabled": false, "cityId": "…"}`. Las solicitudes quedan en `buscando`; al volver a encenderlo, el reconciliador las retoma.
+
+**Push:** con `PUSH_PROVIDER=fake` los avisos quedan en la tabla `notifications` y en el log del worker (`FakePush`). Con `fcm`, los tokens inválidos se borran solos. Si nadie recibe push, revisar `FIREBASE_SERVICE_ACCOUNT` en `api` y `worker` (README, "Firebase").
+
+**Tests e2e:** no se pueden correr dos suites a la vez contra la misma infraestructura local (hay un candado en Postgres). `npm run test:e2e:repeat -- 20` corre la suite 20 veces y guarda las salidas en `backend/.e2e-runs/` (ADR-0028).
+
 ## Secretos y rotación
 
 | Variable | Efecto de rotarla |
@@ -70,6 +93,7 @@ El empleador nunca ve el término que disparó la retención, solo el mensaje ne
 | `JWT_SECRET` | Invalida los tokens de acceso vigentes (máx. 15 min) y los OTP pendientes. |
 | `JWT_REFRESH_SECRET` | Cierra todas las sesiones: todos vuelven a ingresar con su número. |
 | `OTP_PROVIDER_KEY` | Rotar en Bird y actualizar en Render; no afecta las sesiones. |
+| `FIREBASE_SERVICE_ACCOUNT` | Generar una clave nueva en Firebase, actualizarla en `api` y `worker`, y borrar la anterior en la consola. Los tokens de los dispositivos siguen sirviendo. |
 | `STORAGE_ACCESS_KEY` / `STORAGE_SECRET_KEY` | Crear un token nuevo en R2, actualizar en Render y revocar el anterior. Las URLs firmadas vigentes (≤ 1 h) dejan de funcionar. |
 
 ## Documentos de identidad (R9.5)

@@ -21,6 +21,32 @@ Aprobadas el 2026-10-14. Hay que reflejarlas en el documento 01 en la sección i
 | Bloqueo y modo | Si pasa a `bloqueado_deuda` o `suspendido_moderacion` estando en modo trabajador, la cuenta cambia sola a `employer` y se le notifica. Al desbloquearse no vuelve sola: usa el interruptor. | R1.6 |
 | Teléfonos | MVP: solo +591. Prefijos permitidos en configuración (`PHONE_ALLOWED_COUNTRY_CODES`). | R1.1 |
 
+## Propuestas de la Fase 3 por validar
+Implementadas como propuesta; cambiarlas es configuración (variables de entorno, ver `backend/.env.example`).
+
+- [ ] **Candidatos por anillo:** anillo 1 = 5 más cercanos a ≤ 2 km (R4.2); **anillos 2 y 3 = hasta 10** a ≤ 5 y ≤ 10 km (`MATCHING_RINGS=2:5,5:10,10:10`).
+- [ ] **Ofertas suficientes:** con **3** ofertas activas no se amplía al anillo siguiente (`MATCHING_ENOUGH_OFFERS`).
+- [ ] **Espera por anillo:** 45 s (R4.3, `MATCHING_RING_WAIT_MS`).
+- [ ] **Anillo vacío:** si un anillo no encuentra candidatos nuevos se pasa **de inmediato** al siguiente (decidido en el plan de la Fase 3). Consecuencia: sin trabajadores cerca, la solicitud expira en segundos. ¿Hace falta un tiempo mínimo de búsqueda (p. ej. reintentar 2 minutos por si alguien se conecta)?
+- [ ] **Expiración con ofertas sin elegir:** la solicitud expira **10 minutos** después del último anillo y se cierran las ofertas (`MATCHING_OFFERS_GRACE_MS`). Pasar a R4.5 del doc 01 si se aprueba.
+- [ ] **Tope de la contraoferta:** **3 ×** el máximo de referencia de la categoría en la ciudad (`OFFER_COUNTER_MAX_FACTOR`). Mínimo: > 0.
+- [ ] **Velocidades del ETA:** a pie 4,5 km/h, bicicleta 12, moto 25, auto 20, transporte público 15; distancia en línea recta × **1,3** (`ETA_SPEEDS_KMH`, `ETA_ROUTE_FACTOR`). Ajustar con datos reales de Santa Cruz.
+- [ ] **Ubicación del trabajador:** se guarda en Postgres cada 30 s o al moverse 100 m; sin ubicación en **10 min** deja de estar disponible (`WORKER_LOCATION_*`).
+- [ ] **Ubicación en segundo plano:** el MVP solo usa la ubicación en primer plano (ADR-0024). Para recibir solicitudes con la app cerrada hace falta permiso de ubicación en segundo plano (Android `ACCESS_BACKGROUND_LOCATION` y servicio en primer plano; iOS "Siempre"), con justificación ante Google Play y App Store. Decidir si se hace y cuándo.
+- [ ] **Límites:** ofertas 10 por minuto por usuario y 60 por minuto por IP; ubicación 30 por minuto por usuario (`RATE_OFFER_*`, `RATE_WORKER_LOCATION_PER_MIN`).
+- [ ] **Qué ve el empleador de una oferta:** nombre corto ("María P."), calificación, precio, tipo y ETA. Si el trabajador no cargó su nombre aparece "Trabajador". ¿Exigir nombre para trabajar?
+
+## Detectadas en la Fase 3
+- [ ] **Retirar una oferta:** no existe; el trabajador solo puede reemplazarla mientras no se elija ninguna. Confirmar si hace falta.
+- [ ] **Push en iOS:** pendiente hasta tener la cuenta de Apple Developer (llave APNs en Firebase). Ver README, "Firebase".
+- [ ] **Firebase sin configurar:** staging corre con `PUSH_PROVIDER=fake` (solo log). Crear el proyecto y cargar las variables (README, "Firebase") antes de probar push en staging.
+- [ ] **Limpieza del outbox:** los eventos publicados quedan en `outbox_events`. Agregar un job que borre los publicados hace más de N días.
+- [ ] **Historial de ofertas:** reemplazar una oferta pisa el monto anterior (solo queda `revision`). Si hace falta auditar montos, agregar una tabla de eventos de oferta.
+- [ ] **Contacto:** hoy se muestra el teléfono con un botón para copiarlo. Agregar "Llamar" y "WhatsApp" (`url_launcher`) junto con el chat de la Fase 4.
+- [ ] **Bandeja de avisos en la app:** la API ya tiene `GET /me/notifications` y `POST /me/notifications/:id/read`; falta la pantalla.
+- [ ] **Varias instancias de la API:** el socket usa solo el transporte `websocket`, así no hacen falta sticky sessions. Si algún cliente necesitara `polling`, habría que activarlas en Render.
+- [ ] **Build de Android sin verificar en local:** las licencias del Android SDK no están aceptadas en esta máquina (`flutter doctor --android-licenses`). Lo valida el workflow mobile-release.
+
 ## Propuestas de la Fase 2 por validar
 Implementadas como propuesta; cambiarlas es dato (admin o seed) o configuración.
 
@@ -36,11 +62,12 @@ Implementadas como propuesta; cambiarlas es dato (admin o seed) o configuración
 
 ## Detectadas en la Fase 2
 - [ ] **Borradores abandonados:** las solicitudes en `borrador` y sus fotos quedan para siempre. Definir cuánto viven y agregar un job de limpieza (BullMQ) que borre fotos del bucket.
-- [ ] **Eventos no durables** (ADR-0020): si la instancia cae justo después de publicar, el oyente de `request.searching` no corre. La Fase 3 debe recuperar las solicitudes en `buscando` sin procesar.
-- [ ] **Aviso al empleador cuando el admin libera o rechaza** una solicitud retenida: hoy solo cambia el estado (se ve en "Mis solicitudes"). Push en la Fase 4.
+- [x] ~~**Eventos no durables** (ADR-0020)~~ — Fase 3, 2026-10-15: outbox transaccional, relay a BullMQ con jobId determinístico y reconciliador (ADR-0022).
+- [x] ~~**Aviso al empleador cuando el admin libera o rechaza**~~ — Fase 3, 2026-10-15: aviso guardado + push (ADR-0027).
 - [ ] **Panel admin de moderación:** liberar/rechazar y editar términos hoy es solo por API (`/admin/...`). Pantallas en la Fase 6.
 - [ ] **Edición de la solicitud** después de publicar: no existe (solo cancelar). Confirmar que es la regla deseada.
-- [ ] **Expiración de solicitudes** (`buscando`/`con_ofertas` → `expirada`): el estado existe pero ningún proceso lo aplica todavía; plazo por definir (Fase 3).
+- [x] ~~**Expiración de solicitudes**~~ — Fase 3, 2026-10-15: tras el último anillo, sin ofertas expira; con ofertas, tras el plazo de elección (ADR-0025). Plazos en propuesta: ver la Fase 3.
+- [x] ~~**Test e2e intermitente**~~ — Fase 3, 2026-10-15: estado compartido entre corridas (teléfonos que se repetían, base sin limpiar, dos corridas a la vez, timeout de 5 s). Aislamiento y 20 de 20 (ADR-0028).
 
 ## Propuestas de la Fase 1 por validar
 Valores implementados como propuesta; cambiarlos es configuración o un ajuste menor.

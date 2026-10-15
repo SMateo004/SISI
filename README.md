@@ -69,7 +69,7 @@ npm test                # unitarios + Supertest con dependencias simuladas (no n
 npm run test:e2e        # Supertest contra Postgres, Redis y RustFS reales (base sisi_test, bucket sisi-test)
 npm run typecheck       # tsc --noEmit
 npm run build
-npm run start:worker            # proceso BullMQ (vacío hasta la Fase 3)
+npm run start:worker            # worker: relay del outbox, matching por anillos y avisos (ADR-0022)
 npm run start:billing-cron      # corte semanal (vacío hasta la Fase 5)
 npm run prisma:migrate          # crear una migración nueva en desarrollo (y regenera el cliente)
 npm run openapi:export          # actualiza packages/api_contract/openapi.json
@@ -92,6 +92,15 @@ Solicitudes (Fase 2), en modo **Empleador**:
 1. "Pedir un servicio": categoría → descripción (mín. 20 caracteres) y fotos → mapa (sin llave de Maps aparece un mapa de prueba que se arrastra; la dirección la sugiere el geocodificador falso) → precio → Publicar. Queda en **Buscando trabajador**.
 2. Repetir con un término prohibido en la descripción (p. ej. "marihuana" o "m4rihuana"): queda **En revisión** con un mensaje neutral.
 3. Liberarla como admin por API (ver `docs/runbook.md`, "Solicitudes retenidas"). En "Mis solicitudes" pasa a **Buscando trabajador**.
+
+Matching y ofertas (Fase 3): hacen falta **la API y el worker** corriendo (`npm run start:dev` y, en otra terminal, `npm run build && npm run start:worker`).
+
+1. Dos sesiones a la vez en el mismo navegador: abrir la app en `http://localhost:8080` (empleador) y en `http://127.0.0.1:8080` (trabajador). Son orígenes distintos, así que cada una guarda su sesión. Agregar `http://127.0.0.1:8080` a `CORS_ORIGINS` del `.env`.
+2. Trabajador: ingresar con otro celular (p. ej. 71111111) y aprobarlo sin subir documentos: `node dist/scripts/dev-tools.js quick-worker --phone 71111111 --categories plomeria,limpieza`. En la app, modo **Trabajador** → activar **Disponible** (pide la ubicación; debe estar a ≤ 2 km del punto de la solicitud para el anillo 1).
+3. Empleador: pedir un servicio de una categoría del trabajador. Al trabajador le llega en vivo; puede **Aceptar precio** o **Contraofertar**. El empleador ve la oferta en vivo y la **elige**: los dos ven el teléfono del otro.
+4. Sin trabajadores cerca (otra categoría), la solicitud expira enseguida y ofrece **Volver a publicar**.
+
+Para ver los anillos sin esperar 45 s, bajar `MATCHING_RING_WAIT_MS` en el `.env` local.
 
 ### 3. App (empleador + trabajador)
 
@@ -118,7 +127,7 @@ Los puertos web 8080 y 8081 coinciden con `CORS_ORIGINS` del `.env` del backend.
 ## Configuración
 
 - Backend: variables en `backend/.env.example`, validadas al arrancar con zod (`backend/src/config/env.schema.ts`). Si falta una obligatoria la API no arranca y dice cuál.
-- Apps: `--dart-define` `API_URL`, `SOCKET_URL`, `APP_ENV` y, en la app, `MAPS_API_KEY` (ver `apps/*/.env.example`).
+- Apps: `--dart-define` `API_URL`, `SOCKET_URL`, `APP_ENV` y, en la app, `MAPS_API_KEY` y `FIREBASE_*` (ver `apps/*/.env.example`).
 - Nunca subas secretos: `.env` está en `.gitignore`.
 
 ### Llaves de Google Maps (ADR-0021)
@@ -135,6 +144,26 @@ Sin llaves todo funciona en local: el backend usa `GEOCODING_PROVIDER=fake` y la
 La llave del servidor **nunca** se manda a la app. Las de la app son visibles para cualquiera; su protección son las restricciones. Poner alertas de presupuesto en el proyecto de Google Cloud.
 
 Correr la app con llave: `flutter run -d chrome --web-port 8080 --dart-define=MAPS_API_KEY=<llave web>`.
+
+### Firebase (push, ADR-0027)
+
+Sin Firebase todo funciona en local: el backend usa `PUSH_PROVIDER=fake` (deja el aviso en el log y en la tabla `notifications`) y la app no pide permiso de notificaciones. Para activarlo:
+
+1. **Proyecto:** en la [consola de Firebase](https://console.firebase.google.com) crear uno por ambiente (p. ej. `sisi-staging` y `sisi-prod`). Analytics no hace falta.
+2. **Cuenta de servicio (backend):** Configuración del proyecto → Cuentas de servicio → "Generar nueva clave privada".
+   - Pasar el JSON a base64 (`base64 -w0 clave.json`) y cargarlo en Render como `FIREBASE_SERVICE_ACCOUNT` (sync:false) en `api` y `worker`. Después, `PUSH_PROVIDER=fcm` (production ya lo trae en `render.yaml`).
+   - Nunca subir el JSON a git (`firebase-service-account*.json` está en `.gitignore`). Borrar la copia local después de cargarla.
+3. **App Android:** Configuración del proyecto → "Agregar app" → Android, con paquete `bo.sisi.sisi_mobile` (y la huella SHA-1 de la llave de firma).
+   - De `google-services.json` solo se toman los valores, no se versiona: `mobilesdk_app_id` → `FIREBASE_APP_ID_ANDROID`; `current_key` → `FIREBASE_API_KEY_ANDROID`; `project_number` → `FIREBASE_SENDER_ID`; `project_id` → `FIREBASE_PROJECT_ID`.
+   - Cargarlos como variables de GitHub (environment `production`) para `mobile-release.yml`.
+4. **App web:** "Agregar app" → Web (sin Hosting).
+   - Del objeto `firebaseConfig`: `apiKey` → `FIREBASE_API_KEY_WEB` y `appId` → `FIREBASE_APP_ID_WEB`, como variables de los environments `staging` y `production` de GitHub.
+   - Restringir esa llave de API por HTTP referrer a los dominios de Vercel (Google Cloud → Credenciales).
+5. **Llave VAPID (web):** Configuración del proyecto → Cloud Messaging → Configuración web → "Certificados de push web" → "Generar par de claves". La clave pública va como `FIREBASE_VAPID_KEY`.
+   - `deploy-web.yml` la pasa por `--dart-define` y escribe `firebase-config.js` para el service worker.
+6. **iOS:** pendiente hasta tener la cuenta de Apple (subir la llave APNs `.p8` en Cloud Messaging).
+
+Probar en local con Firebase: `flutter run -d chrome --web-port 8080 --dart-define=FIREBASE_API_KEY=… --dart-define=FIREBASE_APP_ID=… --dart-define=FIREBASE_SENDER_ID=… --dart-define=FIREBASE_PROJECT_ID=… --dart-define=FIREBASE_VAPID_KEY=…`. Además hay que crear `apps/mobile/web/firebase-config.js` con `self.FIREBASE_CONFIG = {apiKey, appId, messagingSenderId, projectId};` (no se versiona).
 
 ## Ramas y despliegue
 

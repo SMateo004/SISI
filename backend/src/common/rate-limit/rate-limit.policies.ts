@@ -20,6 +20,7 @@ export const RATE_LIMIT_POLICIES = {
   authIp: { limitFrom: 'RATE_AUTH_IP_PER_MIN', windowSec: 60 },
   geocodeIp: { limitFrom: 'RATE_GEOCODE_IP_PER_MIN', windowSec: 60 },
   requestCreateIp: { limitFrom: 'RATE_REQUEST_CREATE_IP_PER_HOUR', windowSec: 3600 },
+  offerCreateIp: { limitFrom: 'RATE_OFFER_IP_PER_MIN', windowSec: 60 },
 } satisfies Record<string, RateLimitPolicyDef>;
 
 export type RateLimitPolicy = keyof typeof RATE_LIMIT_POLICIES;

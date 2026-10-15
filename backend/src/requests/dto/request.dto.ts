@@ -104,6 +104,14 @@ export class RequestDto {
   @ApiProperty({
     type: String,
     nullable: true,
+    format: 'uuid',
+    description: 'Trabajo asignado (contacto en GET /jobs/{jobId}/contact)',
+  })
+  jobId!: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
     description: 'Con ofertas sin elegir tras el último anillo: hasta cuándo se puede elegir',
   })
   expiresAt!: string | null;

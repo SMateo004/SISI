@@ -58,22 +58,4 @@ export class MatchingRepository {
       ratingAvg: Number(r.ratingAvg),
     }));
   }
-
-  /** Bloquea la solicitud hasta el fin de la transacción (anillos, cierre y ofertas en serie). */
-  async lockRequest(tx: Prisma.TransactionClient, requestId: string) {
-    const [row] = await tx.$queryRaw<
-      {
-        id: string;
-        status: string;
-        ring: number | null;
-        cityId: string;
-        employerId: string;
-        expiresAt: Date | null;
-      }[]
-    >`
-      SELECT id, status::text AS status, ring, city_id AS "cityId",
-             employer_id AS "employerId", expires_at AS "expiresAt"
-      FROM service_requests WHERE id = ${requestId}::uuid FOR UPDATE`;
-    return row ?? null;
-  }
 }

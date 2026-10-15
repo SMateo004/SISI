@@ -126,6 +126,18 @@ export const envSchema = z
     MATCHING_ENOUGH_OFFERS: positiveInt(3),
     MATCHING_OFFERS_GRACE_MS: positiveInt(600_000),
 
+    // Ofertas (R5, ADR-0026). Propuestas en docs/pendientes.md.
+    /** Velocidad media por medio de transporte, para el tiempo estimado de llegada. */
+    ETA_SPEEDS_KMH: z
+      .string()
+      .default('a_pie:4.5,bicicleta:12,moto:25,auto:20,transporte_publico:15'),
+    /** Recorrido real ≈ línea recta × este factor. */
+    ETA_ROUTE_FACTOR: z.coerce.number().min(1).max(3).default(1.3),
+    /** Tope de la contraoferta: este factor × el máximo de referencia de la categoría. */
+    OFFER_COUNTER_MAX_FACTOR: z.coerce.number().positive().default(3),
+    RATE_OFFER_PER_MIN: positiveInt(10),
+    RATE_OFFER_IP_PER_MIN: positiveInt(60),
+
     // Ubicación y disponibilidad del trabajador (ADR-0024). Propuestas en docs/pendientes.md.
     WORKER_LOCATION_PERSIST_MS: positiveInt(30_000),
     WORKER_LOCATION_PERSIST_M: positiveInt(100),

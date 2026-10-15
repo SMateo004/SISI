@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { BullJobPublisher } from '../queues/bull-job.publisher';
 import { jobIds, MATCHING_JOBS, QUEUES } from '../queues/queues';
 import { RealtimeEmitter } from '../realtime/realtime.emitter';
+import { lockRequest } from '../requests/request-lock';
 import { RequestStatusService } from '../requests/request-status.service';
 import { selectCandidates } from './candidates';
 import { DEBT_CAP_POLICY, type DebtCapPolicy } from './debt-cap.policy';
@@ -58,7 +59,7 @@ export class MatchingService {
     const now = Date.now();
 
     const outcome = await this.prisma.$transaction(async (tx): Promise<RingOutcome> => {
-      const request = await this.repo.lockRequest(tx, requestId);
+      const request = await lockRequest(tx, requestId);
       if (!request || !OPEN.has(request.status) || (request.ring ?? 0) >= ring) {
         return { kind: 'skip' };
       }
@@ -146,7 +147,7 @@ export class MatchingService {
   async close(requestId: string): Promise<void> {
     const now = Date.now();
     const expiresAt = await this.prisma.$transaction(async (tx) => {
-      const request = await this.repo.lockRequest(tx, requestId);
+      const request = await lockRequest(tx, requestId);
       if (!request || !OPEN.has(request.status) || request.expiresAt) return null;
       const activeOffers = await tx.offer.count({ where: { requestId, status: 'activa' } });
       const decision = closeDecision(activeOffers, now, this.config.offersGraceMs);
@@ -166,7 +167,7 @@ export class MatchingService {
   /** Vence el plazo para elegir: expira y cierra las ofertas. */
   async expire(requestId: string): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
-      const request = await this.repo.lockRequest(tx, requestId);
+      const request = await lockRequest(tx, requestId);
       if (!request || !OPEN.has(request.status) || !request.expiresAt) return;
       if (request.expiresAt.getTime() > Date.now()) return;
       await this.expireIn(tx, requestId);

@@ -4,6 +4,7 @@ import { FeatureFlagsModule } from '../feature-flags/feature-flags.module';
 import { MatchingWorkerModule } from '../matching/matching-worker.module';
 import { NotificationsCoreModule } from '../notifications/notifications.module';
 import { RequestNotificationsHandlers } from '../notifications/request-notifications.handlers';
+import { OfferEventsHandlers } from '../offers/offer-events.handlers';
 import { OutboxRelayModule } from '../outbox/outbox-relay.module';
 import { OutboxModule } from '../outbox/outbox.module';
 import { PrismaModule } from '../prisma/prisma.module';
@@ -27,6 +28,6 @@ import { RequestEventsHandlers } from '../requests/request-events.handlers';
     RealtimeEmitterModule,
     NotificationsCoreModule,
   ],
-  providers: [RequestEventsHandlers, RequestNotificationsHandlers],
+  providers: [RequestEventsHandlers, RequestNotificationsHandlers, OfferEventsHandlers],
 })
 export class WorkerModule {}

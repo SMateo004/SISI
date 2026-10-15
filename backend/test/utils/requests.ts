@@ -1,6 +1,8 @@
 import request from 'supertest';
 import type { CreatedRequestDto, PublishResultDto } from '../../src/requests/dto/request.dto';
+import type { PresignedUploadDto } from '../../src/storage/dto/upload.dto';
 import { bearer, type TestApp, uniqueIp } from './test-app';
+import { fakeJpeg, putPresigned } from './upload';
 
 /** Cerca de la Plaza 24 de Septiembre (dentro del radio provisional de 15 km). */
 export const CENTRO = { latitude: -17.7834, longitude: -63.1821 };
@@ -16,6 +18,7 @@ export async function publishRequest(
   t: TestApp,
   token: string,
   overrides: Record<string, unknown> = {},
+  opts: { photos?: number } = {},
 ): Promise<string> {
   const server = t.app.getHttpServer();
   const categoryId =
@@ -36,6 +39,22 @@ export async function publishRequest(
       })
       .expect(201)
   ).body as CreatedRequestDto;
+  for (let i = 0; i < (opts.photos ?? 0); i++) {
+    const file = fakeJpeg(2048);
+    const upload = (
+      await request(server)
+        .post(`/requests/${created.request.id}/photos/upload-url`)
+        .set(...bearer(token))
+        .send({ contentType: 'image/jpeg', sizeBytes: file.length })
+        .expect(201)
+    ).body as PresignedUploadDto;
+    if ((await putPresigned(upload, file)) !== 200) throw new Error('No se pudo subir la foto');
+    await request(server)
+      .put(`/requests/${created.request.id}/photos`)
+      .set(...bearer(token))
+      .send({ key: upload.key })
+      .expect(200);
+  }
   const published = (
     await request(server)
       .post(`/requests/${created.request.id}/publish`)

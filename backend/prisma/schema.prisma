@@ -78,6 +78,8 @@ model User {
   serviceRequests        ServiceRequest[]    @relation("ServiceRequestEmployer")
   notifications          Notification[]
   deviceTokens           DeviceToken[]
+  jobsAsEmployer         Job[]               @relation("JobEmployer")
+  jobsAsWorker           Job[]               @relation("JobWorker")
 
   @@index([cityId])
   @@map("users")
@@ -376,6 +378,7 @@ model ServiceRequest {
   events        ServiceRequestEvent[]
   notifications RequestNotification[]
   offers        Offer[]
+  job           Job?
 
   @@index([employerId, createdAt])
   @@index([status, cityId])
@@ -565,4 +568,43 @@ model Offer {
   @@unique([requestId, workerId])
   @@index([requestId, status])
   @@map("offers")
+}
+
+/// Estados del trabajo (R6.1). En la Fase 3 solo se crea en `asignado`; el resto es de la Fase 4.
+enum JobStatus {
+  asignado
+  en_camino
+  en_curso
+  terminado
+  cancelado
+
+  @@map("job_status")
+}
+
+/// Trabajo asignado al aceptar una oferta (R5.4, ADR-0026).
+model Job {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Única: una solicitud tiene a lo sumo un trabajo (segunda barrera contra la doble asignación).
+  requestId     String    @unique @map("request_id") @db.Uuid
+  workerId      String    @map("worker_id") @db.Uuid
+  employerId    String    @map("employer_id") @db.Uuid
+  cityId        String    @map("city_id") @db.Uuid
+  offerId       String    @unique @map("offer_id") @db.Uuid
+  finalPriceBs  Decimal   @map("final_price_bs") @db.Decimal(10, 2)
+  /// Copia de la comisión efectiva de la categoría al asignar (CategoryResolver, ADR-0016).
+  commissionPct Decimal   @map("commission_pct") @db.Decimal(5, 2)
+  /// Se calcula al terminar (R6.3, Fase 4/5).
+  commissionBs  Decimal?  @map("commission_bs") @db.Decimal(10, 2)
+  status        JobStatus @default(asignado)
+  assignedAt    DateTime  @default(now()) @map("assigned_at") @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  request  ServiceRequest @relation(fields: [requestId], references: [id])
+  worker   User           @relation("JobWorker", fields: [workerId], references: [id])
+  employer User           @relation("JobEmployer", fields: [employerId], references: [id])
+
+  @@index([workerId, createdAt])
+  @@index([employerId, createdAt])
+  @@map("jobs")
 }

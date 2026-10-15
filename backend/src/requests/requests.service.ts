@@ -37,6 +37,7 @@ import { RequestsRepository } from './requests.repository';
 const requestInclude = {
   category: { select: { id: true, slug: true, name: true } },
   photos: { orderBy: { position: 'asc' } },
+  job: { select: { id: true } },
 } satisfies Prisma.ServiceRequestInclude;
 
 type RequestRow = Prisma.ServiceRequestGetPayload<{ include: typeof requestInclude }>;
@@ -450,6 +451,7 @@ export class RequestsService {
           cancelledAt: row.cancelledAt?.toISOString() ?? null,
           ring: row.ring,
           totalRings: this.totalRings,
+          jobId: row.job?.id ?? null,
           expiresAt: row.expiresAt?.toISOString() ?? null,
         };
       }),

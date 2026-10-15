@@ -24,6 +24,10 @@ export interface OutboxPayloads {
   };
   /** Expiró sin asignarse (R4.5): aviso al empleador, request:expired y offer:closed. */
   'request.expired': { requestId: string };
+  /** Llegó o se reemplazó una oferta (R5.2): offer:new y push al empleador. */
+  'offer.created': { requestId: string; offerId: string; revision: number };
+  /** El empleador eligió una oferta (R5.4): request:assigned, offer:closed y aviso al elegido. */
+  'request.assigned': { requestId: string; jobId: string };
 }
 
 export type OutboxEventType = keyof OutboxPayloads;

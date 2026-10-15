@@ -14,6 +14,7 @@ import { LocationsModule } from './locations/locations.module';
 import { MapsModule } from './maps/maps.module';
 import { ModerationModule } from './moderation/moderation.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { OffersModule } from './offers/offers.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RealtimeModule } from './realtime/realtime.module';
@@ -42,6 +43,7 @@ import { WorkersModule } from './workers/workers.module';
     MapsModule,
     LocationsModule,
     NotificationsModule,
+    OffersModule,
     RealtimeModule,
   ],
   providers: [

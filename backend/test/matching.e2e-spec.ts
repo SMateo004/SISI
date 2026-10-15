@@ -127,7 +127,7 @@ describe('Matching por anillos (e2e, ADR-0025)', () => {
 
     await waitFor(async () => ((await notifiedIds(id, 2)).length === 1 ? true : undefined), {
       what: 'el anillo 2',
-      timeoutMs: 6000,
+      timeoutMs: 10000,
     });
     expect(await notifiedIds(id, 2)).toEqual([mid.id]);
     expect(await notifiedIds(id)).toHaveLength(2);

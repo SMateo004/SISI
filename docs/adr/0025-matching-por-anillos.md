@@ -27,7 +27,7 @@ R4 define candidatos (R4.1), anillos (R4.2), espera por anillo (R4.3), orden (R4
   - `MATCHING_RING_WAIT_MS=45000`;
   - `MATCHING_ENOUGH_OFFERS=3`;
   - `MATCHING_OFFERS_GRACE_MS=600000`.
-  - Los e2e usan 1500 ms y 3000 ms.
+  - Los e2e usan 3000 ms para ambos (margen para ofertar o cancelar dentro de un anillo con la máquina cargada).
 - **Progresión** (`ring-plan.ts`, puro):
   - el anillo que avisó a alguien espera `RING_WAIT` antes de ampliar;
   - **un anillo sin candidatos nuevos amplía de inmediato** (decidido en el plan);

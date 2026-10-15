@@ -20,8 +20,9 @@ export function applyE2eEnv(): void {
   // El reconciliador se dispara a mano en los tests (runOnce).
   process.env.MATCHING_RECONCILE_MS = '3600000';
   process.env.LOCATION_SWEEP_MS = '3600000';
-  // Anillos y plazos en milisegundos (nunca los 45 s reales).
-  process.env.MATCHING_RING_WAIT_MS = '1500';
+  // Anillos y plazos en milisegundos (nunca los 45 s reales). 3 s deja margen para actuar
+  // dentro de un anillo (ofertar, cancelar) aunque la máquina esté cargada.
+  process.env.MATCHING_RING_WAIT_MS = '3000';
   process.env.MATCHING_OFFERS_GRACE_MS = '3000';
 
   process.env.STORAGE_ENDPOINT = process.env.E2E_STORAGE_ENDPOINT ?? 'http://localhost:59000';

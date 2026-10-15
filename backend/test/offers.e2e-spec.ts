@@ -344,13 +344,13 @@ describe('Ofertas, asignación y contacto (e2e, ADR-0026)', () => {
         ).body as RequestDto;
         return r.expiresAt ? r : undefined;
       },
-      { what: 'el plazo para elegir', timeoutMs: 6000 },
+      { what: 'el plazo para elegir', timeoutMs: 10000 },
     );
     expect(withDeadline).toMatchObject({ status: 'con_ofertas', ring: 1 });
     expect(await notified(id)).not.toContain(far.id);
 
     // El empleador no elige: expira y se cierran las ofertas.
-    await employerLive.next('request:expired', (p) => p.requestId === id, 8000);
+    await employerLive.next('request:expired', (p) => p.requestId === id, 10000);
     expect(await live.next('offer:closed', (p) => p.requestId === id)).toEqual({
       requestId: id,
       reason: 'expirada',

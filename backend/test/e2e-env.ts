@@ -14,6 +14,11 @@ export function applyE2eEnv(): void {
   process.env.CORS_ORIGINS ??= 'http://localhost:8080';
   process.env.OTP_PROVIDER = 'console';
   process.env.GEOCODING_PROVIDER = 'fake';
+  // Colas propias de los e2e y tiempos en milisegundos (ADR-0028).
+  process.env.QUEUE_PREFIX = 'bull-e2e';
+  process.env.OUTBOX_POLL_MS = '50';
+  // El reconciliador se dispara a mano en los tests (runOnce).
+  process.env.MATCHING_RECONCILE_MS = '3600000';
 
   process.env.STORAGE_ENDPOINT = process.env.E2E_STORAGE_ENDPOINT ?? 'http://localhost:59000';
   process.env.STORAGE_REGION = 'us-east-1';

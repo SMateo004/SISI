@@ -1,6 +1,6 @@
 # ADR-0020: Bus de eventos de dominio en proceso (@nestjs/event-emitter)
 
-- Estado: aceptada
+- Estado: reemplazada por ADR-0022
 - Fecha: 2026-10-14
 - Fase: 2
 

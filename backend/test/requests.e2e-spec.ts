@@ -1,4 +1,3 @@
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import request from 'supertest';
 import type {
   AdminHeldRequestDto,
@@ -7,7 +6,6 @@ import type {
   RequestDto,
   RequestPageDto,
 } from '../src/requests/dto/request.dto';
-import { RequestEvents, type RequestSearchingEvent } from '../src/requests/request.events';
 import type { PresignedUploadDto } from '../src/storage/dto/upload.dto';
 import {
   bearer,
@@ -28,7 +26,6 @@ const LA_PAZ = { latitude: -16.5, longitude: -68.15 };
 describe('Solicitudes de servicio (e2e)', () => {
   let t: TestApp;
   let plomeriaId: string;
-  let emit: jest.SpyInstance;
   const server = () => t.app.getHttpServer();
 
   const draft = (overrides: Record<string, unknown> = {}) => ({
@@ -77,18 +74,23 @@ describe('Solicitudes de servicio (e2e)', () => {
   beforeAll(async () => {
     t = await createTestApp();
     plomeriaId = (await t.prisma.category.findUniqueOrThrow({ where: { slug: 'plomeria' } })).id;
-    emit = jest.spyOn(t.app.get(EventEmitter2), 'emit');
   });
 
   afterAll(async () => {
     await t.close();
   });
 
-  beforeEach(() => {
-    emit.mockClear();
-  });
+  /** Tipos de evento que la API dejó en el outbox para la solicitud (ADR-0022). */
+  const outboxTypes = async (requestId: string): Promise<string[]> =>
+    (
+      await t.prisma.outboxEvent.findMany({
+        where: { aggregateId: requestId },
+        orderBy: { id: 'asc' },
+        select: { type: true },
+      })
+    ).map((e) => e.type);
 
-  it('publica una solicitud normal con fotos: queda en buscando y emite request.searching', async () => {
+  it('publica una solicitud normal con fotos: queda en buscando y deja request.searching en el outbox', async () => {
     const { accessToken } = await login(t);
     const created = await create(accessToken);
     expect(created.warnings).toEqual([]);
@@ -113,13 +115,7 @@ describe('Solicitudes de servicio (e2e)', () => {
     });
     expect(published.request.publishedAt).not.toBeNull();
 
-    const calls = emit.mock.calls as [string, unknown][];
-    const searching = calls.find(([name]) => name === RequestEvents.searching);
-    expect(searching?.[1]).toMatchObject({
-      requestId: id,
-      categoryId: plomeriaId,
-      location: { lat: CENTRO.latitude, lng: CENTRO.longitude },
-    } satisfies Partial<RequestSearchingEvent>);
+    expect(await outboxTypes(id)).toEqual(['request.searching']);
 
     // Las fotos solo se leen con URL firmada.
     const detail = (
@@ -176,7 +172,7 @@ describe('Solicitudes de servicio (e2e)', () => {
       });
       // Al empleador nunca se le dice qué término coincidió.
       expect(JSON.stringify(res.body)).not.toMatch(/cocain|matches|drogas/i);
-      expect(emit.mock.calls.some(([name]) => name === RequestEvents.searching)).toBe(false);
+      expect(await outboxTypes(created.request.id)).toEqual(['request.held']);
 
       const admin = await loginAsAdmin(t);
       const held = (
@@ -195,7 +191,11 @@ describe('Solicitudes de servicio (e2e)', () => {
           .expect(200)
       ).body as RequestDto;
       expect(released.status).toBe('buscando');
-      expect(emit.mock.calls.some(([name]) => name === RequestEvents.searching)).toBe(true);
+      expect(await outboxTypes(created.request.id)).toEqual([
+        'request.held',
+        'request.released',
+        'request.searching',
+      ]);
 
       const events = await t.prisma.serviceRequestEvent.findMany({
         where: { requestId: created.request.id },

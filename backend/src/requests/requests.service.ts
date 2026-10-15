@@ -1,6 +1,5 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CategoryResolver } from '../categories/category-resolver';
 import { decimal, toBs } from '../categories/effective-category';
 import { ApiError } from '../common/errors/api-error';
@@ -9,6 +8,7 @@ import { RateLimitedException } from '../common/rate-limit/rate-limited.exceptio
 import type { AppConfigService } from '../config/app-config';
 import type { Prisma } from '../generated/prisma/client';
 import { ModerationService } from '../moderation/moderation.service';
+import { OutboxService } from '../outbox/outbox.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type { PresignedUploadDto } from '../storage/dto/upload.dto';
 import { StorageService } from '../storage/storage.service';
@@ -29,12 +29,6 @@ import type {
 } from './dto/request.dto';
 import { assertValidCoordinates, isInsideServiceArea, type LatLng, outsideCity } from './location';
 import { priceWarnings } from './price-warning';
-import {
-  RequestCancelledEvent,
-  RequestEvents,
-  RequestHeldEvent,
-  RequestSearchingEvent,
-} from './request.events';
 import type { RequestStatus } from './request-status.machine';
 import { RequestStatusService } from './request-status.service';
 import { RequestsRepository } from './requests.repository';
@@ -85,7 +79,7 @@ export class RequestsService {
     private readonly moderation: ModerationService,
     private readonly storage: StorageService,
     private readonly rateLimits: RateLimitStore,
-    private readonly events: EventEmitter2,
+    private readonly outbox: OutboxService,
     @Inject(ConfigService) private readonly config: AppConfigService,
   ) {}
 
@@ -216,23 +210,38 @@ export class RequestsService {
     const moderation = await this.moderation.check(`${request.description}\n${request.address}`);
     const now = new Date();
 
-    if (moderation.held) {
-      await this.status.apply(requestId, 'PUBLISH_HELD', userId, {
-        data: {
-          // Copia JSON plana de las coincidencias (solo las ve el admin).
-          moderationMatches: JSON.parse(
-            JSON.stringify({ matches: moderation.matches, timedOut: moderation.timedOut }),
-          ) as Prisma.InputJsonValue,
-        },
-      });
-      this.events.emit(
-        RequestEvents.held,
-        new RequestHeldEvent(requestId, request.cityId, moderation.matches.length),
-      );
-    } else {
-      await this.status.apply(requestId, 'PUBLISH_CLEAN', userId, { data: { publishedAt: now } });
-      await this.emitSearching(requestId, now);
-    }
+    // Estado y evento en la misma transacción: el matching no depende de memoria (ADR-0022).
+    await this.prisma.$transaction(async (tx) => {
+      if (moderation.held) {
+        await this.status.apply(
+          requestId,
+          'PUBLISH_HELD',
+          userId,
+          {
+            data: {
+              // Copia JSON plana de las coincidencias (solo las ve el admin).
+              moderationMatches: JSON.parse(
+                JSON.stringify({ matches: moderation.matches, timedOut: moderation.timedOut }),
+              ) as Prisma.InputJsonValue,
+            },
+          },
+          tx,
+        );
+        await this.outbox.add(tx, 'request.held', requestId, {
+          requestId,
+          matchCount: moderation.matches.length,
+        });
+      } else {
+        await this.status.apply(
+          requestId,
+          'PUBLISH_CLEAN',
+          userId,
+          { data: { publishedAt: now } },
+          tx,
+        );
+        await this.outbox.add(tx, 'request.searching', requestId, { requestId });
+      }
+    });
 
     return {
       request: await this.getOwn(userId, requestId),
@@ -245,10 +254,16 @@ export class RequestsService {
   /** El empleador cancela mientras no esté asignada (R3.4). */
   async cancel(userId: string, requestId: string): Promise<RequestDto> {
     await this.requireOwn(userId, requestId);
-    await this.status.apply(requestId, 'CANCEL', userId, {
-      data: { cancelReason: 'empleador', cancelledAt: new Date() },
+    await this.prisma.$transaction(async (tx) => {
+      await this.status.apply(
+        requestId,
+        'CANCEL',
+        userId,
+        { data: { cancelReason: 'empleador', cancelledAt: new Date() } },
+        tx,
+      );
+      await this.outbox.add(tx, 'request.cancelled', requestId, { requestId });
     });
-    this.events.emit(RequestEvents.cancelled, new RequestCancelledEvent(requestId, 'empleador'));
     return this.getOwn(userId, requestId);
   }
 
@@ -294,48 +309,48 @@ export class RequestsService {
 
   async release(adminId: string, requestId: string): Promise<RequestDto> {
     const now = new Date();
-    await this.status.apply(requestId, 'RELEASE', adminId, {
-      data: { reviewedById: adminId, reviewedAt: now, publishedAt: now },
-      reason: 'Liberada por moderación',
+    await this.prisma.$transaction(async (tx) => {
+      await this.status.apply(
+        requestId,
+        'RELEASE',
+        adminId,
+        {
+          data: { reviewedById: adminId, reviewedAt: now, publishedAt: now },
+          reason: 'Liberada por moderación',
+        },
+        tx,
+      );
+      await this.outbox.add(tx, 'request.released', requestId, { requestId });
+      await this.outbox.add(tx, 'request.searching', requestId, { requestId });
     });
-    await this.emitSearching(requestId, now);
     return this.adminView(requestId);
   }
 
   async reject(adminId: string, requestId: string, reason: string): Promise<RequestDto> {
     const now = new Date();
-    await this.status.apply(requestId, 'REJECT', adminId, {
-      data: {
-        reviewedById: adminId,
-        reviewedAt: now,
-        cancelReason: 'moderacion',
-        cancelNote: reason,
-        cancelledAt: now,
-      },
-      reason,
+    await this.prisma.$transaction(async (tx) => {
+      await this.status.apply(
+        requestId,
+        'REJECT',
+        adminId,
+        {
+          data: {
+            reviewedById: adminId,
+            reviewedAt: now,
+            cancelReason: 'moderacion',
+            cancelNote: reason,
+            cancelledAt: now,
+          },
+          reason,
+        },
+        tx,
+      );
+      await this.outbox.add(tx, 'request.rejected', requestId, { requestId });
     });
-    this.events.emit(RequestEvents.cancelled, new RequestCancelledEvent(requestId, 'moderacion'));
     return this.adminView(requestId);
   }
 
   // ---- Internos ----
-
-  private async emitSearching(requestId: string, at: Date): Promise<void> {
-    const row = await this.prisma.serviceRequest.findUniqueOrThrow({ where: { id: requestId } });
-    const location = (await this.repo.locations([requestId])).get(requestId);
-    if (!location) throw notFound();
-    this.events.emit(
-      RequestEvents.searching,
-      new RequestSearchingEvent(
-        requestId,
-        row.cityId,
-        row.categoryId,
-        row.employerId,
-        location,
-        at,
-      ),
-    );
-  }
 
   private async adminView(requestId: string): Promise<RequestDto> {
     const row = await this.prisma.serviceRequest.findUnique({

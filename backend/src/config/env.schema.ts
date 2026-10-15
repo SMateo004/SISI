@@ -97,6 +97,17 @@ export const envSchema = z
     RATE_REQUEST_PUBLISH_PER_DAY: positiveInt(30),
     RATE_REQUEST_CREATE_IP_PER_HOUR: positiveInt(30),
 
+    // Outbox y colas (ADR-0022). Los e2e usan tiempos en milisegundos.
+    OUTBOX_POLL_MS: positiveInt(500),
+    OUTBOX_BATCH_SIZE: positiveInt(100),
+    QUEUE_PREFIX: z
+      .string()
+      .regex(/^[a-z0-9-]+$/)
+      .default('bull'),
+    /** Cuánto se guarda un job completado: mientras exista, su jobId no se repite. */
+    QUEUE_KEEP_COMPLETED_SEC: positiveInt(86_400),
+    MATCHING_RECONCILE_MS: positiveInt(60_000),
+
     FIREBASE_SERVICE_ACCOUNT: optionalString,
 
     // Mapas (ADR-0021). La llave del backend nunca se envía a la app.

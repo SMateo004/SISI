@@ -404,3 +404,23 @@ model ServiceRequestEvent {
   @@index([requestId, createdAt])
   @@map("service_request_events")
 }
+
+/// Outbox transaccional (ADR-0022): cada evento de dominio se escribe en la misma
+/// transacción que el cambio de estado; el relay del proceso worker lo publica a BullMQ.
+model OutboxEvent {
+  id          BigInt    @id @default(autoincrement())
+  /// Tipo del evento (p. ej. request.searching).
+  type        String
+  aggregateId String    @map("aggregate_id") @db.Uuid
+  payload     Json      @default("{}")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  /// No se publica antes de esta hora (reintentos con espera).
+  availableAt DateTime  @default(now()) @map("available_at") @db.Timestamptz(3)
+  publishedAt DateTime? @map("published_at") @db.Timestamptz(3)
+  attempts    Int       @default(0)
+  lastError   String?   @map("last_error")
+
+  @@index([publishedAt, availableAt, id])
+  @@index([aggregateId])
+  @@map("outbox_events")
+}

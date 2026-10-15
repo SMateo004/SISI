@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
-import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
@@ -13,6 +12,7 @@ import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
 import { HealthModule } from './health/health.module';
 import { MapsModule } from './maps/maps.module';
 import { ModerationModule } from './moderation/moderation.module';
+import { OutboxModule } from './outbox/outbox.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
 import { RequestsModule } from './requests/requests.module';
@@ -23,8 +23,8 @@ import { WorkersModule } from './workers/workers.module';
 @Module({
   imports: [
     AppConfigModule,
-    // Bus de eventos de dominio en proceso (ADR-0020).
-    EventEmitterModule.forRoot(),
+    // Eventos de dominio por outbox transaccional (ADR-0022).
+    OutboxModule,
     PrismaModule,
     RedisModule,
     RateLimitModule,

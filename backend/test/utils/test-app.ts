@@ -9,6 +9,7 @@ import type { LoginResponseDto } from '../../src/auth/dto/auth.dto';
 import { OTP_PROVIDER, type OtpProvider } from '../../src/auth/otp/otp-provider';
 import { PrismaService } from '../../src/prisma/prisma.service';
 import { REDIS_CLIENT } from '../../src/redis/redis.constants';
+import { WorkerModule } from '../../src/worker/worker.module';
 import { uniqueIp, uniquePhone, uniqueSuffix } from './unique';
 
 export interface TestApp {
@@ -19,9 +20,14 @@ export interface TestApp {
   close(): Promise<void>;
 }
 
-/** Levanta la API completa contra Postgres, Redis y S3 reales, espiando el proveedor de consola. */
-export async function createTestApp(): Promise<TestApp> {
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+/**
+ * Levanta la API completa contra Postgres, Redis y S3 reales, espiando el proveedor de consola.
+ * Con `worker: true` también levanta en el mismo proceso lo que corre en el worker de Render
+ * (relay del outbox y colas BullMQ con prefijo de e2e), con tiempos en milisegundos.
+ */
+export async function createTestApp(opts: { worker?: boolean } = {}): Promise<TestApp> {
+  const imports = opts.worker ? [AppModule, WorkerModule] : [AppModule];
+  const moduleRef = await Test.createTestingModule({ imports }).compile();
   const app = moduleRef.createNestApplication<INestApplication<App>>({ logger: ['error'] });
   setupApp(app);
   await app.init();
@@ -106,3 +112,17 @@ export async function loginAsAdmin(t: TestApp): Promise<LoginResponseDto> {
 }
 
 export const bearer = (token: string): [string, string] => ['Authorization', `Bearer ${token}`];
+
+/** Espera hasta que `check` devuelva un valor distinto de undefined (o falla al vencer). */
+export async function waitFor<T>(
+  check: () => Promise<T | undefined>,
+  { timeoutMs = 5000, everyMs = 25, what = 'la condición' } = {},
+): Promise<T> {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const value = await check();
+    if (value !== undefined) return value;
+    if (Date.now() > deadline) throw new Error(`Se agotó la espera de ${what} (${timeoutMs} ms)`);
+    await new Promise((r) => setTimeout(r, everyMs));
+  }
+}

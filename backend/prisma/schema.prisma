@@ -35,6 +35,7 @@ model City {
   featureFlags    FeatureFlag[]
   requests        ServiceRequest[]
   workerLocations WorkerLocation[]
+  notifications   Notification[]
 
   @@map("cities")
 }
@@ -75,6 +76,8 @@ model User {
   reviewedDocuments      WorkerDocument[]    @relation("WorkerDocumentReviewer")
   workerStatusEvents     WorkerStatusEvent[] @relation("WorkerStatusEventActor")
   serviceRequests        ServiceRequest[]    @relation("ServiceRequestEmployer")
+  notifications          Notification[]
+  deviceTokens           DeviceToken[]
 
   @@index([cityId])
   @@map("users")
@@ -446,4 +449,51 @@ model WorkerLocation {
   @@index([geog], type: Gist)
   @@index([cityId, available])
   @@map("worker_locations")
+}
+
+/// Aviso a un usuario (ADR-0027): se guarda siempre y, si tiene dispositivos, va por push.
+model Notification {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  cityId     String    @map("city_id") @db.Uuid
+  /// request_new, offer_new, request_assigned, request_expired, request_released, request_rejected...
+  type       String
+  title      String
+  body       String
+  /// Datos para la app (ids y `route`, la pantalla a abrir al tocar el aviso).
+  payload    Json      @default("{}")
+  /// Evita duplicados si el job se reintenta: evento del outbox + destinatario.
+  dedupeKey  String    @unique @map("dedupe_key")
+  pushSentAt DateTime? @map("push_sent_at") @db.Timestamptz(3)
+  readAt     DateTime? @map("read_at") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city City @relation(fields: [cityId], references: [id])
+
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+enum DevicePlatform {
+  android
+  web
+  ios
+
+  @@map("device_platform")
+}
+
+/// Token de FCM de un dispositivo (ADR-0027). Los inválidos se borran al enviar.
+model DeviceToken {
+  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String         @map("user_id") @db.Uuid
+  token      String         @unique
+  platform   DevicePlatform
+  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  lastSeenAt DateTime       @default(now()) @map("last_seen_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("device_tokens")
 }

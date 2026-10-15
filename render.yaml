@@ -25,6 +25,9 @@ projects:
               # Geocodificación de prueba hasta tener la llave de Maps de servidor (ADR-0021).
               - key: GEOCODING_PROVIDER
                 value: fake
+              # Push falso (solo log) hasta configurar Firebase y FIREBASE_SERVICE_ACCOUNT (ADR-0027).
+              - key: PUSH_PROVIDER
+                value: fake
               - key: NODE_VERSION
                 value: "24"
               - key: TZ_DEFAULT
@@ -165,6 +168,9 @@ projects:
                 value: bird
               - key: GEOCODING_PROVIDER
                 value: google
+              # Exige FIREBASE_SERVICE_ACCOUNT en api y worker (ADR-0027).
+              - key: PUSH_PROVIDER
+                value: fcm
               - key: NODE_VERSION
                 value: "24"
               - key: TZ_DEFAULT

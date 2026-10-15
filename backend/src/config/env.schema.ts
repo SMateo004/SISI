@@ -115,6 +115,8 @@ export const envSchema = z
     LOCATION_SWEEP_MS: positiveInt(60_000),
     RATE_WORKER_LOCATION_PER_MIN: positiveInt(30),
 
+    // Push (ADR-0027). production exige fcm. La credencial va en JSON o base64.
+    PUSH_PROVIDER: z.enum(['fake', 'fcm']).default('fake'),
     FIREBASE_SERVICE_ACCOUNT: optionalString,
 
     // Mapas (ADR-0021). La llave del backend nunca se envía a la app.

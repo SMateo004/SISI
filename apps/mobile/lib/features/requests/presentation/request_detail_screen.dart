@@ -139,7 +139,10 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen> {
         AsyncData(value: final request) => ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            if (widget.notice != null)
+            // El aviso de recién publicada solo mientras sigue vigente (no si ya expiró).
+            if (widget.notice != null &&
+                (request.isSearching ||
+                    request.status == RequestStatus.retenida))
               Card(
                 key: const Key('publish-notice'),
                 color: Theme.of(context).colorScheme.secondaryContainer,

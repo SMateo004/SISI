@@ -128,7 +128,7 @@ class _OfferTileState extends ConsumerState<_OfferTile> {
         title: Text('¿Elegir a ${o.workerShortName}?'),
         content: Text(
           'Por ${formatBs(o.amountBs)} (incluye el traslado), llegaría en unos ${o.etaMin} min. '
-          'Las demás ofertas se cerrarán y verán sus datos de contacto.',
+          'Las demás ofertas se cerrarán y ambos podrán ver el teléfono del otro.',
         ),
         actions: [
           TextButton(

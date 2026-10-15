@@ -16,6 +16,9 @@ import 'package:sisi_mobile/features/requests/data/requests_repository.dart';
 import 'package:sisi_mobile/features/requests/domain/service_request.dart';
 import 'package:sisi_mobile/features/worker_onboarding/data/worker_repository.dart';
 import 'package:sisi_mobile/features/worker_onboarding/domain/worker_models.dart';
+import 'package:sisi_mobile/core/realtime/realtime_providers.dart';
+
+import 'fake_realtime.dart';
 
 const testTokens = AuthTokens(accessToken: 'access', refreshToken: 'refresh');
 
@@ -259,6 +262,7 @@ Future<void> pumpSisiApp(
   FakeMeRepository? me,
   FakeWorkerRepository? worker,
   FakeRequestsRepository? requests,
+  FakeRealtimeClient? realtime,
 }) async {
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 2.6;
@@ -277,6 +281,9 @@ Future<void> pumpSisiApp(
         imagePickerProvider.overrideWithValue(FakeImagePicker()),
         requestsRepositoryProvider.overrideWithValue(
           requests ?? FakeRequestsRepository(),
+        ),
+        realtimeClientFactoryProvider.overrideWithValue(
+          () => realtime ?? FakeRealtimeClient(),
         ),
       ],
       child: const SisiApp(),

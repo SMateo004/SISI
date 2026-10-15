@@ -84,6 +84,11 @@ class AuthInterceptor extends Interceptor {
     }
   }
 
+  /// Renueva la sesión ya (p. ej. antes de reconectar el socket con un token vencido).
+  /// Comparte la renovación en curso si ya hay una.
+  Future<AuthTokens?> refreshNow() =>
+      _refreshing ??= _refresh().whenComplete(() => _refreshing = null);
+
   Future<AuthTokens?> _refresh() async {
     final refreshToken = session.tokens?.refreshToken;
     if (refreshToken == null) {

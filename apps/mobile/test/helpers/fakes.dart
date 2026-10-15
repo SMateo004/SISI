@@ -19,6 +19,7 @@ import 'package:sisi_mobile/features/worker_onboarding/domain/worker_models.dart
 import 'package:sisi_mobile/core/realtime/realtime_providers.dart';
 import 'package:sisi_mobile/features/matching/data/availability_repository.dart';
 import 'package:sisi_mobile/features/matching/data/location_service.dart';
+import 'package:sisi_mobile/features/offers/application/employer_live.dart';
 import 'package:sisi_mobile/features/offers/data/offers_repository.dart';
 
 import 'fake_matching.dart';
@@ -171,6 +172,9 @@ ServiceRequest testRequest({
   RequestStatus status = RequestStatus.buscando,
   String? statusMessage = 'Buscando trabajadores cerca de ti.',
   String price = '150.00',
+  int? ring,
+  String? jobId,
+  DateTime? expiresAt,
 }) => ServiceRequest(
   id: id,
   status: status,
@@ -185,6 +189,9 @@ ServiceRequest testRequest({
   address: 'Calle Junín 150',
   proposedPriceBs: price,
   createdAt: DateTime(2026, 10, 15, 10),
+  ring: ring,
+  jobId: jobId,
+  expiresAt: expiresAt,
 );
 
 class FakeRequestsRepository implements RequestsRepository {
@@ -301,6 +308,8 @@ Future<void> pumpSisiApp(
         locationServiceProvider.overrideWithValue(
           location ?? FakeLocationService(),
         ),
+        // Sin refresco periódico: con él pumpAndSettle no termina nunca.
+        searchRefreshIntervalProvider.overrideWithValue(null),
       ],
       child: const SisiApp(),
     ),

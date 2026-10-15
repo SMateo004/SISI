@@ -1,21 +1,44 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/http/api_exception.dart';
+import '../../../core/realtime/realtime_client.dart';
+import '../../../core/realtime/realtime_providers.dart';
 import '../../../core/router/routes.dart';
 import '../../../shared/categories/category.dart';
 import '../../../shared/money.dart';
+import '../../offers/application/employer_live.dart';
+import '../../offers/presentation/employer_request_panels.dart';
 import '../data/requests_repository.dart';
 import '../domain/service_request.dart';
 import 'my_requests_screen.dart';
 import 'request_status_chip.dart';
 
+/// Avisos que cambian el estado de la solicitud para el empleador.
+const _employerEvents = {
+  RealtimeEvents.offerNew,
+  RealtimeEvents.requestAssigned,
+  RealtimeEvents.requestExpired,
+};
+
+/// Detalle de la solicitud. Se vuelve a pedir con cada aviso de esta solicitud y al
+/// reconectar el socket (ADR-0023).
 final requestDetailProvider = FutureProvider.autoDispose
-    .family<ServiceRequest, String>(
-      (ref, id) => ref.watch(requestsRepositoryProvider).get(id),
-      retry: (retryCount, error) => null,
-    );
+    .family<ServiceRequest, String>((ref, id) {
+      ref.watch(realtimeResyncProvider);
+      ref.listen(realtimeEventsProvider, (_, next) {
+        final event = next.value;
+        if (event != null &&
+            event.requestId == id &&
+            _employerEvents.contains(event.name)) {
+          ref.invalidateSelf();
+        }
+      });
+      return ref.watch(requestsRepositoryProvider).get(id);
+    }, retry: (retryCount, error) => null);
 
 /// Detalle de una solicitud propia: estado, mensaje y opción de cancelar (R3.4).
 class RequestDetailScreen extends ConsumerStatefulWidget {
@@ -33,6 +56,34 @@ class RequestDetailScreen extends ConsumerStatefulWidget {
 
 class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen> {
   bool _cancelling = false;
+  Timer? _refresh;
+
+  @override
+  void initState() {
+    super.initState();
+    // El anillo actual no tiene evento propio: se refresca mientras busca (ADR-0023).
+    final every = ref.read(searchRefreshIntervalProvider);
+    if (every != null) {
+      _refresh = Timer.periodic(every, (_) {
+        final current = ref.read(requestDetailProvider(widget.requestId)).value;
+        if (current?.isSearching ?? false) {
+          ref.invalidate(requestDetailProvider(widget.requestId));
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _refresh?.cancel();
+    super.dispose();
+  }
+
+  void _assigned(String jobId) {
+    ref.invalidate(requestDetailProvider(widget.requestId));
+    ref.invalidate(myRequestsProvider);
+    context.push(Routes.jobContact(jobId));
+  }
 
   Future<void> _cancel() async {
     final confirmed = await showDialog<bool>(
@@ -151,6 +202,19 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen> {
                 ),
               ),
             const SizedBox(height: 24),
+            if (request.isSearching) ...[
+              SearchingPanel(request: request, onAssigned: _assigned),
+              const SizedBox(height: 16),
+            ],
+            if (request.status == RequestStatus.asignada &&
+                request.jobId != null) ...[
+              AssignedPanel(jobId: request.jobId!),
+              const SizedBox(height: 16),
+            ],
+            if (request.status == RequestStatus.expirada) ...[
+              ExpiredPanel(request: request),
+              const SizedBox(height: 16),
+            ],
             if (request.status.cancelable)
               OutlinedButton.icon(
                 key: const Key('cancel-request'),

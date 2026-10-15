@@ -4,6 +4,7 @@ import '../../../core/files/picked_image.dart';
 import '../../../core/maps/geo_point.dart';
 import '../../../shared/categories/category.dart';
 import '../../../shared/money.dart';
+import '../domain/service_request.dart';
 
 /// Pasos de "Pedir un servicio".
 enum RequestStep {
@@ -121,6 +122,16 @@ class RequestDraftController extends Notifier<RequestDraft> {
       state = state.copyWith(address: value, addressEdited: true);
 
   void setPrice(String value) => state = state.copyWith(price: value);
+
+  /// Volver a publicar: precarga todo menos la categoría (llega con la lista de la API)
+  /// y las fotos (se eligen de nuevo).
+  void prefill(RepublishSeed seed) => state = state.copyWith(
+    description: seed.description,
+    location: seed.location,
+    address: seed.address,
+    addressEdited: true,
+    price: seed.proposedPriceBs.replaceAll('.', ','),
+  );
 
   void next() {
     final i = state.step.index;

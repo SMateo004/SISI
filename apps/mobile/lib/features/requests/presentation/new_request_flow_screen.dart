@@ -13,11 +13,15 @@ import '../../../core/router/routes.dart';
 import '../../../shared/money.dart';
 import '../application/request_draft.dart';
 import '../data/requests_repository.dart';
+import '../domain/service_request.dart';
 import 'price_step.dart';
 
 /// "Pedir un servicio": categoría → descripción y fotos → ubicación → precio → resumen.
 class NewRequestFlowScreen extends ConsumerStatefulWidget {
-  const NewRequestFlowScreen({super.key});
+  const NewRequestFlowScreen({super.key, this.seed});
+
+  /// Volver a publicar una solicitud expirada: se precargan sus datos.
+  final RepublishSeed? seed;
 
   @override
   ConsumerState<NewRequestFlowScreen> createState() =>
@@ -31,6 +35,21 @@ class _NewRequestFlowScreenState extends ConsumerState<NewRequestFlowScreen> {
   /// crear otro borrador.
   String? _draftId;
   int _uploadedPhotos = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    final seed = widget.seed;
+    if (seed == null) return;
+    Future.microtask(() async {
+      ref.read(requestDraftProvider.notifier).prefill(seed);
+      final categories = await ref.read(requestCategoriesProvider.future);
+      final match = categories.where((c) => c.id == seed.categoryId);
+      if (mounted && match.isNotEmpty) {
+        ref.read(requestDraftProvider.notifier).selectCategory(match.first);
+      }
+    });
+  }
 
   Future<void> _publish(RequestDraft draft) async {
     final repo = ref.read(requestsRepositoryProvider);

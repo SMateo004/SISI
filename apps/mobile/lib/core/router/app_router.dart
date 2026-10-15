@@ -11,6 +11,7 @@ import '../../features/offers/presentation/job_contact_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/requests/presentation/my_requests_screen.dart';
 import '../../features/requests/presentation/new_request_flow_screen.dart';
+import '../../features/requests/domain/service_request.dart';
 import '../../features/requests/presentation/request_detail_screen.dart';
 import '../../features/worker_onboarding/presentation/onboarding_flow_screen.dart';
 import '../../features/worker_onboarding/presentation/review_status_screen.dart';
@@ -83,7 +84,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Antes que /solicitudes/:id para que "nueva" no se tome como id.
       GoRoute(
         path: Routes.newRequest,
-        builder: (context, state) => const NewRequestFlowScreen(),
+        builder: (context, state) =>
+            NewRequestFlowScreen(seed: state.extra as RepublishSeed?),
       ),
       GoRoute(
         path: Routes.requestDetailPath,

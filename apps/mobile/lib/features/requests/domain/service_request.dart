@@ -62,6 +62,10 @@ class ServiceRequest {
     required this.createdAt,
     this.statusMessage,
     this.photos = const [],
+    this.ring,
+    this.totalRings = 3,
+    this.expiresAt,
+    this.jobId,
   });
 
   factory ServiceRequest.fromJson(Map<String, dynamic> json) {
@@ -93,6 +97,12 @@ class ServiceRequest {
             ),
           )
           .toList(),
+      ring: json['ring'] as int?,
+      totalRings: (json['totalRings'] as int?) ?? 3,
+      expiresAt: json['expiresAt'] == null
+          ? null
+          : DateTime.parse(json['expiresAt'] as String),
+      jobId: json['jobId'] as String?,
     );
   }
 
@@ -106,6 +116,44 @@ class ServiceRequest {
   final String proposedPriceBs;
   final DateTime createdAt;
   final List<RequestPhoto> photos;
+
+  /// Anillo de búsqueda actual (R4.2); null si el matching aún no empezó.
+  final int? ring;
+  final int totalRings;
+
+  /// Con ofertas sin elegir tras el último anillo: hasta cuándo se puede elegir.
+  final DateTime? expiresAt;
+
+  /// Trabajo asignado (contacto en /trabajos/:id/contacto).
+  final String? jobId;
+
+  bool get isSearching =>
+      status == RequestStatus.buscando || status == RequestStatus.conOfertas;
+}
+
+/// Datos para volver a publicar una solicitud expirada (las fotos se eligen de nuevo).
+class RepublishSeed {
+  const RepublishSeed({
+    required this.categoryId,
+    required this.description,
+    required this.location,
+    required this.address,
+    required this.proposedPriceBs,
+  });
+
+  factory RepublishSeed.from(ServiceRequest r) => RepublishSeed(
+    categoryId: r.category.id,
+    description: r.description,
+    location: r.location,
+    address: r.address,
+    proposedPriceBs: r.proposedPriceBs,
+  );
+
+  final String categoryId;
+  final String description;
+  final GeoPoint location;
+  final String address;
+  final String proposedPriceBs;
 }
 
 /// Advertencia de la API (R3.2): el precio está bajo el mínimo de referencia.

@@ -5,13 +5,13 @@ import {
   WebSocketGateway,
 } from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
-import { type AuthenticatedUser, authenticateAccessToken } from '../auth/guards/jwt-auth.guard';
+import { authenticateAccessToken, type VerifiedAccess } from '../auth/guards/jwt-auth.guard';
 import { TokenService } from '../auth/tokens/token.service';
 import { ApiError } from '../common/errors/api-error';
 import { rooms } from './realtime.events';
 
 interface SocketData {
-  user: AuthenticatedUser;
+  user: VerifiedAccess;
   expiryTimer?: NodeJS.Timeout;
 }
 

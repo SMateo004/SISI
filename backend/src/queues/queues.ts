@@ -16,6 +16,8 @@ export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
 export const MATCHING_JOBS = {
   ring: 'ring',
   reconcile: 'reconcile',
+  /** Barrido de ubicaciones vencidas (ADR-0024). */
+  sweepLocations: 'sweep_locations',
 } as const;
 
 export const jobIds = {

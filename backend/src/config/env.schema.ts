@@ -108,6 +108,13 @@ export const envSchema = z
     QUEUE_KEEP_COMPLETED_SEC: positiveInt(86_400),
     MATCHING_RECONCILE_MS: positiveInt(60_000),
 
+    // Ubicación y disponibilidad del trabajador (ADR-0024). Propuestas en docs/pendientes.md.
+    WORKER_LOCATION_PERSIST_MS: positiveInt(30_000),
+    WORKER_LOCATION_PERSIST_M: positiveInt(100),
+    WORKER_LOCATION_STALE_MS: positiveInt(600_000),
+    LOCATION_SWEEP_MS: positiveInt(60_000),
+    RATE_WORKER_LOCATION_PER_MIN: positiveInt(30),
+
     FIREBASE_SERVICE_ACCOUNT: optionalString,
 
     // Mapas (ADR-0021). La llave del backend nunca se envía a la app.

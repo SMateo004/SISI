@@ -30,10 +30,11 @@ model City {
   createdAt       DateTime                                @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime                                @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  users        User[]
-  categories   CategoryCity[]
-  featureFlags FeatureFlag[]
-  requests     ServiceRequest[]
+  users           User[]
+  categories      CategoryCity[]
+  featureFlags    FeatureFlag[]
+  requests        ServiceRequest[]
+  workerLocations WorkerLocation[]
 
   @@map("cities")
 }
@@ -209,6 +210,7 @@ model WorkerProfile {
   categories WorkerCategory[]
   documents  WorkerDocument[]
   events     WorkerStatusEvent[]
+  location   WorkerLocation?
 
   @@index([status])
   @@map("worker_profiles")
@@ -423,4 +425,25 @@ model OutboxEvent {
   @@index([publishedAt, availableAt, id])
   @@index([aggregateId])
   @@map("outbox_events")
+}
+
+/// Ubicación y disponibilidad del trabajador (ADR-0024). La copia en vivo está en Redis GEO;
+/// aquí se persiste con throttling y es la fuente de verdad para el matching (ADR-0025).
+model WorkerLocation {
+  workerId       String                                @id @map("worker_id") @db.Uuid
+  cityId         String                                @map("city_id") @db.Uuid
+  geog           Unsupported("geography(Point,4326)")?
+  /// Toggle "Disponible": exige modo worker y perfil aprobado.
+  available      Boolean                               @default(false)
+  availableSince DateTime?                             @map("available_since") @db.Timestamptz(3)
+  /// Última ubicación persistida. Sin actualizar en WORKER_LOCATION_STALE_MS = no disponible.
+  locatedAt      DateTime?                             @map("located_at") @db.Timestamptz(3)
+  updatedAt      DateTime                              @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  worker WorkerProfile @relation(fields: [workerId], references: [userId], onDelete: Cascade)
+  city   City          @relation(fields: [cityId], references: [id])
+
+  @@index([geog], type: Gist)
+  @@index([cityId, available])
+  @@map("worker_locations")
 }

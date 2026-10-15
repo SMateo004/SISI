@@ -1,6 +1,7 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ApiError } from '../common/errors/api-error';
 import type { Prisma, WorkerProfile } from '../generated/prisma/client';
+import { WorkerAvailabilityService } from '../locations/worker-availability.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   DEBT_STATUS_PROVIDER,
@@ -32,6 +33,7 @@ export class WorkerStatusService {
     private readonly prisma: PrismaService,
     @Inject(DEBT_STATUS_PROVIDER) private readonly debts: DebtStatusProvider,
     @Inject(WORKER_NOTIFIER) private readonly notifier: WorkerNotifier,
+    private readonly availability: WorkerAvailabilityService,
   ) {}
 
   async apply(
@@ -76,6 +78,9 @@ export class WorkerStatusService {
           actorId,
         },
       });
+
+      // Fuera de "aprobado" no recibe solicitudes (R4.1, ADR-0024).
+      if (next !== 'aprobado') await this.availability.markUnavailable(tx, userId);
 
       let modeForcedToEmployer = false;
       if (forcesEmployerMode(next)) {

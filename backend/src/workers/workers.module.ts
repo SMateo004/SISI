@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CategoriesModule } from '../categories/categories.module';
+import { WorkerAvailabilityModule } from '../locations/locations.module';
 import { UsersModule } from '../users/users.module';
 import { AdminWorkersController } from './admin-workers.controller';
 import { ModeService } from './mode.service';
@@ -14,7 +15,7 @@ import { WorkerStatusService } from './worker-status.service';
 import { WorkersService } from './workers.service';
 
 @Module({
-  imports: [CategoriesModule, UsersModule],
+  imports: [CategoriesModule, UsersModule, WorkerAvailabilityModule],
   controllers: [WorkerMeController, AdminWorkersController],
   providers: [
     WorkersService,

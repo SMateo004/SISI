@@ -1,17 +1,25 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ApiError } from '../common/errors/api-error';
 import type { User } from '../generated/prisma/client';
+import { WorkerAvailabilityService } from '../locations/worker-availability.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { decideModeSwitch } from './mode-switch.rules';
 
 /** Interruptor empleador / trabajador (R1.5, R1.6). */
 @Injectable()
 export class ModeService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly availability: WorkerAvailabilityService,
+  ) {}
 
   async switchMode(userId: string, target: 'employer' | 'worker'): Promise<User> {
     if (target === 'employer') {
-      return this.prisma.user.update({ where: { id: userId }, data: { activeMode: 'employer' } });
+      // En modo empleador no recibe solicitudes: deja de estar disponible (ADR-0024).
+      return this.prisma.$transaction(async (tx) => {
+        await this.availability.markUnavailable(tx, userId);
+        return tx.user.update({ where: { id: userId }, data: { activeMode: 'employer' } });
+      });
     }
 
     // Condición atómica: solo pasa a worker si en este instante el perfil está aprobado.

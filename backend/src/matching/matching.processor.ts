@@ -3,6 +3,7 @@ import { Inject, Logger, type OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Job, Queue } from 'bullmq';
 import type { AppConfigService } from '../config/app-config';
+import { WorkerAvailabilityService } from '../locations/worker-availability.service';
 import { MATCHING_JOBS, QUEUES } from '../queues/queues';
 import { MatchingReconciler } from './matching.reconciler';
 
@@ -13,18 +14,24 @@ export class MatchingProcessor extends WorkerHost implements OnApplicationBootst
 
   constructor(
     private readonly reconciler: MatchingReconciler,
+    private readonly availability: WorkerAvailabilityService,
     @InjectQueue(QUEUES.matching) private readonly queue: Queue,
     @Inject(ConfigService) private readonly config: AppConfigService,
   ) {
     super();
   }
 
-  /** Programa el reconciliador como job repetible (uno solo aunque haya varias instancias). */
+  /** Jobs repetibles (uno solo aunque haya varias instancias del worker). */
   async onApplicationBootstrap(): Promise<void> {
     await this.queue.upsertJobScheduler(
       MATCHING_JOBS.reconcile,
       { every: this.config.get('MATCHING_RECONCILE_MS', { infer: true }) },
       { name: MATCHING_JOBS.reconcile },
+    );
+    await this.queue.upsertJobScheduler(
+      MATCHING_JOBS.sweepLocations,
+      { every: this.config.get('LOCATION_SWEEP_MS', { infer: true }) },
+      { name: MATCHING_JOBS.sweepLocations },
     );
   }
 
@@ -32,6 +39,8 @@ export class MatchingProcessor extends WorkerHost implements OnApplicationBootst
     switch (job.name) {
       case MATCHING_JOBS.reconcile:
         return this.reconciler.runOnce();
+      case MATCHING_JOBS.sweepLocations:
+        return this.availability.sweepStale();
       case MATCHING_JOBS.ring:
         // Los anillos llegan en el commit de matching; hasta entonces solo se registra.
         this.logger.log(`Solicitud ${job.data.requestId ?? '?'}: anillo ${job.data.ring ?? '?'}`);

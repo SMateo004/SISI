@@ -4,7 +4,7 @@ import { ApiError } from '../../common/errors/api-error';
 import { type AuthenticatedRequest, IS_PUBLIC_KEY } from '../decorators/auth.decorators';
 import { type Role, TokenService } from '../tokens/token.service';
 
-export interface AuthenticatedUser {
+export interface VerifiedAccess {
   id: string;
   role: Role;
   /** Vencimiento del token de acceso (ms Unix), si lo trae. */
@@ -18,7 +18,7 @@ export interface AuthenticatedUser {
 export async function authenticateAccessToken(
   tokens: TokenService,
   token: string | undefined,
-): Promise<AuthenticatedUser> {
+): Promise<VerifiedAccess> {
   if (!token) {
     throw new ApiError(HttpStatus.UNAUTHORIZED, 'UNAUTHENTICATED', 'Inicia sesión para continuar.');
   }

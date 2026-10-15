@@ -6,7 +6,12 @@ import { createContext, Script } from 'node:vm';
  * dentro de `vm` (V8 interrumpe el backtracking al vencer el timeout).
  */
 export const MAX_PATTERN_LENGTH = 100;
-export const SAVE_TEST_TIMEOUT_MS = 20;
+/**
+ * Tiempo por entrada adversaria al guardar. Un patrón catastrófico tarda segundos con 500
+ * caracteres; 100 ms (y un reintento) evita rechazar patrones sanos cuando la CPU está
+ * ocupada (pausas de GC, otros procesos).
+ */
+export const SAVE_TEST_TIMEOUT_MS = 100;
 export const MATCH_TIMEOUT_MS = 50;
 export const REGEX_FLAGS = 'iu';
 
@@ -76,8 +81,11 @@ export function checkPattern(pattern: string): PatternCheck {
     };
   }
   for (const input of adversarialInputs(pattern)) {
-    const result = runWithTimeout(() => regex.test(input), SAVE_TEST_TIMEOUT_MS);
-    if (!result.ok) {
+    // Solo se rechaza si se pasa del tiempo dos veces seguidas (no por una pausa puntual).
+    const slow = [1, 2].every(
+      () => !runWithTimeout(() => regex.test(input), SAVE_TEST_TIMEOUT_MS).ok,
+    );
+    if (slow) {
       return { ok: false, reason: 'El patrón es demasiado lento con ciertos textos.' };
     }
   }

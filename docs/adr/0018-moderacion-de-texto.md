@@ -11,7 +11,7 @@ R3.3 y R9.2: las solicitudes con términos prohibidos (servicios sexuales, droga
 - `ModerationService.check(texto)` → `{ held, matches[], timedOut }`, independiente de solicitudes.
 - **Normalización** (`normalize.ts`): minúsculas, sin tildes (NFD), leet solo dentro de palabras (0→o, 1→i, 3→e, 4→a, 5→s, 7→t, @→a, $→s), letras repetidas colapsadas, y secuencias de ≥3 letras sueltas separadas por `. - _` o espacios se unen ("c.o.c.a" → "coca").
 - **Términos `word`**: palabra completa o frase sobre el texto normalizado; un `*` final permite sufijos (`marihuan*`). El término se normaliza igual que el texto.
-- **Términos `regex`**, al guardar (`checkPattern`): máx. 100 caracteres, compila con `iu`, rechaza referencias hacia atrás, lookaround y cuantificadores anidados, y se prueba contra entradas adversarias en `node:vm` con timeout de 20 ms.
+- **Términos `regex`**, al guardar (`checkPattern`): máx. 100 caracteres, compila con `iu`, rechaza referencias hacia atrás, lookaround y cuantificadores anidados, y se prueba contra entradas adversarias en `node:vm` con timeout de 100 ms; se rechaza solo si se excede dos veces seguidas (con 20 ms fallaba de forma intermitente bajo carga, corregido en la Fase 3).
 - **Al evaluar**: todas las regex corren en `vm` con timeout de 50 ms. Si se excede, el texto queda retenido (falla seguro) y se registra `timedOut`.
 - Términos compilados en memoria por instancia e invalidados con una versión en Redis (`moderation:terms:version`) que se incrementa al editarlos.
 - Admin: CRUD en `/admin/moderation-terms`; DELETE es baja lógica (`active=false`).

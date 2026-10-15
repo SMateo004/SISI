@@ -29,7 +29,9 @@ void main() {
     await tester.tap(find.byKey(const Key('mode-worker')));
     await tester.pumpAndSettle();
     expect(me.user.activeMode, ActiveMode.worker);
-    expect(find.text('Estás en modo trabajador'), findsOneWidget);
+    // En modo trabajador: toggle "Disponible" y bandeja de solicitudes.
+    expect(find.byKey(const Key('availability-switch')), findsOneWidget);
+    expect(find.byKey(const Key('incoming-empty')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('mode-employer')));
     await tester.pumpAndSettle();

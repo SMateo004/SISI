@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/http/api_exception.dart';
 import '../../../core/router/routes.dart';
+import '../../matching/presentation/worker_home_panel.dart';
 import '../../mode_switch/presentation/mode_switch.dart';
 import '../../profile/application/current_user.dart';
 import '../../profile/domain/app_user.dart';
@@ -72,30 +73,7 @@ class _HomeBody extends StatelessWidget {
             ),
           ),
         if (isWorker)
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.handyman_outlined,
-                    size: 32,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Estás en modo trabajador',
-                    style: theme.textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Muy pronto recibirás aquí las solicitudes cercanas de tus categorías.',
-                  ),
-                ],
-              ),
-            ),
-          )
+          const WorkerHomePanel()
         else ...[
           // R1.2/R3: solo el modo empleador publica solicitudes.
           Card(

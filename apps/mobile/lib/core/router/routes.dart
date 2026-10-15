@@ -11,8 +11,16 @@ abstract final class Routes {
   static const myRequests = '/solicitudes';
   static const newRequest = '/solicitudes/nueva';
   static const requestDetailPath = '/solicitudes/:id';
+  static const incomingRequestPath = '/trabajo/solicitudes/:id';
+  static const jobContactPath = '/trabajos/:id/contacto';
 
   static String requestDetail(String id) => '/solicitudes/$id';
+
+  /// Solicitud que le llegó al trabajador (también la abre el push).
+  static String incomingRequest(String id) => '/trabajo/solicitudes/$id';
+
+  /// Contacto revelado tras la elección (R5.4).
+  static String jobContact(String jobId) => '/trabajos/$jobId/contacto';
 
   static String otp(String phoneDigits, int resendInSec) =>
       '$otpPath?telefono=$phoneDigits&espera=$resendInSec';

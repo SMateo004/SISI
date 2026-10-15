@@ -6,6 +6,8 @@ import '../../features/auth/presentation/otp_screen.dart';
 import '../../features/auth/presentation/phone_screen.dart';
 import '../../features/health/presentation/health_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
+import '../../features/matching/presentation/incoming_request_screen.dart';
+import '../../features/offers/presentation/job_contact_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/requests/presentation/my_requests_screen.dart';
 import '../../features/requests/presentation/new_request_flow_screen.dart';
@@ -89,6 +91,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           requestId: state.pathParameters['id']!,
           notice: state.extra as String?,
         ),
+      ),
+      GoRoute(
+        path: Routes.incomingRequestPath,
+        builder: (context, state) =>
+            IncomingRequestScreen(requestId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: Routes.jobContactPath,
+        builder: (context, state) =>
+            JobContactScreen(jobId: state.pathParameters['id']!),
       ),
     ],
   );

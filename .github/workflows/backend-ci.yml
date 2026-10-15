@@ -6,6 +6,9 @@ on:
     paths: ["backend/**", ".github/workflows/backend-ci.yml"]
   pull_request:
     paths: ["backend/**", ".github/workflows/backend-ci.yml"]
+  # Corrida manual (p. ej. tras crear el repositorio: el primer push de una rama nueva
+  # no evalúa los filtros de paths).
+  workflow_dispatch:
 
 concurrency:
   group: backend-ci-${{ github.ref }}

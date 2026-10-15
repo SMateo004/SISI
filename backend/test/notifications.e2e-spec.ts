@@ -116,12 +116,13 @@ describe('Notificaciones y push (e2e, ADR-0027)', () => {
       readAt: null,
     });
 
-    const sent = push.sent.find((s) => s.message.data.requestId === id);
-    expect(sent?.tokens.sort()).toEqual([
-      'invalid-tok-empleador-0001',
-      'tok-empleador-valido-0001',
-    ]);
-    expect(sent?.message.data.route).toBe(`/solicitudes/${id}`);
+    // El push sale después de guardar el aviso: se espera a que se envíe.
+    const sent = await waitFor(
+      () => Promise.resolve(push.sent.find((s) => s.message.data.requestId === id)),
+      { what: 'el push al empleador' },
+    );
+    expect(sent.tokens.sort()).toEqual(['invalid-tok-empleador-0001', 'tok-empleador-valido-0001']);
+    expect(sent.message.data.route).toBe(`/solicitudes/${id}`);
     await waitFor(
       async () =>
         (await t.prisma.deviceToken.findUnique({ where: { token: 'invalid-tok-empleador-0001' } }))

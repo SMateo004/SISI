@@ -66,12 +66,18 @@ describe('Tiempo real: Socket.IO (e2e, ADR-0023)', () => {
     await sb.next('offer:closed');
     expect(sc.received).toHaveLength(0);
 
+    // El leave también viaja por Redis: se reintenta hasta que un aviso a la sala ya no llegue.
     emitter.leaveRequest('r-sala');
-    await new Promise((r) => setTimeout(r, 150));
-    sa.received.length = 0;
-    emitter.toRequest('r-sala', 'request:expired', { requestId: 'r-sala' });
-    await new Promise((r) => setTimeout(r, 150));
-    expect(sa.received).toHaveLength(0);
+    const expiredCount = () => sa.received.filter((r) => r.event === 'request:expired').length;
+    await waitFor(
+      async () => {
+        const before = expiredCount();
+        emitter.toRequest('r-sala', 'request:expired', { requestId: 'r-sala' });
+        await new Promise((r) => setTimeout(r, 150));
+        return expiredCount() === before ? true : undefined;
+      },
+      { what: 'que la sala quede vacía' },
+    );
   });
 
   it('corta el socket cuando vence el token de acceso', async () => {

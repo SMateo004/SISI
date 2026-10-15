@@ -61,6 +61,13 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
 
   async handleConnection(socket: SisiSocket): Promise<void> {
     const { user } = socket.data;
+    // Primero, sin esperar nada: el cliente ya se considera conectado y un aviso a su
+    // sala (o un socketsJoin) podría llegar mientras se consulta la base.
+    void socket.join(rooms.user(user.id));
+    if (user.expiresAt !== undefined) {
+      const ms = Math.max(user.expiresAt - Date.now(), 0);
+      socket.data.expiryTimer = setTimeout(() => socket.disconnect(true), ms);
+    }
     const open = await this.prisma.serviceRequest.findMany({
       where: {
         status: { in: ['buscando', 'con_ofertas'] },
@@ -69,11 +76,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       select: { id: true },
       take: 50,
     });
-    await socket.join([rooms.user(user.id), ...open.map((r) => rooms.request(r.id))]);
-    if (user.expiresAt !== undefined) {
-      const ms = Math.max(user.expiresAt - Date.now(), 0);
-      socket.data.expiryTimer = setTimeout(() => socket.disconnect(true), ms);
-    }
+    if (open.length > 0) await socket.join(open.map((r) => rooms.request(r.id)));
   }
 
   handleDisconnect(socket: SisiSocket): void {

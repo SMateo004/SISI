@@ -17,6 +17,7 @@ import {
   loginAsAdmin,
   type TestApp,
   uniqueIp,
+  uniqueSuffix,
 } from './utils/test-app';
 import { fakeJpeg, putPresigned } from './utils/upload';
 
@@ -300,7 +301,7 @@ describe('Solicitudes de servicio (e2e)', () => {
 
       const otherCity = await t.prisma.city.create({
         data: {
-          slug: `otra-${Date.now()}`,
+          slug: `otra-${uniqueSuffix()}`,
           name: 'Otra',
           countryCode: 'BO',
           timezone: 'America/La_Paz',
@@ -318,7 +319,7 @@ describe('Solicitudes de servicio (e2e)', () => {
     it('con polígono de servicio manda el polígono (PostGIS)', async () => {
       const city = await t.prisma.city.create({
         data: {
-          slug: `poly-${Date.now()}`,
+          slug: `poly-${uniqueSuffix()}`,
           name: 'Con polígono',
           countryCode: 'BO',
           timezone: 'America/La_Paz',

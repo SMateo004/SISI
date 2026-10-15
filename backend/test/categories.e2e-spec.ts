@@ -7,6 +7,7 @@ import {
   login,
   loginAsAdmin,
   type TestApp,
+  uniqueSuffix,
 } from './utils/test-app';
 
 describe('Categorías por ciudad (e2e)', () => {
@@ -48,7 +49,7 @@ describe('Categorías por ciudad (e2e)', () => {
   it('no lista categorías inactivas ni las de otra ciudad', async () => {
     const otherCity = await t.prisma.city.create({
       data: {
-        slug: `otra-${Date.now()}`,
+        slug: `otra-${uniqueSuffix()}`,
         name: 'Otra ciudad',
         countryCode: 'BO',
         timezone: 'America/La_Paz',

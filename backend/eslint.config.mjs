@@ -13,7 +13,8 @@ export default tseslint.config(
     languageOptions: {
       globals: { ...globals.node, ...globals.jest },
       parserOptions: {
-        projectService: true,
+        // scripts/*.mjs: utilidades de desarrollo en JS, fuera del tsconfig.
+        projectService: { allowDefaultProject: ['scripts/*.mjs'] },
         tsconfigRootDir: import.meta.dirname,
       },
     },

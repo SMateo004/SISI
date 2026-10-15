@@ -1,7 +1,14 @@
 import request from 'supertest';
 import { ModerationService } from '../src/moderation/moderation.service';
 import type { ModerationTermDto } from '../src/moderation/moderation-terms.controller';
-import { bearer, createTestApp, login, loginAsAdmin, type TestApp } from './utils/test-app';
+import {
+  bearer,
+  createTestApp,
+  login,
+  loginAsAdmin,
+  type TestApp,
+  uniqueSuffix,
+} from './utils/test-app';
 
 describe('Moderación (e2e)', () => {
   let t: TestApp;
@@ -47,7 +54,7 @@ describe('Moderación (e2e)', () => {
   describe('admin de términos', () => {
     it('agregar y desactivar un término se aplica de inmediato', async () => {
       const admin = await loginAsAdmin(t);
-      const word = `palabraprohibida${Date.now().toString(36)}`;
+      const word = `palabraprohibida${uniqueSuffix()}`;
       expect((await moderation.check(`texto con ${word}`)).held).toBe(false);
 
       const created = (

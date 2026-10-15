@@ -26,6 +26,7 @@ firebase-service-account*.json
 node_modules/
 dist/
 coverage/
+.e2e-runs/
 *.tsbuildinfo
 npm-debug.log*
 yarn-error.log*

@@ -1,12 +1,12 @@
 import { RateLimitStore } from '../src/common/rate-limit/rate-limit.store';
 import { RedisThrottlerStorage } from '../src/common/rate-limit/redis-throttler.storage';
-import { createTestApp, type TestApp } from './utils/test-app';
+import { createTestApp, type TestApp, uniqueSuffix } from './utils/test-app';
 
 /** Scripts Lua del RateLimitStore contra Redis real. */
 describe('RateLimitStore (e2e, Redis real)', () => {
   let t: TestApp;
   let store: RateLimitStore;
-  const prefix = `test:${Date.now()}`;
+  const prefix = `test:${uniqueSuffix()}`;
 
   beforeAll(async () => {
     t = await createTestApp();

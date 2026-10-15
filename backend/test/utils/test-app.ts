@@ -9,6 +9,7 @@ import type { LoginResponseDto } from '../../src/auth/dto/auth.dto';
 import { OTP_PROVIDER, type OtpProvider } from '../../src/auth/otp/otp-provider';
 import { PrismaService } from '../../src/prisma/prisma.service';
 import { REDIS_CLIENT } from '../../src/redis/redis.constants';
+import { uniqueIp, uniquePhone, uniqueSuffix } from './unique';
 
 export interface TestApp {
   app: INestApplication<App>;
@@ -37,17 +38,7 @@ export async function createTestApp(): Promise<TestApp> {
   return { app, prisma: app.get(PrismaService), codes, close: () => app.close() };
 }
 
-let ipCounter = 0;
-/** IP distinta por prueba (vía X-Forwarded-For) para que los límites por IP no se crucen. */
-export const uniqueIp = (): string =>
-  `10.${process.pid % 250}.${Math.floor(ipCounter / 250)}.${(ipCounter++ % 250) + 1}`;
-
-let phoneCounter = 0;
-/** Celular boliviano único por prueba (7XXXXXXX). */
-export const uniquePhone = (): string => {
-  const n = (Date.now() % 1_000_000) * 10 + (phoneCounter++ % 10);
-  return `7${String(n).padStart(7, '0').slice(-7)}`;
-};
+export { uniqueIp, uniquePhone, uniqueSuffix } from './unique';
 
 export const e164 = (local: string): string => `+591${local}`;
 
@@ -84,7 +75,7 @@ export async function createCategory(
 ): Promise<{ id: string; slug: string }> {
   const cityId =
     opts.cityId ?? (await t.prisma.city.findUniqueOrThrow({ where: { slug: 'santa-cruz' } })).id;
-  const slug = `e2e-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+  const slug = `e2e-${uniqueSuffix()}`;
   return t.prisma.category.create({
     data: {
       slug,

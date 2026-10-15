@@ -1,14 +1,21 @@
 import request from 'supertest';
 import type { FeatureFlagDto } from '../src/feature-flags/feature-flags.controller';
 import { FeatureFlagsService } from '../src/feature-flags/feature-flags.service';
-import { bearer, createTestApp, login, loginAsAdmin, type TestApp } from './utils/test-app';
+import {
+  bearer,
+  createTestApp,
+  login,
+  loginAsAdmin,
+  type TestApp,
+  uniqueSuffix,
+} from './utils/test-app';
 
 describe('Feature flags (e2e)', () => {
   let t: TestApp;
   let flags: FeatureFlagsService;
   let santaCruzId: string;
   const server = () => t.app.getHttpServer();
-  const key = () => `e2e.flag-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  const key = () => `e2e.flag-${uniqueSuffix()}`;
 
   beforeAll(async () => {
     t = await createTestApp();

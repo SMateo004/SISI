@@ -129,11 +129,15 @@ export class OffersService {
       const existing = await tx.offer.findUnique({
         where: { requestId_workerId: { requestId, workerId } },
       });
-      if (existing && existing.status !== 'activa') throw offersClosed();
+      // Una retirada se puede volver a enviar; una aceptada o cerrada, no.
+      if (existing && existing.status !== 'activa' && existing.status !== 'retirada') {
+        throw offersClosed();
+      }
       const saved = existing
         ? await tx.offer.update({
             where: { id: existing.id },
             data: {
+              status: 'activa',
               type: dto.type,
               amountBs,
               etaMin,
@@ -232,6 +236,51 @@ export class OffersService {
       jobId: chosen ? (r.job?.id ?? null) : null,
       notifiedAt: notification.notifiedAt.toISOString(),
     };
+  }
+
+  /**
+   * Retirar la oferta activa mientras el empleador no eligió (Fase 4). Si era la única, la
+   * solicitud vuelve a buscando y el matching sigue (lo retoma el worker).
+   */
+  async withdraw(workerId: string, requestId: string): Promise<MyOfferDto> {
+    const offer = await this.prisma.$transaction(async (tx) => {
+      const request = await lockRequest(tx, requestId);
+      const existing = request
+        ? await tx.offer.findUnique({ where: { requestId_workerId: { requestId, workerId } } })
+        : null;
+      if (!request || !existing) throw notFound();
+      if (existing.status !== 'activa') {
+        throw new ApiError(
+          HttpStatus.CONFLICT,
+          'NO_ACTIVE_OFFER',
+          'No tienes una oferta activa en esta solicitud.',
+        );
+      }
+      if (!OPEN.has(request.status)) throw offersClosed();
+      const withdrawn = await tx.offer.update({
+        where: { id: existing.id },
+        data: { status: 'retirada' },
+      });
+      const remaining = await tx.offer.count({ where: { requestId, status: 'activa' } });
+      const reopened = remaining === 0 && request.status === 'con_ofertas';
+      if (reopened) {
+        // Sin plazo de elección pendiente y con un cierre nuevo (ADR-0025).
+        await this.status.apply(
+          requestId,
+          'LAST_OFFER_WITHDRAWN',
+          workerId,
+          { data: { expiresAt: null, closeSeq: request.closeSeq + 1 } },
+          tx,
+        );
+      }
+      await this.outbox.add(tx, 'offer.withdrawn', requestId, {
+        requestId,
+        offerId: withdrawn.id,
+        reopened,
+      });
+      return withdrawn;
+    });
+    return toMyOffer(offer);
   }
 
   // ---- Empleador ----
@@ -357,7 +406,7 @@ function toMyOffer(o: {
   type: 'accept' | 'counter';
   amountBs: { toFixed(n: number): string };
   etaMin: number;
-  status: 'activa' | 'aceptada' | 'cerrada';
+  status: 'activa' | 'aceptada' | 'cerrada' | 'retirada';
   revision: number;
   updatedAt: Date;
 }): MyOfferDto {

@@ -19,6 +19,7 @@ export type RequestStatus = (typeof REQUEST_STATUSES)[number];
  * RELEASE / REJECT: el admin con una retenida. REJECT termina en cancelada (sin estados nuevos).
  * CANCEL: el empleador mientras no esté asignada.
  * RECEIVE_OFFER / ASSIGN / EXPIRE: matching y ofertas (Fase 3).
+ * LAST_OFFER_WITHDRAWN: el trabajador retira la única oferta activa; vuelve a buscar (Fase 4).
  */
 export const REQUEST_EVENTS = [
   'PUBLISH_CLEAN',
@@ -29,6 +30,7 @@ export const REQUEST_EVENTS = [
   'RECEIVE_OFFER',
   'ASSIGN',
   'EXPIRE',
+  'LAST_OFFER_WITHDRAWN',
 ] as const;
 export type RequestEvent = (typeof REQUEST_EVENTS)[number];
 
@@ -46,6 +48,7 @@ const TRANSITIONS: Record<RequestEvent, Partial<Record<RequestStatus, RequestSta
   RECEIVE_OFFER: { buscando: 'con_ofertas' },
   ASSIGN: { con_ofertas: 'asignada' },
   EXPIRE: { buscando: 'expirada', con_ofertas: 'expirada' },
+  LAST_OFFER_WITHDRAWN: { con_ofertas: 'buscando' },
 };
 
 const MESSAGES: Partial<Record<RequestEvent, string>> = {

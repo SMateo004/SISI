@@ -543,6 +543,8 @@ enum OfferStatus {
   activa
   aceptada
   cerrada
+  /// El trabajador la retiró antes de que el empleador eligiera (Fase 4).
+  retirada
 
   @@map("offer_status")
 }

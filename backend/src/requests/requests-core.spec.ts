@@ -25,6 +25,8 @@ const EXPECTED: [RequestStatus, RequestEvent, RequestStatus][] = [
   ['con_ofertas', 'ASSIGN', 'asignada'],
   ['buscando', 'EXPIRE', 'expirada'],
   ['con_ofertas', 'EXPIRE', 'expirada'],
+  // Fase 4: si se retira la única oferta, vuelve a buscar.
+  ['con_ofertas', 'LAST_OFFER_WITHDRAWN', 'buscando'],
 ];
 
 describe('máquina de estados de la solicitud (R3.4)', () => {

@@ -26,6 +26,8 @@ export interface OutboxPayloads {
   'request.expired': { requestId: string };
   /** Llegó o se reemplazó una oferta (R5.2): offer:new y push al empleador. */
   'offer.created': { requestId: string; offerId: string; revision: number };
+  /** El trabajador retiró su oferta; si era la única, la solicitud volvió a buscando. */
+  'offer.withdrawn': { requestId: string; offerId: string; reopened: boolean };
   /** El empleador eligió una oferta (R5.4): request:assigned, offer:closed y aviso al elegido. */
   'request.assigned': { requestId: string; jobId: string };
 }

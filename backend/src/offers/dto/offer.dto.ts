@@ -41,8 +41,8 @@ export class MyOfferDto {
   @ApiProperty({ enum: ['accept', 'counter'] }) type!: 'accept' | 'counter';
   @ApiProperty({ example: '180.00' }) amountBs!: string;
   @ApiProperty() etaMin!: number;
-  @ApiProperty({ enum: ['activa', 'aceptada', 'cerrada'] }) status!:
-    'activa' | 'aceptada' | 'cerrada';
+  @ApiProperty({ enum: ['activa', 'aceptada', 'cerrada', 'retirada'] }) status!:
+    'activa' | 'aceptada' | 'cerrada' | 'retirada';
   @ApiProperty() revision!: number;
   @ApiProperty({ type: String, format: 'date-time' }) updatedAt!: string;
 }

@@ -84,6 +84,12 @@ Para: los trabajadores notificados u ofertantes. Ya no pueden ofertar, o su ofer
 
 `reason`: `elegida_otra` (el empleador eligió otra oferta), `cancelada` (el empleador canceló) o `expirada`.
 
+También va **al empleador** con `reason: "retirada"` y `offerId` cuando un trabajador retira su oferta (Fase 4). Si era la única, la solicitud vuelve a `buscando`.
+
+```json
+{ "requestId": "uuid", "reason": "retirada", "offerId": "uuid" }
+```
+
 ## Reservados (fases siguientes)
 
 `job:status`, `job:location`, `chat:message` (Fase 4), `billing:due` (Fase 5), `account:blocked`, `account:unblocked`.

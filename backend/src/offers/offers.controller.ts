@@ -1,4 +1,13 @@
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -79,6 +88,22 @@ export class OffersController {
     @Body() dto: CreateOfferDto,
   ): Promise<MyOfferDto> {
     return this.offers.createOrReplace(current.id, id, dto);
+  }
+
+  @Delete('requests/:id/offers/mine')
+  @ApiOperation({
+    summary: 'Retirar mi oferta',
+    description:
+      'Mientras el empleador no haya elegido. Si era la única, la solicitud vuelve a buscar trabajadores.',
+  })
+  @ApiOkResponse({ type: MyOfferDto })
+  @ApiNotFoundResponse({ type: ApiErrorBody, description: 'REQUEST_NOT_FOUND' })
+  @ApiConflictResponse({ type: ApiErrorBody, description: 'NO_ACTIVE_OFFER u OFFERS_CLOSED' })
+  withdraw(
+    @CurrentUser() current: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<MyOfferDto> {
+    return this.offers.withdraw(current.id, id);
   }
 
   // ---- Empleador ----

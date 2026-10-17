@@ -250,6 +250,57 @@ describe('Ofertas, asignación y contacto (e2e, ADR-0026)', () => {
     expect(late.body).toMatchObject({ code: 'OFFERS_CLOSED' });
   });
 
+  it('retirar la única oferta vuelve a buscando y avisa al empleador; se puede volver a ofertar', async () => {
+    const category = await createCategory(t);
+    const a = await workerAt(category.slug, 300);
+    const b = await workerAt(category.slug, 600);
+    const employer = await login(t);
+    const employerLive = await socketOf(employer);
+    const id = await publishRequest(t, employer.accessToken, { categoryId: category.id });
+    await waitFor(async () => ((await notified(id)).length === 2 ? true : undefined), {
+      what: 'el anillo 1',
+    });
+    const withdraw = (w: TestWorker) =>
+      request(server())
+        .delete(`/requests/${id}/offers/mine`)
+        .set(...bearer(w.accessToken));
+    const status = async () =>
+      (
+        (
+          await request(server())
+            .get(`/requests/${id}`)
+            .set(...bearer(employer.accessToken))
+        ).body as RequestDto
+      ).status;
+
+    const first = (await offer(a, id, { type: 'accept' }).expect(200)).body as MyOfferDto;
+    await offer(b, id, { type: 'counter', amountBs: '170' }).expect(200);
+    expect(await status()).toBe('con_ofertas');
+
+    // Con dos ofertas, retirar una no cambia el estado.
+    const gone = (await withdraw(a).expect(200)).body as MyOfferDto;
+    expect(gone).toMatchObject({ id: first.id, status: 'retirada' });
+    expect(await employerLive.next('offer:closed', (p) => p.requestId === id)).toEqual({
+      requestId: id,
+      reason: 'retirada',
+      offerId: first.id,
+    });
+    expect(await status()).toBe('con_ofertas');
+    expect((await offersOf(employer.accessToken, id)).map((o) => o.amountBs)).toEqual(['170.00']);
+
+    // Retirar la última: vuelve a buscando.
+    await withdraw(b).expect(200);
+    expect(await status()).toBe('buscando');
+    const again = await withdraw(b).expect(409);
+    expect(again.body).toMatchObject({ code: 'NO_ACTIVE_OFFER' });
+
+    // Puede volver a ofertar; la solicitud pasa otra vez a con_ofertas.
+    const back = (await offer(a, id, { type: 'counter', amountBs: '160' }).expect(200))
+      .body as MyOfferDto;
+    expect(back).toMatchObject({ id: first.id, status: 'activa', amountBs: '160.00' });
+    expect(await status()).toBe('con_ofertas');
+  });
+
   it('dos aceptaciones simultáneas: solo una gana', async () => {
     const category = await createCategory(t);
     const a = await workerAt(category.slug, 300);

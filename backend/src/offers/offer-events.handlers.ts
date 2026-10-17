@@ -54,6 +54,20 @@ export class OfferEventsHandlers implements OnModuleInit {
       });
     });
 
+    // Retiró su oferta: el empleador deja de verla; si era la única, sigue el matching.
+    this.registry.on('offer.withdrawn', async ({ payload }) => {
+      const request = await this.prisma.serviceRequest.findUniqueOrThrow({
+        where: { id: payload.requestId },
+        select: { employerId: true },
+      });
+      this.realtime.toUser(request.employerId, 'offer:closed', {
+        requestId: payload.requestId,
+        reason: 'retirada',
+        offerId: payload.offerId,
+      });
+      if (payload.reopened) await this.matching.resume(payload.requestId);
+    });
+
     this.registry.on('request.assigned', async ({ outboxId, payload }) => {
       const job = await this.prisma.job.findUniqueOrThrow({
         where: { id: payload.jobId },

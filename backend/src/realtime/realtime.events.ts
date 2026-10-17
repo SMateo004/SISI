@@ -16,7 +16,7 @@ export const RealtimeEvents = {
 export type RealtimeEventName = (typeof RealtimeEvents)[keyof typeof RealtimeEvents];
 
 /** Motivo por el que se cierra una oferta (o la posibilidad de ofertar). */
-export type OfferClosedReason = 'elegida_otra' | 'cancelada' | 'expirada';
+export type OfferClosedReason = 'elegida_otra' | 'cancelada' | 'expirada' | 'retirada';
 
 export interface RealtimePayloads {
   /** Al trabajador notificado: hay una solicitud cerca. Detalle por GET /worker/requests/:id. */
@@ -46,8 +46,11 @@ export interface RealtimePayloads {
     etaMin: number;
     worker: { shortName: string; ratingAvg: string; ratingCount: number };
   };
-  /** Al trabajador: ya no puede ofertar o su oferta se cerró. */
-  'offer:closed': { requestId: string; reason: OfferClosedReason };
+  /**
+   * Al trabajador: ya no puede ofertar o su oferta se cerró. Al empleador, con `retirada`:
+   * un trabajador retiró su oferta (`offerId`).
+   */
+  'offer:closed': { requestId: string; reason: OfferClosedReason; offerId?: string };
 }
 
 export const rooms = {

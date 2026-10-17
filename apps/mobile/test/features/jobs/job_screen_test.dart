@@ -294,4 +294,26 @@ void main() {
       expect(find.textContaining('Revisaremos tu reporte'), findsOneWidget);
     });
   });
+
+  testWidgets('el trabajo activo aparece en el inicio al ser elegido', (
+    tester,
+  ) async {
+    final realtime = FakeRealtimeClient();
+    final jobs = FakeJobsRepository();
+    await pumpSisiApp(
+      tester,
+      storedTokens: testTokens,
+      me: FakeMeRepository(user: testUser(mode: ActiveMode.worker)),
+      jobs: jobs,
+      realtime: realtime,
+    );
+    expect(find.byKey(const Key('active-job')), findsNothing);
+    jobs.jobs = [testJob()];
+    realtime.emit(RealtimeEvents.requestAssigned, {
+      'requestId': 'r1',
+      'jobId': 'job-1',
+    });
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('active-job')), findsOneWidget);
+  });
 }

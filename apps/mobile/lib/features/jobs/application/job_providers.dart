@@ -30,7 +30,12 @@ final jobHistoryProvider = FutureProvider.autoDispose.family<JobPage, String>((
 ) async {
   ref.watch(realtimeResyncProvider);
   ref.listen(realtimeEventsProvider, (_, next) {
-    if (next.value?.name == RealtimeEvents.jobStatus) ref.invalidateSelf();
+    // Un trabajo nuevo llega con request:assigned; los cambios, con job:status.
+    final name = next.value?.name;
+    if (name == RealtimeEvents.jobStatus ||
+        name == RealtimeEvents.requestAssigned) {
+      ref.invalidateSelf();
+    }
   });
   return ref.watch(jobsRepositoryProvider).list(role: role);
 }, retry: (retryCount, error) => null);

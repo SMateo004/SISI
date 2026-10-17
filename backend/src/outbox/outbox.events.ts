@@ -38,6 +38,8 @@ export interface OutboxPayloads {
     to: string;
     actorRole: string;
   };
+  /** Mensaje de chat entregado (no retenido): chat:message y push si no está conectado. */
+  'chat.message_sent': { jobId: string; messageId: string };
   /**
    * El trabajo terminó (R6.3, ADR-0030). Lo consume la Fase 5 para el ledger; montos como
    * texto con 2 decimales.

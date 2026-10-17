@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ChatEventsHandlers } from '../chat/chat-events.handlers';
 import { AppConfigModule } from '../config/config.module';
 import { FeatureFlagsModule } from '../feature-flags/feature-flags.module';
 import { JobEventsHandlers } from '../jobs/job-events.handlers';
@@ -40,6 +41,7 @@ import { RequestStatusModule } from '../requests/request-status.module';
     RequestNotificationsHandlers,
     OfferEventsHandlers,
     JobEventsHandlers,
+    ChatEventsHandlers,
   ],
 })
 export class WorkerModule {}

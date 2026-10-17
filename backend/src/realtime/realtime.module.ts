@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
+import { PresenceService } from './presence.service';
 import { RealtimeEmitter } from './realtime.emitter';
 import { RealtimeGateway } from './realtime.gateway';
 
@@ -10,10 +11,10 @@ import { RealtimeGateway } from './realtime.gateway';
 })
 export class RealtimeModule {}
 
-/** Emisor de eventos de tiempo real (API o worker) por Redis (ADR-0023). */
+/** Emisor de eventos de tiempo real y presencia (API o worker) por Redis (ADR-0023, ADR-0031). */
 @Global()
 @Module({
-  providers: [RealtimeEmitter],
-  exports: [RealtimeEmitter],
+  providers: [RealtimeEmitter, PresenceService],
+  exports: [RealtimeEmitter, PresenceService],
 })
 export class RealtimeEmitterModule {}

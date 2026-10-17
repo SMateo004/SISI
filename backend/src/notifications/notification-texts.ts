@@ -20,6 +20,7 @@ export interface NotificationInputs {
   job_completed: { jobId: string; netBs: string; commissionBs: string; auto: boolean };
   job_disputed: { jobId: string };
   job_resolved: { jobId: string; status: string };
+  chat_message: { jobId: string; senderShortName: string; preview: string };
   job_cancelled: {
     jobId: string;
     requestId: string;
@@ -118,6 +119,11 @@ const RENDER: { [T in NotificationType]: (d: NotificationInputs[T]) => RenderedN
     body:
       d.status === 'terminado' ? 'El trabajo quedó como terminado.' : 'El trabajo quedó cancelado.',
     route: `/trabajos/${d.jobId}`,
+  }),
+  chat_message: (d) => ({
+    title: `Mensaje de ${d.senderShortName}`,
+    body: d.preview,
+    route: `/trabajos/${d.jobId}/chat`,
   }),
   job_cancelled: (d) => ({
     title:

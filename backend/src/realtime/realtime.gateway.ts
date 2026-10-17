@@ -1,3 +1,4 @@
+import type { OnModuleDestroy } from '@nestjs/common';
 import {
   type OnGatewayConnection,
   type OnGatewayDisconnect,
@@ -9,6 +10,7 @@ import { authenticateAccessToken, type VerifiedAccess } from '../auth/guards/jwt
 import { TokenService } from '../auth/tokens/token.service';
 import { ApiError } from '../common/errors/api-error';
 import { PrismaService } from '../prisma/prisma.service';
+import { PresenceService } from './presence.service';
 import { rooms } from './realtime.events';
 
 interface SocketData {
@@ -29,16 +31,34 @@ type SisiSocket = Socket<
  * - Cada socket entra a `user:{id}` y a `request:{id}` de las solicitudes abiertas en las que
  *   participa (como empleador o trabajador notificado): reconectar no lo saca de sus salas.
  * - Al vencer el token, el servidor corta el socket: la app reconecta con uno nuevo.
+ * - Registra la presencia del usuario en Redis con un latido (ADR-0031).
  * El cliente no envía eventos: los cambios se hacen por REST.
  */
 @WebSocketGateway()
-export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class RealtimeGateway
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy
+{
+  private readonly local = new Map<string, string>();
+  private heartbeat?: NodeJS.Timeout;
+
   constructor(
     private readonly tokens: TokenService,
     private readonly prisma: PrismaService,
+    private readonly presence: PresenceService,
   ) {}
 
   afterInit(server: Server): void {
+    // Renueva la presencia de los sockets de esta instancia antes de que venza.
+    this.heartbeat = setInterval(
+      () => {
+        void this.presence.touch(
+          [...this.local].map(([socketId, userId]) => ({ socketId, userId })),
+        );
+      },
+      Math.max(Math.floor(this.presence.ttlMs / 3), 1000),
+    );
+    this.heartbeat.unref();
+
     server.use((socket, next) => {
       const auth = socket.handshake.auth as { token?: unknown };
       const token = typeof auth.token === 'string' ? auth.token : undefined;
@@ -64,6 +84,8 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     // Primero, sin esperar nada: el cliente ya se considera conectado y un aviso a su
     // sala (o un socketsJoin) podría llegar mientras se consulta la base.
     void socket.join(rooms.user(user.id));
+    this.local.set(socket.id, user.id);
+    await this.presence.touch([{ userId: user.id, socketId: socket.id }]);
     if (user.expiresAt !== undefined) {
       const ms = Math.max(user.expiresAt - Date.now(), 0);
       socket.data.expiryTimer = setTimeout(() => socket.disconnect(true), ms);
@@ -81,5 +103,11 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
 
   handleDisconnect(socket: SisiSocket): void {
     clearTimeout(socket.data.expiryTimer);
+    this.local.delete(socket.id);
+    void this.presence.leave(socket.data.user.id, socket.id);
+  }
+
+  onModuleDestroy(): void {
+    clearInterval(this.heartbeat);
   }
 }

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
+import { ChatModule } from './chat/chat.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { RateLimitGuard } from './common/rate-limit/rate-limit.guard';
@@ -46,6 +47,7 @@ import { WorkersModule } from './workers/workers.module';
     NotificationsModule,
     OffersModule,
     JobsModule,
+    ChatModule,
     RealtimeModule,
     RealtimeEmitterModule,
   ],

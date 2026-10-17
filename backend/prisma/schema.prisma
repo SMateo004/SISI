@@ -639,11 +639,41 @@ model Job {
   worker   User           @relation("JobWorker", fields: [workerId], references: [id])
   employer User           @relation("JobEmployer", fields: [employerId], references: [id])
   events   JobEvent[]
+  messages ChatMessage[]
 
   /// Además: índice único parcial jobs_one_active_per_worker (migración 20261017020000).
   @@index([workerId, createdAt])
   @@index([employerId, createdAt])
   @@map("jobs")
+}
+
+enum ChatMessageStatus {
+  entregado
+  /// Coincidió con la moderación (R9.2): no se entrega; solo lo ve quien lo envió.
+  retenido
+
+  @@map("chat_message_status")
+}
+
+/// Chat del trabajo (ADR-0031): solo texto, moderado mensaje por mensaje.
+model ChatMessage {
+  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobId             String            @map("job_id") @db.Uuid
+  cityId            String            @map("city_id") @db.Uuid
+  senderId          String            @map("sender_id") @db.Uuid
+  body              String
+  status            ChatMessageStatus
+  /// Términos que coincidieron (solo para el admin).
+  moderationMatches Json?             @map("moderation_matches")
+  /// Lo leyó el destinatario.
+  readAt            DateTime?         @map("read_at") @db.Timestamptz(3)
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  job Job @relation(fields: [jobId], references: [id])
+
+  @@index([jobId, createdAt])
+  @@index([status, createdAt])
+  @@map("chat_messages")
 }
 
 /// Historial del trabajo (ADR-0029). Append-only: un trigger rechaza UPDATE y DELETE.

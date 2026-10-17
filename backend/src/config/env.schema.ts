@@ -114,6 +114,10 @@ export const envSchema = z
     JOB_AUTOCONFIRM_MS: positiveInt(86_400_000),
     /** job:location al empleador como máximo cada N ms (ADR-0029). */
     JOB_LOCATION_EMIT_MS: positiveInt(5000),
+    /** El chat sigue abierto N ms después de terminado o cancelado; luego, solo lectura. */
+    JOB_CHAT_OPEN_AFTER_MS: positiveInt(86_400_000),
+    /** Presencia de un socket en Redis (se renueva con un latido; ADR-0031). */
+    PRESENCE_TTL_MS: positiveInt(60_000),
     OUTBOX_CLEANUP_MS: positiveInt(86_400_000),
 
     // Matching por anillos (R4, ADR-0025). Valores en propuesta: docs/pendientes.md.
@@ -147,6 +151,8 @@ export const envSchema = z
     OFFER_COUNTER_MAX_FACTOR: z.coerce.number().positive().default(3),
     RATE_OFFER_PER_MIN: positiveInt(10),
     RATE_OFFER_IP_PER_MIN: positiveInt(60),
+    /** Mensajes de chat por usuario (ADR-0031). */
+    RATE_CHAT_PER_MIN: positiveInt(30),
 
     // Ubicación y disponibilidad del trabajador (ADR-0024). Propuestas en docs/pendientes.md.
     WORKER_LOCATION_PERSIST_MS: positiveInt(30_000),

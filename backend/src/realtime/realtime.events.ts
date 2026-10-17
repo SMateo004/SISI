@@ -13,6 +13,7 @@ export const RealtimeEvents = {
   offerClosed: 'offer:closed',
   jobStatus: 'job:status',
   jobLocation: 'job:location',
+  chatMessage: 'chat:message',
 } as const;
 
 export type RealtimeEventName = (typeof RealtimeEvents)[keyof typeof RealtimeEvents];
@@ -60,6 +61,14 @@ export interface RealtimePayloads {
   'job:status': { jobId: string; requestId: string; status: string; action: string };
   /** Al empleador, mientras el trabajador va en camino (con throttling). */
   'job:location': { jobId: string; latitude: number; longitude: number; at: string };
+  /** A las dos partes: mensaje de chat entregado (los retenidos no se emiten). */
+  'chat:message': {
+    jobId: string;
+    messageId: string;
+    senderId: string;
+    body: string;
+    createdAt: string;
+  };
 }
 
 export const rooms = {

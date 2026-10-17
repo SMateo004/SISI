@@ -102,6 +102,17 @@ Matching y ofertas (Fase 3): hacen falta **la API y el worker** corriendo (`npm 
 
 Para ver los anillos sin esperar 45 s, bajar `MATCHING_RING_WAIT_MS` en el `.env` local.
 
+Trabajo, chat y calificaciones (Fase 4), con las dos sesiones del paso anterior:
+
+1. Después de elegir, las dos partes ven **el trabajo** (también en el inicio y en "Mis trabajos"): contacto con **Llamar** y **WhatsApp**, chat y línea de tiempo.
+2. Trabajador: **Voy en camino**. Con la pantalla del trabajo abierta envía su ubicación cada 10 s; el empleador la ve en el mapa en vivo. Luego **Empecé el trabajo** y **Terminé el trabajo**.
+3. Empleador: **Confirmar que terminó** (o **Hubo un problema**). Si no responde, se confirma solo (`JOB_AUTOCONFIRM_MS`, 24 h; bajarlo en local para probar).
+4. Los dos califican. Cada calificación se ve cuando califican ambos. El trabajador ve en "Mis trabajos" el monto, la comisión y lo que recibe.
+5. Chat: un mensaje con un término prohibido no le llega a la otra parte; quien lo envió ve un aviso neutral.
+6. Cancelar en camino: cualquiera de los dos, con un motivo. El empleador puede **Volver a publicar**.
+
+Disputas, reportes y mensajes retenidos se revisan por API o con `dev-tools` (ver `docs/runbook.md`).
+
 ### 3. App (empleador + trabajador)
 
 ```bash

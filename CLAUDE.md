@@ -19,7 +19,9 @@ Lee docs/00-contexto-general-SISI.md, docs/01-reglas-de-negocio.md y docs/02-con
 - Límites de peticiones: reutiliza RateLimitStore / @RateLimit (ADR-0010).
 - El estado del trabajador solo cambia con WorkerStatusService.apply (ADR-0013).
 - Precio y comisión de una categoría siempre vía CategoryResolver (ADR-0016); el estado de una solicitud solo con RequestStatusService (ADR-0019).
-- Texto de usuarios (solicitudes, chat) se modera con ModerationService.check (ADR-0018).
+- El estado de un trabajo solo con JobStatusService.apply (ADR-0029); la comisión solo con commissionOf (HALF_UP, ADR-0030). job_events es append-only (trigger).
+- Un trabajador con un trabajo activo queda ocupado: fuera del matching y sin poder ofertar (ADR-0029).
+- Texto de usuarios (solicitudes, chat, notas de cancelación, comentarios de calificaciones y reportes) se modera con ModerationService.check (ADR-0018).
 - Eventos de dominio por outbox: OutboxService.add dentro de la misma transacción del cambio; nada de eventos en memoria (ADR-0022). Los handlers del worker deben ser idempotentes.
 - Tiempos de matching, outbox y ubicación siempre por configuración (los e2e usan milisegundos). Tiempo real: solo los eventos de doc 02 §6 (docs/realtime-events.md).
 - E2E: una corrida a la vez; identificadores con test/utils/unique.ts (nunca Date.now ni azar). Antes de cerrar una fase: npm run test:e2e:repeat -- 20 (ADR-0028).

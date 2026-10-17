@@ -38,6 +38,11 @@ node dist/scripts/dev-tools.js create-category --name "Plomería prueba" --min 8
 node dist/scripts/dev-tools.js make-admin --phone 70012345
 # Trabajador aprobado para pruebas, sin subir carnet ni selfie (pasa igual por SUBMIT + APPROVE):
 node dist/scripts/dev-tools.js quick-worker --phone 71111111 --categories plomeria,limpieza --transport moto --radius 10
+# Resolver una disputa de un trabajo (Fase 4): confirm = terminado con comisión; cancel = cancelado sin comisión.
+node dist/scripts/dev-tools.js resolve-dispute --job <uuid> --decision confirm --reason "Se verificó con las dos partes"
+# Resolver un reporte (Fase 4): --approve = válido (cuenta para la suspensión); --reject = descartado.
+node dist/scripts/dev-tools.js resolve-report --report <uuid> --approve --reason "Se verificó el mensaje"
+node dist/scripts/dev-tools.js resolve-report --report <uuid> --reject "No corresponde"
 ```
 
 En Windows, si el argumento lleva paréntesis u otros caracteres especiales, usar `node dist/scripts/dev-tools.js …` directamente: `npm run` en Windows pasa los argumentos por `cmd` y les agrega `^`.
@@ -107,3 +112,27 @@ WHERE status IN ('buscando', 'con_ofertas') ORDER BY published_at;
 - **Muchos 429 legítimos:** revisar `RATE_*` en Render (ADR-0010). Los contadores están en Redis con prefijo `rl:`; borrar una clave libera ese límite.
 - **Bird caído o rechazando:** la API responde 503 `OTP_SEND_FAILED` y el detalle queda en el log (`BirdOtpProvider`). Revisar el saldo y los destinos habilitados en Bird.
 - **Fallan las subidas en web:** revisar el CORS del bucket R2 (deben estar los dominios de Vercel).
+
+## Disputas, reportes y mensajes retenidos (Fase 4)
+
+Hasta la consola de la Fase 6, con un usuario admin (ver arriba cómo darle el rol):
+
+- **Disputas** ("Hubo un problema", ADR-0029): el trabajo queda en curso, sin autoconfirmación ni comisión.
+  ```bash
+  curl -H "Authorization: Bearer $TOKEN" "$API/admin/jobs/disputed"
+  curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+    -d '{"decision":"confirm","note":"Se verificó con las dos partes"}' "$API/admin/jobs/<id>/resolve"
+  ```
+  `confirm` lo deja terminado con comisión (emite `job.completed`); `cancel`, cancelado sin comisión y la solicitud cancelada. La nota queda en `job_events`.
+- **Reportes** (ADR-0033): `GET /admin/reports?status=pendiente` y `POST /admin/reports/<id>/resolve` con `{"valid": true, "resolution": "…"}`. Con 3 reportes válidos de personas distintas, el trabajador queda `suspendido_moderacion` (modo empleador). Si solo es empleador, se marca `users.moderation_flagged_at` y aparece en el log del API como aviso.
+- **Mensajes de chat retenidos** (ADR-0031): `GET /admin/chat/held` (no se entregan; solo los ve quien los envió).
+
+`job_events` es append-only: un trigger rechaza `UPDATE` y `DELETE` (para corregir algo, se agrega un evento nuevo).
+
+## Mantenimiento del worker
+
+El reconciliador (cada `MATCHING_RECONCILE_MS`) también:
+- autoconfirma los trabajos cuyo "Terminé" venció sin respuesta (respaldo del job `autoconfirm_{jobId}`);
+- publica las calificaciones ciegas cuyo plazo venció.
+
+Una vez por día (`OUTBOX_CLEANUP_MS`) se borran los eventos del outbox publicados hace más de `OUTBOX_RETENTION_DAYS` días.

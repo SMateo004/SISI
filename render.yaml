@@ -117,9 +117,11 @@ projects:
             plan: starter
             branch: develop
             rootDir: backend
-            # Corte semanal: domingo 23:59 hora de Bolivia (UTC-4) = lunes 03:59 UTC.
-            # Render interpreta el cron en UTC. Ver R7.2 y docs/pendientes.md.
-            schedule: "59 3 * * 1"
+            # Puesta al día de cobros cada hora (ADR-0036): cierra los periodos cuyo fin ya pasó
+            # (corte del domingo 23:59 local), vence los impagos y programa avisos. Idempotente:
+            # una corrida fallida se recupera en la siguiente. Render interpreta el cron en UTC;
+            # los límites del negocio se calculan en la zona de cada ciudad, no aquí.
+            schedule: "5 * * * *"
             buildCommand: npm ci --include=dev && npm run build
             startCommand: npm run start:billing-cron
             autoDeployTrigger: checksPass # despliega solo si pasa backend-ci
@@ -260,9 +262,11 @@ projects:
             plan: starter
             branch: main
             rootDir: backend
-            # Corte semanal: domingo 23:59 hora de Bolivia (UTC-4) = lunes 03:59 UTC.
-            # Render interpreta el cron en UTC. Ver R7.2 y docs/pendientes.md.
-            schedule: "59 3 * * 1"
+            # Puesta al día de cobros cada hora (ADR-0036): cierra los periodos cuyo fin ya pasó
+            # (corte del domingo 23:59 local), vence los impagos y programa avisos. Idempotente:
+            # una corrida fallida se recupera en la siguiente. Render interpreta el cron en UTC;
+            # los límites del negocio se calculan en la zona de cada ciudad, no aquí.
+            schedule: "5 * * * *"
             buildCommand: npm ci --include=dev && npm run build
             startCommand: npm run start:billing-cron
             autoDeployTrigger: checksPass # despliega solo si pasa backend-ci

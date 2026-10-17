@@ -43,6 +43,15 @@ export interface OutboxPayloads {
    * el tope (R7.5) y el bloqueo por deuda (R7.7). Idempotente: solo mira el estado actual.
    */
   'billing.balance_changed': { workerId: string; cause: 'comision' | 'pago' | 'ajuste' };
+  /**
+   * Aviso de cobro de un periodo (R7.6, ADR-0036), registrado una sola vez por tipo:
+   * cierre del corte, víspera y día del vencimiento, o vencido (bloqueo, ADR-0038).
+   */
+  'billing.notice': {
+    periodId: string;
+    workerId: string;
+    kind: 'cierre' | 'vispera' | 'dia' | 'vencido';
+  };
   /** Mensaje de chat entregado (no retenido): chat:message y push si no está conectado. */
   'chat.message_sent': { jobId: string; messageId: string };
   /**

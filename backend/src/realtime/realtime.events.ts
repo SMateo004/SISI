@@ -14,6 +14,7 @@ export const RealtimeEvents = {
   jobStatus: 'job:status',
   jobLocation: 'job:location',
   chatMessage: 'chat:message',
+  billingDue: 'billing:due',
 } as const;
 
 export type RealtimeEventName = (typeof RealtimeEvents)[keyof typeof RealtimeEvents];
@@ -62,6 +63,17 @@ export interface RealtimePayloads {
   /** Al empleador, mientras el trabajador va en camino (con throttling). */
   'job:location': { jobId: string; latitude: number; longitude: number; at: string };
   /** A las dos partes: mensaje de chat entregado (los retenidos no se emiten). */
+  /**
+   * Al trabajador: hay un cobro para pagar (cierre del corte o recordatorio, R7.6). Detalle por
+   * GET /me/billing/pay-info. Montos como texto con 2 decimales.
+   */
+  'billing:due': {
+    periodId: string;
+    kind: 'cierre' | 'vispera' | 'dia';
+    amountBs: string;
+    paymentReference: string;
+    dueAt: string;
+  };
   'chat:message': {
     jobId: string;
     messageId: string;

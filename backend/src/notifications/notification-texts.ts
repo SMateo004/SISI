@@ -21,6 +21,14 @@ export interface NotificationInputs {
   job_disputed: { jobId: string };
   job_resolved: { jobId: string; status: string };
   chat_message: { jobId: string; senderShortName: string; preview: string };
+  billing_due: { periodId: string; amountBs: string; reference: string; dueLabel: string };
+  billing_reminder: {
+    periodId: string;
+    amountBs: string;
+    reference: string;
+    dueLabel: string;
+    today: boolean;
+  };
   review_request: { jobId: string; counterpartShortName: string; toWorker: boolean };
   job_cancelled: {
     jobId: string;
@@ -120,6 +128,16 @@ const RENDER: { [T in NotificationType]: (d: NotificationInputs[T]) => RenderedN
     body:
       d.status === 'terminado' ? 'El trabajo quedó como terminado.' : 'El trabajo quedó cancelado.',
     route: `/trabajos/${d.jobId}`,
+  }),
+  billing_due: (d) => ({
+    title: 'Tu comisión de la semana',
+    body: `Paga ${bs(d.amountBs)} hasta el ${d.dueLabel}. Referencia: ${d.reference}.`,
+    route: '/ganancias/pagar',
+  }),
+  billing_reminder: (d) => ({
+    title: d.today ? 'Hoy vence tu comisión' : 'Mañana vence tu comisión',
+    body: `Paga ${bs(d.amountBs)} hasta el ${d.dueLabel} para seguir recibiendo trabajos. Referencia: ${d.reference}.`,
+    route: '/ganancias/pagar',
   }),
   review_request: (d) => ({
     title: d.toWorker ? 'Califica al empleador' : `Califica a ${d.counterpartShortName}`,

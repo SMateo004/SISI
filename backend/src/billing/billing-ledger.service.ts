@@ -132,6 +132,28 @@ export class BillingLedgerService {
     return period;
   }
 
+  /** Saldo de un periodo: suma de sus movimientos (positivo = debe). */
+  async periodBalance(
+    tx: Prisma.TransactionClient | PrismaService,
+    periodId: string,
+  ): Promise<Prisma.Decimal> {
+    const [row] = await tx.$queryRaw<{ balance: string }[]>`
+      SELECT COALESCE(SUM(amount_bs), 0)::text AS balance
+      FROM ledger_entries WHERE period_id = ${periodId}::uuid`;
+    return new Prisma.Decimal(row?.balance ?? '0');
+  }
+
+  /** Saldo total del trabajador: suma de todo su ledger (positivo = debe). */
+  async workerBalance(
+    tx: Prisma.TransactionClient | PrismaService,
+    workerId: string,
+  ): Promise<Prisma.Decimal> {
+    const [row] = await tx.$queryRaw<{ balance: string }[]>`
+      SELECT COALESCE(SUM(amount_bs), 0)::text AS balance
+      FROM ledger_entries WHERE worker_id = ${workerId}::uuid`;
+    return new Prisma.Decimal(row?.balance ?? '0');
+  }
+
   /** Código estable del trabajador para la referencia; se genera la primera vez. */
   private async billingCode(tx: Prisma.TransactionClient, workerId: string): Promise<string> {
     const profile = await tx.workerProfile.findUnique({
@@ -139,6 +161,12 @@ export class BillingLedgerService {
       select: { billingCode: true },
     });
     if (profile?.billingCode) return profile.billingCode;
+    // Igual que WorkerStatusService: el perfil se crea si falta (sin_solicitar).
+    if (!profile) {
+      await tx.$executeRaw`
+        INSERT INTO worker_profiles (user_id, updated_at) VALUES (${workerId}::uuid, now())
+        ON CONFLICT (user_id) DO NOTHING`;
+    }
     // Colisión improbable (31^6): se reintenta con otro código.
     for (let attempt = 0; attempt < 5; attempt++) {
       const code = newBillingCode();

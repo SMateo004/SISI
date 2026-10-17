@@ -48,6 +48,18 @@ export function reminderTimes(dueAt: Date, cal: BillingCalendar): { vispera: Dat
   };
 }
 
+const WEEKDAY_NAMES = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+
+/**
+ * Fecha límite como la lee una persona: el último minuto antes de `dueAt` en hora local.
+ * Ej.: "miércoles 21/10 a las 23:59".
+ */
+export function dueLabel(dueAt: Date, timeZone: string): string {
+  const l = toLocal(new Date(dueAt.getTime() - 60_000), timeZone);
+  const two = (n: number) => String(n).padStart(2, '0');
+  return `${WEEKDAY_NAMES[l.weekday - 1] ?? ''} ${two(l.day)}/${two(l.month)} a las ${two(l.hour)}:${two(l.minute)}`;
+}
+
 /** Sin 0/O, 1/I/L, para dictar y escribir sin errores. */
 const CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 

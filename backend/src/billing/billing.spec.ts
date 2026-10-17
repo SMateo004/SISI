@@ -3,6 +3,7 @@ import {
   allocatePayment,
   amountToUnlockCap,
   capTransition,
+  dueLabel,
   newBillingCode,
   paymentReference,
   periodStatus,
@@ -60,6 +61,12 @@ describe('periodo de un trabajo (R7.2)', () => {
     const w = periodWindow(new Date('2026-10-19T04:00:00.000Z'), LA_PAZ);
     expect(w.startAt.toISOString()).toBe('2026-10-19T04:00:00.000Z');
     expect(w.endAt.toISOString()).toBe('2026-10-26T04:00:00.000Z');
+  });
+
+  it('la fecha límite se muestra como miércoles 23:59 local', () => {
+    expect(dueLabel(new Date('2026-10-22T04:00:00.000Z'), 'America/La_Paz')).toBe(
+      'miércoles 21/10 a las 23:59',
+    );
   });
 
   it('vence el jueves 00:00 local (miércoles 23:59) y recuerda martes y miércoles a las 09:00', () => {

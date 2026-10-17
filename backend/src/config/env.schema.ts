@@ -122,6 +122,19 @@ export const envSchema = z
     REVIEW_WINDOW_MS: positiveInt(604_800_000),
     /** Reportes válidos de personas distintas para suspender (R9.3). */
     REPORTS_SUSPEND_THRESHOLD: positiveInt(3),
+
+    // Cobros (R7, ADR-0035 a ADR-0038). Valores en propuesta (docs/pendientes.md).
+    /** Días desde el fin del periodo (lunes 00:00) hasta el vencimiento exclusivo: 3 → jueves 00:00. */
+    BILLING_DUE_AFTER_DAYS: positiveInt(3),
+    /** Hora local de los recordatorios de la víspera y del día del vencimiento. */
+    BILLING_REMINDER_HOUR: z.coerce.number().int().min(0).max(23).default(9),
+    /** Tope de deuda en Bs (R7.5): por encima no recibe solicitudes. */
+    BILLING_DEBT_CAP_BS: z
+      .string()
+      .regex(/^\d{1,6}(\.\d{1,2})?$/)
+      .default('150.00'),
+    /** Candado del cron de cobros en Redis (ms). */
+    BILLING_LOCK_TTL_MS: positiveInt(600_000),
     /** Presencia de un socket en Redis (se renueva con un latido; ADR-0031). */
     PRESENCE_TTL_MS: positiveInt(60_000),
     OUTBOX_CLEANUP_MS: positiveInt(86_400_000),

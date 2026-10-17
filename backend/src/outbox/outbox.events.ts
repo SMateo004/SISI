@@ -38,6 +38,11 @@ export interface OutboxPayloads {
     to: string;
     actorRole: string;
   };
+  /**
+   * Cambió el saldo de un trabajador (comisión, pago o ajuste; ADR-0034): el worker revisa
+   * el tope (R7.5) y el bloqueo por deuda (R7.7). Idempotente: solo mira el estado actual.
+   */
+  'billing.balance_changed': { workerId: string; cause: 'comision' | 'pago' | 'ajuste' };
   /** Mensaje de chat entregado (no retenido): chat:message y push si no está conectado. */
   'chat.message_sent': { jobId: string; messageId: string };
   /**

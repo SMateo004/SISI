@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { BillingCoreModule } from '../billing/billing-core.module';
+import { BillingEventsHandlers } from '../billing/billing-events.handlers';
 import { ChatEventsHandlers } from '../chat/chat-events.handlers';
 import { AppConfigModule } from '../config/config.module';
 import { FeatureFlagsModule } from '../feature-flags/feature-flags.module';
@@ -35,6 +37,7 @@ import { RequestStatusModule } from '../requests/request-status.module';
     QueuesModule,
     RequestStatusModule,
     JobStatusModule,
+    BillingCoreModule,
   ],
   providers: [
     RequestEventsHandlers,
@@ -42,6 +45,7 @@ import { RequestStatusModule } from '../requests/request-status.module';
     OfferEventsHandlers,
     JobEventsHandlers,
     ChatEventsHandlers,
+    BillingEventsHandlers,
   ],
 })
 export class WorkerModule {}

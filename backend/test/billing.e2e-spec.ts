@@ -1,6 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { ledgerMismatches } from './utils/billing';
-import { createTestApp, login, type TestApp } from './utils/test-app';
+import { BillingLedgerService } from '../src/billing/billing-ledger.service';
+import { EventHandlersRegistry } from '../src/outbox/event-handlers.registry';
+import { ledgerBalance, ledgerMismatches } from './utils/billing';
+import { assignJob, completeJob } from './utils/jobs';
+import { bearer, createTestApp, login, type TestApp, waitFor } from './utils/test-app';
+import request from 'supertest';
 
 describe('Cobros (e2e, ADR-0034)', () => {
   let t: TestApp;
@@ -64,5 +68,120 @@ describe('Cobros (e2e, ADR-0034)', () => {
     ).rejects.toThrow();
     const left = await t.prisma.ledgerEntry.findUniqueOrThrow({ where: { id: entry.id } });
     expect(left.amountBs.toFixed(2)).toBe('1.00');
+  });
+
+  const commissionsOf = (workerId: string) =>
+    t.prisma.ledgerEntry.findMany({ where: { workerId, type: 'comision' } });
+
+  const waitCommission = (workerId: string, count = 1) =>
+    waitFor(
+      async () => {
+        const rows = await commissionsOf(workerId);
+        return rows.length >= count ? rows : undefined;
+      },
+      { what: 'la comisión en el ledger' },
+    );
+
+  describe('comisión desde job.completed', () => {
+    it('un trabajo de 150 Bs deja 19,50 en el periodo de la semana, y un evento repetido no duplica', async () => {
+      const job = await assignJob(t);
+      await completeJob(t, job);
+      const [entry] = await waitCommission(job.worker.id);
+      expect(entry?.amountBs.toFixed(2)).toBe('19.50');
+      expect(entry?.jobId).toBe(job.jobId);
+
+      const period = await t.prisma.billingPeriod.findUniqueOrThrow({
+        where: { id: entry?.periodId ?? '' },
+      });
+      expect(period).toMatchObject({ status: 'abierto', timezone: 'America/La_Paz' });
+      expect([period.grossBs.toFixed(2), period.commissionBs.toFixed(2)]).toEqual([
+        '150.00',
+        '19.50',
+      ]);
+      expect(period.paymentReference).toMatch(/^SISI-\d{4}-[2-9A-HJKMNP-Z]{6}$/);
+      const now = Date.now();
+      expect(period.startAt.getTime()).toBeLessThanOrEqual(now);
+      expect(period.endAt.getTime()).toBeGreaterThan(now);
+
+      // El mismo job.completed otra vez (el outbox garantiza al menos una vez).
+      const event = await t.prisma.outboxEvent.findFirstOrThrow({
+        where: { aggregateId: job.jobId, type: 'job.completed' },
+      });
+      await t.app.get(EventHandlersRegistry).dispatch('job.completed', {
+        outboxId: event.id.toString(),
+        aggregateId: job.jobId,
+        payload: event.payload as never,
+      });
+      expect(await commissionsOf(job.worker.id)).toHaveLength(1);
+      expect(await ledgerBalance(t, job.worker.id)).toBe('19.50');
+    });
+
+    it('si llega tarde y su periodo ya cerró, va al periodo abierto actual', async () => {
+      const job = await assignJob(t);
+      await completeJob(t, job);
+      await waitCommission(job.worker.id);
+      const ledger = t.app.get(BillingLedgerService);
+
+      // Un trabajo que terminó la semana pasada, cuyo periodo ya está cerrado.
+      const lastWeek = new Date(Date.now() - 7 * 24 * 3600_000);
+      const closed = await t.prisma.$transaction((tx) =>
+        ledger.lockPeriodAt(tx, job.worker.id, lastWeek),
+      );
+      await t.prisma.billingPeriod.update({
+        where: { id: closed.id },
+        data: { status: 'pagado', closedAt: new Date() },
+      });
+      const late = await assignJob(t, { worker: job.worker, categoryId: job.categoryId });
+      const result = await ledger.recordCommission({
+        jobId: late.jobId,
+        workerId: job.worker.id,
+        // Los montos reales del trabajo (la consistencia los compara con jobs.final_price_bs).
+        finalPriceBs: '150.00',
+        commissionBs: '19.50',
+        completedAt: lastWeek,
+      });
+      expect(result.inserted).toBe(true);
+      expect(result.periodId).not.toBe(closed.id);
+      const current = await t.prisma.billingPeriod.findUniqueOrThrow({
+        where: { id: result.periodId ?? '' },
+      });
+      expect(current.status).toBe('abierto');
+      expect(current.commissionBs.toFixed(2)).toBe('39.00');
+      // El cerrado no cambió.
+      const after = await t.prisma.billingPeriod.findUniqueOrThrow({ where: { id: closed.id } });
+      expect(after.commissionBs.toFixed(2)).toBe('0.00');
+      // Se cancela el trabajo de prueba que quedó asignado (no genera comisión).
+      await request(t.app.getHttpServer())
+        .post(`/jobs/${late.jobId}/cancel`)
+        .set(...bearer(late.employer.accessToken))
+        .send({ reason: 'otro' })
+        .expect(200);
+    });
+
+    it('cancelados y disputados sin resolver no generan comisión', async () => {
+      const cancelled = await assignJob(t);
+      await request(t.app.getHttpServer())
+        .post(`/jobs/${cancelled.jobId}/cancel`)
+        .set(...bearer(cancelled.employer.accessToken))
+        .send({ reason: 'cambio_de_planes' })
+        .expect(200);
+
+      const disputed = await assignJob(t);
+      for (const step of ['on-the-way', 'start', 'finish']) {
+        await request(t.app.getHttpServer())
+          .post(`/jobs/${disputed.jobId}/${step}`)
+          .set(...bearer(disputed.worker.accessToken))
+          .expect(200);
+      }
+      await request(t.app.getHttpServer())
+        .post(`/jobs/${disputed.jobId}/dispute`)
+        .set(...bearer(disputed.employer.accessToken))
+        .send({})
+        .expect(200);
+      // Más que el plazo de autoconfirmación de e2e (3 s): sigue sin comisión.
+      await new Promise((r) => setTimeout(r, 3500));
+      expect(await commissionsOf(cancelled.worker.id)).toHaveLength(0);
+      expect(await commissionsOf(disputed.worker.id)).toHaveLength(0);
+    });
   });
 });

@@ -68,3 +68,18 @@ export async function assignJob(
   ).body as AcceptOfferResultDto;
   return { jobId: result.jobId, requestId, worker, employer, categoryId };
 }
+
+/** Lleva un trabajo asignado hasta terminado: en camino, empecé, terminé y confirmar. */
+export async function completeJob(t: TestApp, job: AssignedJob): Promise<void> {
+  const server = t.app.getHttpServer();
+  for (const step of ['on-the-way', 'start', 'finish']) {
+    await request(server)
+      .post(`/jobs/${job.jobId}/${step}`)
+      .set(...bearer(job.worker.accessToken))
+      .expect(200);
+  }
+  await request(server)
+    .post(`/jobs/${job.jobId}/confirm`)
+    .set(...bearer(job.employer.accessToken))
+    .expect(200);
+}

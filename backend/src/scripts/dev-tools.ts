@@ -4,6 +4,8 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { normalizePhone } from '../common/phone/phone';
 import type { AppConfigService } from '../config/app-config';
+import { BillingCatchUpService } from '../billing/billing-catchup.service';
+import { BillingCoreModule } from '../billing/billing-core.module';
 import { BillingDebtStatusProvider } from '../billing/billing-debt-status.provider';
 import { AppConfigModule } from '../config/config.module';
 import { JobStatusModule } from '../jobs/job-status.module';
@@ -34,6 +36,7 @@ import { type WorkerEventInput, WorkerStatusService } from '../workers/worker-st
  *   npm run dev:tools -- make-admin --phone 70012345
  *   npm run dev:tools -- quick-worker --phone 70012345 --categories plomeria,limpieza --transport moto --radius 10
  *   npm run dev:tools -- resolve-dispute --job <uuid> --decision confirm --reason "Se verificó con ambas partes"
+ *   npm run dev:tools -- billing-run --at 2026-10-19T04:05:00Z   (cron de cobros con reloj simulado)
  *   npm run dev:tools -- resolve-report --report <uuid> --approve --reason "Se verificó"   (o --reject "motivo")
  */
 @Module({
@@ -45,6 +48,7 @@ import { type WorkerEventInput, WorkerStatusService } from '../workers/worker-st
     WorkerAvailabilityModule,
     OutboxModule,
     JobStatusModule,
+    BillingCoreModule,
   ],
   providers: [
     WorkerStatusService,
@@ -77,6 +81,7 @@ async function main(): Promise<void> {
       job: { type: 'string' },
       decision: { type: 'string' },
       report: { type: 'string' },
+      at: { type: 'string' },
     },
   });
 
@@ -202,6 +207,16 @@ async function main(): Promise<void> {
         logger.log(`Trabajo ${values.job} ahora ${to}`);
         break;
       }
+      case 'billing-run': {
+        // Cron de cobros (ADR-0036) con reloj simulado: cierra, vence y programa avisos como
+        // si fuera esa hora. Los avisos y bloqueos los hace el worker (debe estar corriendo).
+        const at = values.at ? new Date(values.at) : new Date();
+        if (Number.isNaN(at.getTime()))
+          throw new Error('Usa --at con una fecha ISO, p. ej. 2026-10-19T04:05:00Z');
+        const result = await app.get(BillingCatchUpService).run(at);
+        logger.log(`Cobros al ${at.toISOString()}: ${JSON.stringify(result)}`);
+        break;
+      }
       case 'resolve-report': {
         // Igual que POST /admin/reports/:id/resolve (ADR-0033): --approve = válido.
         if (!values.report || (!values.approve && !values.reject)) {
@@ -221,7 +236,7 @@ async function main(): Promise<void> {
       }
       default:
         throw new Error(
-          'Comandos: review-worker, worker-event, create-category, make-admin, quick-worker, resolve-dispute, resolve-report (ver src/scripts/dev-tools.ts)',
+          'Comandos: review-worker, worker-event, create-category, make-admin, quick-worker, resolve-dispute, resolve-report, billing-run (ver src/scripts/dev-tools.ts)',
         );
     }
   } finally {

@@ -44,6 +44,15 @@ export class NotificationDto {
   createdAt!: string;
 }
 
+export class UnreadCountDto {
+  @ApiProperty({ example: 3, description: 'Avisos sin leer (para el contador del ícono)' })
+  count!: number;
+}
+
+export class ReadAllResultDto {
+  @ApiProperty({ example: 3 }) updated!: number;
+}
+
 export class NotificationPageDto {
   @ApiProperty({ type: [NotificationDto] })
   items!: NotificationDto[];

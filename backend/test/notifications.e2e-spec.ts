@@ -186,4 +186,43 @@ describe('Notificaciones y push (e2e, ADR-0027)', () => {
     expect((await notifications(employer.accessToken)).items).toHaveLength(1);
     expect(push.sent.filter((s) => s.message.data.requestId === id)).toHaveLength(1);
   });
+
+  it('contador de no leídos, marcar uno y marcar todos', async () => {
+    const employer = await login(t);
+    const admin = await loginAsAdmin(t);
+    for (let i = 0; i < 3; i++) {
+      const id = await heldRequest(employer.accessToken);
+      await request(server())
+        .post(`/admin/requests/${id}/release`)
+        .set(...bearer(admin.accessToken))
+        .expect(200);
+    }
+    const unread = async () =>
+      (
+        (
+          await request(server())
+            .get('/me/notifications/unread-count')
+            .set(...bearer(employer.accessToken))
+            .expect(200)
+        ).body as { count: number }
+      ).count;
+    await waitFor(async () => ((await unread()) === 3 ? true : undefined), {
+      what: 'los 3 avisos',
+    });
+
+    const [first] = (await notifications(employer.accessToken)).items;
+    await request(server())
+      .post(`/me/notifications/${first?.id ?? ''}/read`)
+      .set(...bearer(employer.accessToken))
+      .expect(204);
+    expect(await unread()).toBe(2);
+
+    const all = await request(server())
+      .post('/me/notifications/read-all')
+      .set(...bearer(employer.accessToken))
+      .expect(200);
+    expect(all.body).toEqual({ updated: 2 });
+    expect(await unread()).toBe(0);
+    expect((await notifications(employer.accessToken)).items.every((n) => n.readAt)).toBe(true);
+  });
 });

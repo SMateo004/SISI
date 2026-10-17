@@ -22,7 +22,13 @@ import { type AuthenticatedUser, CurrentUser } from '../auth/decorators/auth.dec
 import { ApiErrorBody } from '../common/errors/api-error';
 import type { DevicePlatform } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { NotificationDto, NotificationPageDto, RegisterDeviceDto } from './dto/notification.dto';
+import {
+  NotificationDto,
+  NotificationPageDto,
+  ReadAllResultDto,
+  RegisterDeviceDto,
+  UnreadCountDto,
+} from './dto/notification.dto';
 
 const PAGE = 20;
 
@@ -94,6 +100,29 @@ export class NotificationsController {
       }),
       nextCursor: rows.length > PAGE ? (page.at(-1)?.id ?? null) : null,
     };
+  }
+
+  @Get('notifications/unread-count')
+  @ApiOperation({ summary: 'Cuántos avisos tengo sin leer' })
+  @ApiOkResponse({ type: UnreadCountDto })
+  async unreadCount(@CurrentUser() current: AuthenticatedUser): Promise<UnreadCountDto> {
+    return {
+      count: await this.prisma.notification.count({
+        where: { userId: current.id, readAt: null },
+      }),
+    };
+  }
+
+  @Post('notifications/read-all')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Marcar todos mis avisos como leídos' })
+  @ApiOkResponse({ type: ReadAllResultDto })
+  async readAll(@CurrentUser() current: AuthenticatedUser): Promise<ReadAllResultDto> {
+    const { count } = await this.prisma.notification.updateMany({
+      where: { userId: current.id, readAt: null },
+      data: { readAt: new Date() },
+    });
+    return { updated: count };
   }
 
   @Post('notifications/:id/read')

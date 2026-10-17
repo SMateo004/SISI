@@ -8,10 +8,12 @@ import { AppConfigModule } from '../config/config.module';
 import { JobStatusModule } from '../jobs/job-status.module';
 import { JobStatusService } from '../jobs/job-status.service';
 import { WorkerAvailabilityModule } from '../locations/locations.module';
+import { ModerationService } from '../moderation/moderation.service';
 import { OutboxModule } from '../outbox/outbox.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisModule } from '../redis/redis.module';
+import { ReportsService } from '../reports/reports.service';
 import {
   DEBT_STATUS_PROVIDER,
   LoggingWorkerNotifier,
@@ -32,6 +34,7 @@ import { type WorkerEventInput, WorkerStatusService } from '../workers/worker-st
  *   npm run dev:tools -- make-admin --phone 70012345
  *   npm run dev:tools -- quick-worker --phone 70012345 --categories plomeria,limpieza --transport moto --radius 10
  *   npm run dev:tools -- resolve-dispute --job <uuid> --decision confirm --reason "Se verificó con ambas partes"
+ *   npm run dev:tools -- resolve-report --report <uuid> --approve --reason "Se verificó"   (o --reject "motivo")
  */
 @Module({
   // WorkerStatusService apaga la disponibilidad al bloquear o suspender (Redis, ADR-0024).
@@ -45,6 +48,8 @@ import { type WorkerEventInput, WorkerStatusService } from '../workers/worker-st
   ],
   providers: [
     WorkerStatusService,
+    ModerationService,
+    ReportsService,
     { provide: DEBT_STATUS_PROVIDER, useClass: NoBillingYetDebtProvider },
     { provide: WORKER_NOTIFIER, useClass: LoggingWorkerNotifier },
   ],
@@ -71,6 +76,7 @@ async function main(): Promise<void> {
       max: { type: 'string' },
       job: { type: 'string' },
       decision: { type: 'string' },
+      report: { type: 'string' },
     },
   });
 
@@ -196,9 +202,26 @@ async function main(): Promise<void> {
         logger.log(`Trabajo ${values.job} ahora ${to}`);
         break;
       }
+      case 'resolve-report': {
+        // Igual que POST /admin/reports/:id/resolve (ADR-0033): --approve = válido.
+        if (!values.report || (!values.approve && !values.reject)) {
+          throw new Error('Usa --report <uuid> y --approve --reason "nota" o --reject "motivo"');
+        }
+        const valid = values.approve === true;
+        const { outcome } = await app
+          .get(ReportsService)
+          .resolve(
+            null,
+            values.report,
+            valid,
+            (valid ? values.reason : values.reject) ?? 'Resuelto con dev-tools',
+          );
+        logger.log(`Reporte ${valid ? 'válido' : 'descartado'}; resultado: ${outcome}`);
+        break;
+      }
       default:
         throw new Error(
-          'Comandos: review-worker, worker-event, create-category, make-admin, quick-worker, resolve-dispute (ver src/scripts/dev-tools.ts)',
+          'Comandos: review-worker, worker-event, create-category, make-admin, quick-worker, resolve-dispute, resolve-report (ver src/scripts/dev-tools.ts)',
         );
     }
   } finally {

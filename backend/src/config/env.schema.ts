@@ -120,6 +120,8 @@ export const envSchema = z
     JOB_CONTACT_VISIBLE_AFTER_MS: positiveInt(86_400_000),
     /** Plazo para calificar desde que terminó el trabajo (7 días; ADR-0032). */
     REVIEW_WINDOW_MS: positiveInt(604_800_000),
+    /** Reportes válidos de personas distintas para suspender (R9.3). */
+    REPORTS_SUSPEND_THRESHOLD: positiveInt(3),
     /** Presencia de un socket en Redis (se renueva con un latido; ADR-0031). */
     PRESENCE_TTL_MS: positiveInt(60_000),
     OUTBOX_CLEANUP_MS: positiveInt(86_400_000),

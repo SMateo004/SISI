@@ -31,6 +31,8 @@ Aprobadas el 2026-10-14. Hay que reflejarlas en el documento 01 en la sección i
 - [ ] **Contacto después del trabajo:** el teléfono se oculta **24 h** después de terminado o cancelado (`JOB_CONTACT_VISIBLE_AFTER_MS`, 410 `CONTACT_EXPIRED`); el chat queda en solo lectura.
 - [ ] **Calificaciones:** solo trabajos terminados, dentro de **7 días** (`REVIEW_WINDOW_MS`); **ciegas** hasta que califican las dos partes o vence el plazo; comentario moderado (si coincide, no se publica y las estrellas cuentan). Recordatorio al terminar. Definir si se manda un segundo recordatorio antes de vencer.
 - [ ] **Promedio del empleador:** se guarda y se muestra a los trabajadores en las solicitudes entrantes. Definir si un promedio bajo debe filtrar o advertir algo.
+- [ ] **Reportes:** motivos de R9.1 más acoso, fraude, no se presentó, suplantación y otro. Cuentan **3 reportes válidos de personas distintas** (`REPORTS_SUSPEND_THRESHOLD`) y los valida un admin. Solo se reporta lo que uno conoce (trabajo, chat, solicitud que le llegó, contraparte).
+- [ ] **Reportes contra alguien que solo es empleador:** no hay estado para suspenderlo (R1.4 es del trabajador); hoy se marca `moderation_flagged_at` y se avisa al admin. Definir si se agrega un bloqueo de cuenta (relacionado con "Bloqueo permanente").
 - [ ] **Trabajador ocupado:** con un trabajo asignado, en camino o en curso no recibe solicitudes ni puede ofertar. Al ser elegido, sus otras ofertas activas se retiran solas (el empleador recibe el aviso y, si era la única, su solicitud vuelve a buscar).
 
 ## Propuestas de la Fase 3 por validar

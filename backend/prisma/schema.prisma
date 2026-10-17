@@ -69,6 +69,8 @@ model User {
   /// Promedio como empleador (lo ven los trabajadores en las solicitudes entrantes, ADR-0032).
   employerRatingAvg   Decimal    @default(0) @map("employer_rating_avg") @db.Decimal(3, 2)
   employerRatingCount Int        @default(0) @map("employer_rating_count")
+  /// 3 reportes válidos sin ser trabajador aprobado: aviso para el admin (ADR-0033).
+  moderationFlaggedAt DateTime?  @map("moderation_flagged_at") @db.Timestamptz(3)
   /// Trabajos que canceló (sin penalidad por ahora, Fase 4).
   cancellationsCount  Int        @default(0) @map("cancellations_count")
   createdAt           DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -711,6 +713,65 @@ model Review {
   @@index([toUserId, reviewerRole, publishedAt])
   @@index([publishedAt, createdAt])
   @@map("reviews")
+}
+
+enum ReportTargetType {
+  request
+  user
+  chat_message
+  job
+
+  @@map("report_target_type")
+}
+
+/// Motivos (lista cerrada): los de R9.1 y otros de convivencia (ADR-0033).
+enum ReportReason {
+  servicios_sexuales
+  drogas
+  armas
+  ilegal
+  inmoral
+  venta_productos
+  acoso
+  fraude
+  no_se_presento
+  suplantacion
+  otro
+
+  @@map("report_reason")
+}
+
+enum ReportStatus {
+  pendiente
+  valido
+  descartado
+
+  @@map("report_status")
+}
+
+/// Reportes (R9.3, ADR-0033). Uno por persona y objetivo.
+model Report {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reporterId     String           @map("reporter_id") @db.Uuid
+  targetType     ReportTargetType @map("target_type")
+  targetId       String           @map("target_id") @db.Uuid
+  /// Dueño del objetivo: a quien cuentan los reportes válidos.
+  reportedUserId String           @map("reported_user_id") @db.Uuid
+  cityId         String           @map("city_id") @db.Uuid
+  reason         ReportReason
+  note           String?
+  /// La nota coincidió con la moderación (solo informativo para el admin).
+  noteHeld       Boolean          @default(false) @map("note_held")
+  status         ReportStatus     @default(pendiente)
+  resolution     String?
+  resolvedById   String?          @map("resolved_by_id") @db.Uuid
+  resolvedAt     DateTime?        @map("resolved_at") @db.Timestamptz(3)
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([reporterId, targetType, targetId])
+  @@index([status, createdAt])
+  @@index([reportedUserId, status])
+  @@map("reports")
 }
 
 /// Historial del trabajo (ADR-0029). Append-only: un trigger rechaza UPDATE y DELETE.

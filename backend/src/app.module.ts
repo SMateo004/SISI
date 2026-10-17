@@ -21,6 +21,7 @@ import { OutboxModule } from './outbox/outbox.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RealtimeEmitterModule, RealtimeModule } from './realtime/realtime.module';
 import { RedisModule } from './redis/redis.module';
+import { ReportsModule } from './reports/reports.module';
 import { RequestsModule } from './requests/requests.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { StorageModule } from './storage/storage.module';
@@ -50,6 +51,7 @@ import { WorkersModule } from './workers/workers.module';
     JobsModule,
     ChatModule,
     ReviewsModule,
+    ReportsModule,
     RealtimeModule,
     RealtimeEmitterModule,
   ],

@@ -99,9 +99,15 @@ export class ChatService {
     limit = 30,
   ): Promise<ChatPageDto> {
     const job = await this.partyJob(userId, jobId);
+    const reported = await this.prisma.report.findMany({
+      where: { reporterId: userId, targetType: 'chat_message' },
+      select: { targetId: true },
+    });
     const visible: Prisma.ChatMessageWhereInput = {
       jobId,
       OR: [{ status: 'entregado' }, { senderId: userId }],
+      // Un mensaje que reporté deja de mostrarse para mí (ADR-0033).
+      ...(reported.length > 0 ? { id: { notIn: reported.map((r) => r.targetId) } } : {}),
     };
     const rows = await this.prisma.chatMessage.findMany({
       where: visible,

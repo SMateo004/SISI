@@ -929,4 +929,122 @@ describe('Cobros (e2e, ADR-0034)', () => {
       expect((mine.body as { status: string }[])[0]?.status).toBe('rechazado');
     });
   });
+
+  const getAs = async <T>(token: string, path: string): Promise<T> =>
+    (
+      await request(t.app.getHttpServer())
+        .get(path)
+        .set(...bearer(token))
+        .expect(200)
+    ).body as T;
+
+  describe('ganancias del trabajador (R8)', () => {
+    it('un trabajo de 150 Bs: el resumen muestra bruto 150,00, comisión 19,50 y neto 130,50', async () => {
+      const job = await assignJob(t);
+      await completeJob(t, job);
+      await waitCommission(job.worker.id);
+      const summary = await getAs<{
+        currentPeriod: Record<string, unknown>;
+        balanceBs: unknown;
+        debtCap: Record<string, unknown>;
+        overdue: boolean;
+        blocked: boolean;
+      }>(job.worker.accessToken, '/me/earnings/summary');
+      expect(summary.currentPeriod).toMatchObject({
+        grossBs: '150.00',
+        commissionBs: '19.50',
+        netBs: '130.50',
+      });
+      expect(summary.balanceBs).toBe('19.50');
+      // Montos como texto, nunca como número.
+      expect(typeof summary.balanceBs).toBe('string');
+      expect(summary.debtCap).toEqual({
+        capBs: '150.00',
+        reached: false,
+        amountToUnlockBs: '0.00',
+      });
+      expect([summary.overdue, summary.blocked]).toEqual([false, false]);
+
+      const periods = await getAs<{ items: { commissionBs: string; balanceBs: string }[] }>(
+        job.worker.accessToken,
+        '/me/earnings/periods',
+      );
+      expect(periods.items[0]).toMatchObject({ commissionBs: '19.50', balanceBs: '19.50' });
+      // El historial de trabajos con comisión (Fase 4) sigue siendo el de /jobs.
+      const jobs = await getAs<{ items: { commissionBs: string; netBs: string }[] }>(
+        job.worker.accessToken,
+        '/jobs?role=worker',
+      );
+      expect(jobs.items[0]).toMatchObject({ commissionBs: '19.50', netBs: '130.50' });
+    });
+
+    it('pay-info: "para ponerte al día" y "para volver a recibir solicitudes"', async () => {
+      const { worker, period } = await blockedWorker(31);
+      // Además, deuda en el periodo actual que lo deja sobre el tope.
+      await addDebt(worker.id, '140.00');
+      const info = await getAs<Record<string, unknown>>(worker.accessToken, '/me/billing/pay-info');
+      expect(info).toMatchObject({
+        catchUpAmountBs: '19.50',
+        unlockAmountBs: '9.50',
+        totalBalanceBs: '159.50',
+        paymentReference: period.paymentReference,
+        dueAt: period.dueAt.toISOString(),
+        gatewayEnabled: false,
+      });
+      expect((info.instructions as string[]).join(' ')).toContain(
+        `Escribe la referencia ${period.paymentReference} en la glosa`,
+      );
+      const summary = await getAs<{
+        overdue: boolean;
+        blocked: boolean;
+        overdueOrPendingBs: string;
+      }>(worker.accessToken, '/me/earnings/summary');
+      expect(summary).toMatchObject({ overdue: true, blocked: true, overdueOrPendingBs: '19.50' });
+    });
+
+    it('historial de pagos con periodos y comprobante; cada trabajador ve solo los suyos', async () => {
+      const admin = await loginAsAdmin(t);
+      const { worker, period } = await blockedWorker(32);
+      const receiptKey = await upload(admin.accessToken, '/admin/billing/receipts/upload-url', {
+        workerId: worker.id,
+      });
+      await payment(admin.accessToken, {
+        workerId: worker.id,
+        amountBs: '19.50',
+        method: 'qr_transferencia',
+        paidAt: '2026-10-17T13:00:00.000Z',
+        reference: period.paymentReference,
+        receiptKey,
+      }).expect(200);
+      const mine = await getAs<{ items: Record<string, unknown>[] }>(
+        worker.accessToken,
+        '/me/payments',
+      );
+      expect(mine.items).toHaveLength(1);
+      expect(mine.items[0]).toMatchObject({
+        amountBs: '19.50',
+        paidAt: '2026-10-17T13:00:00.000Z',
+        status: 'registrado',
+        reference: period.paymentReference,
+        periods: [
+          { periodId: period.id, paymentReference: period.paymentReference, amountBs: '19.50' },
+        ],
+      });
+      expect(mine.items[0]?.receiptUrl).toMatch(/X-Amz-Signature/);
+
+      const other = await createApprovedWorker(t);
+      expect((await getAs<{ items: unknown[] }>(other.accessToken, '/me/payments')).items).toEqual(
+        [],
+      );
+      // Un comprobante de otro trabajador no se puede usar en su pago.
+      const wrong = await payment(admin.accessToken, {
+        workerId: other.id,
+        amountBs: '1.00',
+        method: 'qr_transferencia',
+        paidAt: new Date().toISOString(),
+        receiptKey,
+      }).expect(403);
+      expect(wrong.body).toMatchObject({ code: 'UPLOAD_KEY_FORBIDDEN' });
+    });
+  });
 });

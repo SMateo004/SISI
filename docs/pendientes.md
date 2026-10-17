@@ -33,6 +33,7 @@ Aprobadas el 2026-10-14. Hay que reflejarlas en el documento 01 en la sección i
 - [ ] **Cron de cobros cada hora** (ADR-0036): puesta al día idempotente; a lo sumo 1 h entre el corte y el aviso.
 - [ ] **Facturación de la comisión:** no implementada. `payments.invoice_number` existe (opcional, sin uso) hasta la revisión legal y tributaria.
 - [ ] **QR de cobro:** uno global (`app_settings`). Definir si cada ciudad tendrá su propia cuenta.
+- [ ] **CORS del bucket (R2) en staging y producción:** Flutter web carga las imágenes con XHR, así que el bucket debe permitir `GET` desde los dominios de la app y del admin; si no, no se ven el QR, los comprobantes ni las fotos. En local está en `infra/storage/cors.json` (incluye `127.0.0.1:8080` para la prueba con dos sesiones).
 
 ## Propuestas de la Fase 4 por validar
 - [ ] **Autoconfirmación:** si el empleador no confirma ni reporta un problema **24 h** después del "Terminé" del trabajador, el trabajo se confirma solo y se cobra la comisión (`JOB_AUTOCONFIRM_MS`, ADR-0029).

@@ -10,6 +10,7 @@ import type { Job, Queue } from 'bullmq';
 import type { AppConfigService } from '../config/app-config';
 import { WorkerAvailabilityService } from '../locations/worker-availability.service';
 import { MATCHING_JOBS, QUEUES } from '../queues/queues';
+import { OutboxCleanupService } from '../outbox/outbox-cleanup.service';
 import { MatchingReconciler } from './matching.reconciler';
 import { MatchingService } from './matching.service';
 
@@ -32,6 +33,7 @@ export class MatchingProcessor
     private readonly matching: MatchingService,
     private readonly reconciler: MatchingReconciler,
     private readonly availability: WorkerAvailabilityService,
+    private readonly outboxCleanup: OutboxCleanupService,
     @InjectQueue(QUEUES.matching) private readonly queue: Queue,
     @Inject(ConfigService) private readonly config: AppConfigService,
   ) {
@@ -49,6 +51,11 @@ export class MatchingProcessor
       MATCHING_JOBS.sweepLocations,
       { every: this.config.get('LOCATION_SWEEP_MS', { infer: true }) },
       { name: MATCHING_JOBS.sweepLocations },
+    );
+    await this.queue.upsertJobScheduler(
+      MATCHING_JOBS.outboxCleanup,
+      { every: this.config.get('OUTBOX_CLEANUP_MS', { infer: true }) },
+      { name: MATCHING_JOBS.outboxCleanup },
     );
   }
 
@@ -73,6 +80,8 @@ export class MatchingProcessor
         return this.reconciler.runOnce();
       case MATCHING_JOBS.sweepLocations:
         return this.availability.sweepStale();
+      case MATCHING_JOBS.outboxCleanup:
+        return this.outboxCleanup.runOnce();
     }
     this.logger.warn(`Job de matching inválido: ${job.name} ${JSON.stringify(job.data)}`);
     return undefined;

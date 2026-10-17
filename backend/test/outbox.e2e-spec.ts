@@ -1,3 +1,4 @@
+import { OutboxCleanupService } from '../src/outbox/outbox-cleanup.service';
 import type { Queue } from 'bullmq';
 import { MatchingReconciler } from '../src/matching/matching.reconciler';
 import { OutboxRelay } from '../src/outbox/outbox.relay';
@@ -97,5 +98,34 @@ describe('Outbox transaccional, relay y reconciliador (e2e, ADR-0022)', () => {
     // Con el job presente (esperando, activo o ya completado) no lo vuelve a encolar.
     await reconciler.runOnce();
     expect((await ringJob(id))?.timestamp).toBe(job.timestamp);
+  });
+
+  it('la limpieza borra solo los eventos publicados hace más de 7 días', async () => {
+    const day = 24 * 3600_000;
+    const aggregateId = '00000000-0000-4000-8000-0000000000c1';
+    const mk = (publishedAgoDays: number | null) =>
+      t.prisma.outboxEvent.create({
+        data: {
+          type: 'request.held',
+          aggregateId,
+          payload: { requestId: aggregateId, matchCount: 0 },
+          createdAt: new Date(Date.now() - 10 * day),
+          publishedAt:
+            publishedAgoDays === null ? null : new Date(Date.now() - publishedAgoDays * day),
+        },
+      });
+    const old = await mk(8);
+    const recent = await mk(2);
+    // Pendiente y viejo: nunca se borra (todavía no se publicó). Con el relay detenido.
+    await relay.stop();
+    const pending = await mk(null);
+
+    expect(await t.app.get(OutboxCleanupService).runOnce()).toBeGreaterThanOrEqual(1);
+    const left = (
+      await t.prisma.outboxEvent.findMany({ where: { aggregateId }, select: { id: true } })
+    ).map((e) => e.id);
+    expect(left).not.toContain(old.id);
+    expect(left).toEqual(expect.arrayContaining([recent.id, pending.id]));
+    await t.prisma.outboxEvent.deleteMany({ where: { aggregateId } });
   });
 });

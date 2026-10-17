@@ -26,4 +26,4 @@ El ADR-0020 emitía los eventos de dominio en memoria (`@nestjs/event-emitter`) 
 ## Consecuencias
 - Garantía de **al menos una vez** de la base a la cola. Los consumidores deben ser idempotentes.
 - Latencia extra de hasta `OUTBOX_POLL_MS` (500 ms). Si hiciera falta menos, se puede agregar `LISTEN/NOTIFY` sin cambiar la garantía.
-- La tabla crece: hace falta una limpieza periódica de eventos publicados (docs/pendientes.md).
+- La tabla crece: la **limpieza** (Fase 4, `OutboxCleanupService`) es un job repetible del worker (`OUTBOX_CLEANUP_MS`, diario) que borra, por lotes de 5000, los eventos **publicados** hace más de `OUTBOX_RETENTION_DAYS` (7). Los pendientes nunca se borran. 7 días superan con holgura los 24 h que BullMQ guarda los jobs completados, así que la deduplicación por jobId no depende de esas filas. El ledger no se limpia nunca (append-only).

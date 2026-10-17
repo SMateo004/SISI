@@ -41,7 +41,7 @@ Implementadas como propuesta; cambiarlas es configuración (variables de entorno
 - [ ] **Retirar una oferta:** no existe; el trabajador solo puede reemplazarla mientras no se elija ninguna. Confirmar si hace falta.
 - [ ] **Push en iOS:** pendiente hasta tener la cuenta de Apple Developer (llave APNs en Firebase). Ver README, "Firebase".
 - [ ] **Firebase sin configurar:** staging corre con `PUSH_PROVIDER=fake` (solo log). Crear el proyecto y cargar las variables (README, "Firebase") antes de probar push en staging.
-- [ ] **Limpieza del outbox:** los eventos publicados quedan en `outbox_events`. Agregar un job que borre los publicados hace más de N días.
+- [x] **Limpieza del outbox:** job diario que borra los eventos publicados hace más de `OUTBOX_RETENTION_DAYS` (7) días (Fase 4, ADR-0022).
 - [ ] **Historial de ofertas:** reemplazar una oferta pisa el monto anterior (solo queda `revision`). Si hace falta auditar montos, agregar una tabla de eventos de oferta.
 - [ ] **Contacto:** hoy se muestra el teléfono con un botón para copiarlo. Agregar "Llamar" y "WhatsApp" (`url_launcher`) junto con el chat de la Fase 4.
 - [ ] **Bandeja de avisos en la app:** la API ya tiene `GET /me/notifications` y `POST /me/notifications/:id/read`; falta la pantalla.

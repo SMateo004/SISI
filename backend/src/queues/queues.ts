@@ -22,6 +22,8 @@ export const MATCHING_JOBS = {
   reconcile: 'reconcile',
   /** Barrido de ubicaciones vencidas (ADR-0024). */
   sweepLocations: 'sweep_locations',
+  /** Limpieza de eventos publicados del outbox (ADR-0022). */
+  outboxCleanup: 'outbox_cleanup',
 } as const;
 
 export const jobIds = {

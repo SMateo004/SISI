@@ -4,7 +4,9 @@ import { BillingLedgerService } from '../src/billing/billing-ledger.service';
 import { DebtCapService } from '../src/billing/debt-cap.service';
 import { connectSocket } from './utils/socket';
 import { EventHandlersRegistry } from '../src/outbox/event-handlers.registry';
+import type { PresignedUploadDto } from '../src/storage/dto/upload.dto';
 import { ledgerBalance, ledgerMismatches } from './utils/billing';
+import { fakeJpeg, putPresigned } from './utils/upload';
 import { assignJob, completeJob, waitNotified } from './utils/jobs';
 import { CENTRO, eastOf, publishRequest } from './utils/requests';
 import { createApprovedWorker, makeAvailable } from './utils/workers';
@@ -794,6 +796,137 @@ describe('Cobros (e2e, ADR-0034)', () => {
             : undefined,
         { what: 'la marca del tope limpia' },
       );
+    });
+  });
+
+  /** Sube una imagen con la URL prefirmada que devuelve `path` y devuelve la clave. */
+  const upload = async (token: string, path: string, extra: Record<string, unknown> = {}) => {
+    const file = fakeJpeg(4096);
+    const presigned = (
+      await request(t.app.getHttpServer())
+        .post(path)
+        .set(...bearer(token))
+        .send({ contentType: 'image/jpeg', sizeBytes: file.length, ...extra })
+        .expect((r) => {
+          if (r.status !== 200 && r.status !== 201) throw new Error(`upload-url ${r.status}`);
+        })
+    ).body as PresignedUploadDto;
+    expect(await putPresigned(presigned, file)).toBe(200);
+    return presigned.key;
+  };
+
+  describe('QR y comprobantes (ADR-0037)', () => {
+    it('el admin carga el QR de cobro de la empresa', async () => {
+      const admin = await loginAsAdmin(t);
+      const key = await upload(admin.accessToken, '/admin/billing/qr/upload-url');
+      expect(key.startsWith('company/')).toBe(true);
+      const res = await request(t.app.getHttpServer())
+        .put('/admin/billing/qr')
+        .set(...bearer(admin.accessToken))
+        .send({ key })
+        .expect(200);
+      expect((res.body as { qrUrl: string }).qrUrl).toMatch(/X-Amz-Signature/);
+    });
+
+    it('el trabajador envía su comprobante: pendiente, sin tocar el ledger; el admin lo registra', async () => {
+      const admin = await loginAsAdmin(t);
+      const { job, period } = await periodWithCommission(30);
+      const worker = job.worker;
+      const key = await upload(worker.accessToken, '/me/billing/submissions/upload-url');
+      expect(key.startsWith(`receipts/${worker.id}/`)).toBe(true);
+      const sent = await request(t.app.getHttpServer())
+        .post('/me/billing/submissions')
+        .set(...bearer(worker.accessToken))
+        .send({ receiptKey: key, declaredAmountBs: '19.50', note: 'Pagué por QR' })
+        .expect(201);
+      const submission = sent.body as { id: string; status: string; receiptUrl: string };
+      expect(submission.status).toBe('pendiente');
+      expect(submission.receiptUrl).toMatch(/X-Amz-Signature/);
+      expect(await ledgerBalance(t, worker.id)).toBe('19.50');
+
+      // Otro trabajador no puede usar mi archivo; alguien sin perfil de trabajador no envía.
+      const other = await createApprovedWorker(t);
+      const stolen = await request(t.app.getHttpServer())
+        .post('/me/billing/submissions')
+        .set(...bearer(other.accessToken))
+        .send({ receiptKey: key })
+        .expect(403);
+      expect(stolen.body).toMatchObject({ code: 'UPLOAD_KEY_FORBIDDEN' });
+      const stranger = await login(t);
+      const notWorker = await request(t.app.getHttpServer())
+        .post('/me/billing/submissions/upload-url')
+        .set(...bearer(stranger.accessToken))
+        .send({ contentType: 'image/jpeg', sizeBytes: 100 })
+        .expect(403);
+      expect(notWorker.body).toMatchObject({ code: 'NOT_A_WORKER' });
+      // Y no ve los comprobantes de otro.
+      const othersList = await request(t.app.getHttpServer())
+        .get('/me/billing/submissions')
+        .set(...bearer(other.accessToken))
+        .expect(200);
+      expect(othersList.body).toEqual([]);
+
+      const pending = await request(t.app.getHttpServer())
+        .get('/admin/billing/submissions')
+        .set(...bearer(admin.accessToken))
+        .expect(200);
+      expect((pending.body as { id: string }[]).map((s) => s.id)).toContain(submission.id);
+
+      await payment(admin.accessToken, {
+        workerId: worker.id,
+        amountBs: '19.50',
+        method: 'qr_transferencia',
+        paidAt: new Date().toISOString(),
+        reference: period.paymentReference,
+        submissionId: submission.id,
+      }).expect(200);
+      const registered = await t.prisma.paymentSubmission.findUniqueOrThrow({
+        where: { id: submission.id },
+      });
+      expect(registered.status).toBe('registrado');
+      const paid = await t.prisma.payment.findFirstOrThrow({ where: { workerId: worker.id } });
+      expect(paid.receiptKey).toBe(key);
+      expect(paid.submissionId).toBe(submission.id);
+      // Ya registrado, no se vuelve a usar ni se rechaza.
+      await payment(admin.accessToken, {
+        workerId: worker.id,
+        amountBs: '1.00',
+        method: 'qr_transferencia',
+        paidAt: new Date().toISOString(),
+        submissionId: submission.id,
+      }).expect(409);
+      await request(t.app.getHttpServer())
+        .post(`/admin/billing/submissions/${submission.id}/reject`)
+        .set(...bearer(admin.accessToken))
+        .send({ note: 'Ilegible' })
+        .expect(409);
+    });
+
+    it('un comprobante ilegible se rechaza con motivo', async () => {
+      const admin = await loginAsAdmin(t);
+      const worker = await createApprovedWorker(t);
+      const key = await upload(worker.accessToken, '/me/billing/submissions/upload-url');
+      const sent = (
+        await request(t.app.getHttpServer())
+          .post('/me/billing/submissions')
+          .set(...bearer(worker.accessToken))
+          .send({ receiptKey: key })
+          .expect(201)
+      ).body as { id: string };
+      const rejected = await request(t.app.getHttpServer())
+        .post(`/admin/billing/submissions/${sent.id}/reject`)
+        .set(...bearer(admin.accessToken))
+        .send({ note: 'No se lee el monto.' })
+        .expect(200);
+      expect(rejected.body).toMatchObject({
+        status: 'rechazado',
+        reviewNote: 'No se lee el monto.',
+      });
+      const mine = await request(t.app.getHttpServer())
+        .get('/me/billing/submissions')
+        .set(...bearer(worker.accessToken))
+        .expect(200);
+      expect((mine.body as { status: string }[])[0]?.status).toBe('rechazado');
     });
   });
 });

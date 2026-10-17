@@ -15,4 +15,11 @@ export const FEATURE_FLAGS: {
     description:
       'Matching por anillos (ADR-0025). Apagado, las solicitudes quedan en buscando y el matching se retoma al encenderlo.',
   },
+  {
+    key: 'payments.gateway',
+    citySlug: null,
+    enabled: false,
+    description:
+      'Pasarela de pago automática (R7.4, fase 2 del negocio; ADR-0037). Sin implementar: el MVP cobra por QR y el admin registra el pago.',
+  },
 ];

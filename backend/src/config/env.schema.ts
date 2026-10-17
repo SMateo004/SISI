@@ -85,6 +85,8 @@ export const envSchema = z
     UPLOAD_MAX_BYTES: positiveInt(8 * 1024 * 1024),
     UPLOAD_URL_TTL_SEC: positiveInt(300),
     DOCUMENT_URL_TTL_SEC: positiveInt(300),
+    /** Enlaces temporales a comprobantes de pago y al QR de cobro (R8.2). */
+    RECEIPT_URL_TTL_SEC: positiveInt(300),
     AVATAR_URL_TTL_SEC: positiveInt(3600),
 
     DEFAULT_CITY_SLUG: z.string().default('santa-cruz'),

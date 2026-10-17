@@ -47,6 +47,14 @@ export class RegisterPaymentDto {
   @MaxLength(300)
   receiptKey?: string;
 
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description: 'Comprobante enviado por el trabajador que se está registrando',
+  })
+  @IsOptional()
+  @IsUUID('all')
+  submissionId?: string;
+
   @ApiPropertyOptional({ description: 'Número de factura (sin uso hasta la revisión tributaria)' })
   @IsOptional()
   @IsString()

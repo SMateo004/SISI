@@ -128,6 +128,19 @@ export class BillingAdminService {
             })),
           );
           const allocations = allocatePayment(amount, balances, current.id);
+          const submission = dto.submissionId
+            ? await tx.paymentSubmission.findUnique({ where: { id: dto.submissionId } })
+            : null;
+          if (
+            dto.submissionId &&
+            (submission?.workerId !== dto.workerId || submission.status !== 'pendiente')
+          ) {
+            throw new ApiError(
+              HttpStatus.CONFLICT,
+              'SUBMISSION_NOT_PENDING',
+              'Ese comprobante no está pendiente para este trabajador.',
+            );
+          }
           const payment = await tx.payment.create({
             data: {
               workerId: dto.workerId,
@@ -136,7 +149,8 @@ export class BillingAdminService {
               amountBs: amount.toFixed(2),
               method: dto.method,
               reference: BillingAdminService.optional(dto.reference),
-              receiptKey: dto.receiptKey ?? null,
+              receiptKey: dto.receiptKey ?? submission?.receiptKey ?? null,
+              submissionId: submission?.id ?? null,
               invoiceNumber: BillingAdminService.optional(dto.invoiceNumber),
               registeredById: adminId,
               paidAt,
@@ -165,6 +179,17 @@ export class BillingAdminService {
               paymentReference: period.paymentReference,
               amountBs: a.amount.toFixed(2),
               status,
+            });
+          }
+          if (submission) {
+            await tx.paymentSubmission.update({
+              where: { id: submission.id },
+              data: {
+                status: 'registrado',
+                paymentId: payment.id,
+                reviewedById: adminId,
+                reviewedAt: now,
+              },
             });
           }
           await this.outbox.add(tx, 'billing.payment_registered', dto.workerId, {

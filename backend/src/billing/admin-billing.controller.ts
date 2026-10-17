@@ -7,6 +7,8 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Put,
+  Query,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -23,6 +25,15 @@ import { ApiErrorBody } from '../common/errors/api-error';
 import { requireIdempotencyKey } from '../common/idempotency/idempotency';
 import { PresignedUploadDto } from '../storage/dto/upload.dto';
 import { BillingAdminService } from './billing-admin.service';
+import { BillingFilesService } from './billing-files.service';
+import {
+  FileUploadDto,
+  ListSubmissionsQuery,
+  PaymentSubmissionDto,
+  QrResultDto,
+  RejectSubmissionDto,
+  SetQrDto,
+} from './dto/billing-files.dto';
 import {
   AdjustmentResultDto,
   AdminWorkerBillingDto,
@@ -52,7 +63,10 @@ const IDEMPOTENCY_HEADER = {
 })
 @Controller('admin/billing')
 export class AdminBillingController {
-  constructor(private readonly billing: BillingAdminService) {}
+  constructor(
+    private readonly billing: BillingAdminService,
+    private readonly files: BillingFilesService,
+  ) {}
 
   @Post('receipts/upload-url')
   @ApiOperation({ summary: 'URL para subir el comprobante de un pago (receipts/, privado)' })
@@ -109,5 +123,44 @@ export class AdminBillingController {
   @ApiOkResponse({ type: AdminWorkerBillingDto })
   worker(@Param('id', ParseUUIDPipe) id: string): Promise<AdminWorkerBillingDto> {
     return this.billing.workerBilling(id);
+  }
+
+  @Post('qr/upload-url')
+  @ApiOperation({ summary: 'URL para subir la imagen del QR de cobro de la empresa' })
+  @ApiOkResponse({ type: PresignedUploadDto })
+  qrUploadUrl(@Body() dto: FileUploadDto): Promise<PresignedUploadDto> {
+    return this.files.qrUploadUrl(dto.contentType, dto.sizeBytes);
+  }
+
+  @Put('qr')
+  @ApiOperation({
+    summary: 'Configurar el QR de cobro (R7.4)',
+    description: 'Después del PUT a la URL de subida. Los trabajadores lo ven en "Pagar comisión".',
+  })
+  @ApiOkResponse({ type: QrResultDto })
+  setQr(@CurrentUser() current: AuthenticatedUser, @Body() dto: SetQrDto): Promise<QrResultDto> {
+    return this.files.setQr(current.id, dto.key);
+  }
+
+  @Get('submissions')
+  @ApiOperation({ summary: 'Comprobantes enviados por los trabajadores (por defecto, pendientes)' })
+  @ApiOkResponse({ type: [PaymentSubmissionDto] })
+  submissions(@Query() q: ListSubmissionsQuery): Promise<PaymentSubmissionDto[]> {
+    return this.files.listSubmissions(q.status ?? 'pendiente');
+  }
+
+  @Post('submissions/:id/reject')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Rechazar un comprobante',
+    description: 'Para aceptarlo se registra el pago con submissionId.',
+  })
+  @ApiOkResponse({ type: PaymentSubmissionDto })
+  rejectSubmission(
+    @CurrentUser() current: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RejectSubmissionDto,
+  ): Promise<PaymentSubmissionDto> {
+    return this.files.rejectSubmission(current.id, id, dto.note.trim());
   }
 }

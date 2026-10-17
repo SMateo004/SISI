@@ -836,8 +836,9 @@ model BillingPeriod {
   createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt        DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  entries LedgerEntry[]
-  notices BillingNotice[]
+  entries  LedgerEntry[]
+  notices  BillingNotice[]
+  payments Payment[]
 
   @@unique([workerId, startAt])
   @@index([status, endAt])
@@ -865,7 +866,8 @@ model LedgerEntry {
   createdById     String?         @map("created_by_id") @db.Uuid
   createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  period BillingPeriod @relation(fields: [periodId], references: [id])
+  period  BillingPeriod @relation(fields: [periodId], references: [id])
+  payment Payment?      @relation(fields: [paymentId], references: [id], onDelete: Restrict)
 
   @@index([workerId, id])
   @@index([periodId])
@@ -896,22 +898,28 @@ enum PaymentMethod {
 /// Pago registrado por un admin (R7.4, ADR-0037). Se reparte en el ledger: un movimiento
 /// `pago` por periodo cubierto, todos con este payment_id.
 model Payment {
-  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workerId       String        @map("worker_id") @db.Uuid
-  cityId         String        @map("city_id") @db.Uuid
+  id             String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workerId       String             @map("worker_id") @db.Uuid
+  cityId         String             @map("city_id") @db.Uuid
   /// Primer periodo que cubre (el más antiguo con saldo).
-  periodId       String        @map("period_id") @db.Uuid
-  amountBs       Decimal       @map("amount_bs") @db.Decimal(12, 2)
+  periodId       String             @map("period_id") @db.Uuid
+  amountBs       Decimal            @map("amount_bs") @db.Decimal(12, 2)
   method         PaymentMethod
   /// Referencia que el trabajador escribió en la glosa, o la del banco.
   reference      String?
   /// Comprobante en el bucket privado (receipts/{worker}/…).
-  receiptKey     String?       @map("receipt_key")
+  receiptKey     String?            @map("receipt_key")
   /// Número de factura de la comisión: sin uso hasta la revisión tributaria (pendiente).
-  invoiceNumber  String?       @map("invoice_number")
-  registeredById String        @map("registered_by_id") @db.Uuid
-  paidAt         DateTime      @map("paid_at") @db.Timestamptz(3)
-  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  invoiceNumber  String?            @map("invoice_number")
+  registeredById String             @map("registered_by_id") @db.Uuid
+  /// Comprobante enviado por el trabajador que originó este registro, si hubo.
+  submissionId   String?            @unique @map("submission_id") @db.Uuid
+  submission     PaymentSubmission? @relation(fields: [submissionId], references: [id], onDelete: Restrict)
+  paidAt         DateTime           @map("paid_at") @db.Timestamptz(3)
+  createdAt      DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  period  BillingPeriod @relation(fields: [periodId], references: [id])
+  entries LedgerEntry[]
 
   @@index([workerId, paidAt])
   @@map("payments")
@@ -930,4 +938,48 @@ model IdempotencyKey {
 
   @@id([scope, key])
   @@map("idempotency_keys")
+}
+
+enum PaymentSubmissionStatus {
+  pendiente
+  registrado
+  rechazado
+
+  @@map("payment_submission_status")
+}
+
+/// Comprobante subido por el trabajador (propuesta, ADR-0037): "enviado, pendiente de
+/// verificación". No toca el ledger hasta que un admin registra el pago.
+model PaymentSubmission {
+  id               String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workerId         String                  @map("worker_id") @db.Uuid
+  cityId           String                  @map("city_id") @db.Uuid
+  receiptKey       String                  @map("receipt_key")
+  declaredAmountBs Decimal?                @map("declared_amount_bs") @db.Decimal(12, 2)
+  note             String?
+  status           PaymentSubmissionStatus @default(pendiente)
+  paymentId        String?                 @map("payment_id") @db.Uuid
+  reviewNote       String?                 @map("review_note")
+  reviewedById     String?                 @map("reviewed_by_id") @db.Uuid
+  reviewedAt       DateTime?               @map("reviewed_at") @db.Timestamptz(3)
+  createdAt        DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  payment Payment?
+
+  @@index([workerId, createdAt])
+  @@index([status, createdAt])
+  @@map("payment_submissions")
+}
+
+/// Configuración editable por el admin (por ahora, el QR de cobro de la empresa).
+model AppSetting {
+  key         String
+  /// 'global' o el id de una ciudad.
+  scope       String   @default("global")
+  value       Json
+  updatedById String?  @map("updated_by_id") @db.Uuid
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@id([key, scope])
+  @@map("app_settings")
 }

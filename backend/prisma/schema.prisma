@@ -205,6 +205,10 @@ model WorkerProfile {
   maxRadiusKm          Int?           @map("max_radius_km") @db.SmallInt
   ratingAvg            Decimal        @default(0) @map("rating_avg") @db.Decimal(3, 2)
   ratingCount          Int            @default(0) @map("rating_count")
+  /// Código corto y estable para la referencia de pago (base32 sin caracteres ambiguos, ADR-0035).
+  billingCode          String?        @unique @map("billing_code") @db.VarChar(8)
+  /// Cruzó el tope de deuda (R7.5): se avisa una sola vez hasta que baje (ADR-0038).
+  debtCapReachedAt     DateTime?      @map("debt_cap_reached_at") @db.Timestamptz(3)
   /// Sin lógica en el MVP (niveles: etapa 2).
   level                Int            @default(1)
   submittedAt          DateTime?      @map("submitted_at") @db.Timestamptz(3)
@@ -792,4 +796,91 @@ model JobEvent {
 
   @@index([jobId, id])
   @@map("job_events")
+}
+
+enum LedgerEntryType {
+  comision
+  pago
+  ajuste
+
+  @@map("ledger_entry_type")
+}
+
+enum BillingPeriodStatus {
+  abierto
+  cerrado_pendiente
+  pagado
+  vencido
+
+  @@map("billing_period_status")
+}
+
+/// Periodo semanal de cobro de un trabajador (R7.2, R7.8, ADR-0035). Intervalo [start_at, end_at)
+/// en la zona horaria de su ciudad. Los totales son derivados del ledger.
+model BillingPeriod {
+  id               String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workerId         String              @map("worker_id") @db.Uuid
+  cityId           String              @map("city_id") @db.Uuid
+  timezone         String
+  startAt          DateTime            @map("start_at") @db.Timestamptz(3)
+  endAt            DateTime            @map("end_at") @db.Timestamptz(3)
+  dueAt            DateTime            @map("due_at") @db.Timestamptz(3)
+  status           BillingPeriodStatus @default(abierto)
+  /// Derivados: suma de los trabajos y de las comisiones del periodo (se verifican contra el ledger).
+  grossBs          Decimal             @default(0) @map("gross_bs") @db.Decimal(12, 2)
+  commissionBs     Decimal             @default(0) @map("commission_bs") @db.Decimal(12, 2)
+  paymentReference String              @unique @map("payment_reference")
+  closedAt         DateTime?           @map("closed_at") @db.Timestamptz(3)
+  paidAt           DateTime?           @map("paid_at") @db.Timestamptz(3)
+  overdueAt        DateTime?           @map("overdue_at") @db.Timestamptz(3)
+  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  entries LedgerEntry[]
+  notices BillingNotice[]
+
+  @@unique([workerId, startAt])
+  @@index([status, endAt])
+  @@index([status, dueAt])
+  @@map("billing_periods")
+}
+
+/// Ledger inmutable (R7.9, ADR-0034). Monto con signo: positivo aumenta la deuda (comisión,
+/// ajuste en contra); negativo la reduce (pago, ajuste a favor). Un trigger rechaza UPDATE y DELETE.
+model LedgerEntry {
+  id              BigInt          @id @default(autoincrement())
+  workerId        String          @map("worker_id") @db.Uuid
+  cityId          String          @map("city_id") @db.Uuid
+  periodId        String          @map("period_id") @db.Uuid
+  type            LedgerEntryType
+  amountBs        Decimal         @map("amount_bs") @db.Decimal(12, 2)
+  /// Comisión: el trabajo (único por trabajo, índice parcial).
+  jobId           String?         @map("job_id") @db.Uuid
+  /// Pago: el registro de payments.
+  paymentId       String?         @map("payment_id") @db.Uuid
+  /// Ajuste: el movimiento que corrige, si aplica.
+  correctsEntryId BigInt?         @map("corrects_entry_id")
+  reason          String?
+  /// Quién lo creó (admin); null = sistema.
+  createdById     String?         @map("created_by_id") @db.Uuid
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  period BillingPeriod @relation(fields: [periodId], references: [id])
+
+  @@index([workerId, id])
+  @@index([periodId])
+  @@map("ledger_entries")
+}
+
+/// Avisos de cobro ya emitidos por periodo (R7.6): uno por tipo, aunque el cron corra muchas veces.
+model BillingNotice {
+  periodId  String   @map("period_id") @db.Uuid
+  /// cierre | vispera | dia | vencido
+  kind      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  period BillingPeriod @relation(fields: [periodId], references: [id])
+
+  @@id([periodId, kind])
+  @@map("billing_notices")
 }

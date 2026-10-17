@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { normalizePhone } from '../common/phone/phone';
 import type { AppConfigService } from '../config/app-config';
+import { BillingDebtStatusProvider } from '../billing/billing-debt-status.provider';
 import { AppConfigModule } from '../config/config.module';
 import { JobStatusModule } from '../jobs/job-status.module';
 import { JobStatusService } from '../jobs/job-status.service';
@@ -17,7 +18,6 @@ import { ReportsService } from '../reports/reports.service';
 import {
   DEBT_STATUS_PROVIDER,
   LoggingWorkerNotifier,
-  NoBillingYetDebtProvider,
   WORKER_NOTIFIER,
 } from '../workers/worker.ports';
 import { type WorkerEventInput, WorkerStatusService } from '../workers/worker-status.service';
@@ -50,7 +50,7 @@ import { type WorkerEventInput, WorkerStatusService } from '../workers/worker-st
     WorkerStatusService,
     ModerationService,
     ReportsService,
-    { provide: DEBT_STATUS_PROVIDER, useClass: NoBillingYetDebtProvider },
+    { provide: DEBT_STATUS_PROVIDER, useClass: BillingDebtStatusProvider },
     { provide: WORKER_NOTIFIER, useClass: LoggingWorkerNotifier },
   ],
 })

@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeEmitter } from '../realtime/realtime.emitter';
 import { BillingLedgerService } from './billing-ledger.service';
 import { dueLabel } from './billing.rules';
+import { DebtStateService } from './debt-state.service';
 
 /**
  * Cobros en el worker (ADR-0034, ADR-0036). Idempotentes:
@@ -20,6 +21,7 @@ export class BillingEventsHandlers implements OnModuleInit {
     private readonly ledger: BillingLedgerService,
     private readonly realtime: RealtimeEmitter,
     private readonly notifications: NotificationsService,
+    private readonly debtState: DebtStateService,
   ) {}
 
   onModuleInit(): void {
@@ -33,8 +35,17 @@ export class BillingEventsHandlers implements OnModuleInit {
       });
     });
 
+    // Cambió el saldo (comisión, pago o ajuste): bloqueo o desbloqueo según la deuda vencida.
+    this.registry.on('billing.balance_changed', async ({ payload }) => {
+      await this.debtState.reconcile(payload.workerId);
+    });
+
     this.registry.on('billing.notice', async ({ payload }) => {
-      if (payload.kind === 'vencido') return;
+      // Vencido (R7.7): el bloqueo avisa con account:blocked y push.
+      if (payload.kind === 'vencido') {
+        await this.debtState.reconcile(payload.workerId);
+        return;
+      }
       const period = await this.prisma.billingPeriod.findUniqueOrThrow({
         where: { id: payload.periodId },
       });

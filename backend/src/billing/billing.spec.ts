@@ -1,3 +1,4 @@
+import { debtTransition } from './debt-state.service';
 import { Prisma } from '../generated/prisma/client';
 import {
   allocatePayment,
@@ -181,5 +182,22 @@ describe('tope de deuda (R7.5, ADR-0038)', () => {
   it('monto para volver a recibir solicitudes', () => {
     expect(amountToUnlockCap(d('162.30'), cap).toFixed(2)).toBe('12.30');
     expect(amountToUnlockCap(d('150.00'), cap).toFixed(2)).toBe('0.00');
+  });
+});
+
+describe('bloqueo por deuda (R7.7, ADR-0038)', () => {
+  it('bloquea al aprobado con deuda vencida y desbloquea al pagar', () => {
+    expect(debtTransition('aprobado', true)).toBe('BLOCK_FOR_DEBT');
+    expect(debtTransition('bloqueado_deuda', false)).toBe('DEBT_PAID');
+  });
+
+  it('idempotente y sin tocar otros estados', () => {
+    expect(debtTransition('aprobado', false)).toBeNull();
+    expect(debtTransition('bloqueado_deuda', true)).toBeNull();
+    // La suspensión tiene prioridad: al levantarla se mira la deuda (ADR-0013).
+    expect(debtTransition('suspendido_moderacion', true)).toBeNull();
+    expect(debtTransition('suspendido_moderacion', false)).toBeNull();
+    expect(debtTransition('pendiente_revision', true)).toBeNull();
+    expect(debtTransition(null, true)).toBeNull();
   });
 });

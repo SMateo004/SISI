@@ -15,6 +15,8 @@ export const RealtimeEvents = {
   jobLocation: 'job:location',
   chatMessage: 'chat:message',
   billingDue: 'billing:due',
+  accountBlocked: 'account:blocked',
+  accountUnblocked: 'account:unblocked',
 } as const;
 
 export type RealtimeEventName = (typeof RealtimeEvents)[keyof typeof RealtimeEvents];
@@ -74,6 +76,16 @@ export interface RealtimePayloads {
     paymentReference: string;
     dueAt: string;
   };
+  /**
+   * Al trabajador: su modo trabajador quedó bloqueado (R7.7 deuda vencida, R9.3 moderación).
+   * Sigue pudiendo usar la app como empleador (R1.6).
+   */
+  'account:blocked': {
+    reason: 'deuda' | 'moderacion';
+    status: 'bloqueado_deuda' | 'suspendido_moderacion';
+  };
+  /** Al trabajador: se levantó el bloqueo. No cambia de modo solo: usa el interruptor. */
+  'account:unblocked': { status: string };
   'chat:message': {
     jobId: string;
     messageId: string;

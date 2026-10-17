@@ -29,6 +29,8 @@ export interface NotificationInputs {
     dueLabel: string;
     today: boolean;
   };
+  account_blocked: { reason: 'deuda' | 'moderacion' };
+  account_unblocked: { status: string };
   review_request: { jobId: string; counterpartShortName: string; toWorker: boolean };
   job_cancelled: {
     jobId: string;
@@ -138,6 +140,22 @@ const RENDER: { [T in NotificationType]: (d: NotificationInputs[T]) => RenderedN
     title: d.today ? 'Hoy vence tu comisión' : 'Mañana vence tu comisión',
     body: `Paga ${bs(d.amountBs)} hasta el ${d.dueLabel} para seguir recibiendo trabajos. Referencia: ${d.reference}.`,
     route: '/ganancias/pagar',
+  }),
+  account_blocked: (d) => ({
+    title:
+      d.reason === 'deuda'
+        ? 'Tu modo trabajador está bloqueado por deuda'
+        : 'Tu modo trabajador está suspendido',
+    body:
+      d.reason === 'deuda'
+        ? 'Paga tu comisión vencida para volver a recibir trabajos. Puedes seguir pidiendo servicios como empleador.'
+        : 'Mientras revisamos un reporte no recibirás trabajos. Puedes seguir pidiendo servicios como empleador.',
+    route: d.reason === 'deuda' ? '/ganancias/pagar' : '/',
+  }),
+  account_unblocked: () => ({
+    title: 'Ya puedes volver a trabajar',
+    body: 'Se levantó el bloqueo de tu modo trabajador. Actívalo con el interruptor.',
+    route: '/',
   }),
   review_request: (d) => ({
     title: d.toWorker ? 'Califica al empleador' : `Califica a ${d.counterpartShortName}`,

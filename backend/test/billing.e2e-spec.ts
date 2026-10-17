@@ -351,4 +351,90 @@ describe('Cobros (e2e, ADR-0034)', () => {
       }
     });
   });
+
+  describe('vencimiento y bloqueo por deuda (R7.7, ADR-0038)', () => {
+    it('vencido sin pagar: bloqueado_deuda, modo employer, fuera del matching y account:blocked', async () => {
+      const { job, period } = await periodWithCommission(10);
+      const worker = job.worker;
+      const live = await connectSocket(t, worker.accessToken);
+      try {
+        await catchUp(minutes(period.endAt, 5));
+        // Antes de la fecha límite no pasa nada.
+        await catchUp(minutes(period.dueAt, -1));
+        expect(
+          (await t.prisma.workerProfile.findUniqueOrThrow({ where: { userId: worker.id } })).status,
+        ).toBe('aprobado');
+
+        const result = await catchUp(minutes(period.dueAt, 5));
+        expect(result.overdue).toBeGreaterThanOrEqual(1);
+        expect(
+          (await t.prisma.billingPeriod.findUniqueOrThrow({ where: { id: period.id } })).status,
+        ).toBe('vencido');
+
+        expect(await live.next('account:blocked')).toEqual({
+          reason: 'deuda',
+          status: 'bloqueado_deuda',
+        });
+        const user = await t.prisma.user.findUniqueOrThrow({
+          where: { id: worker.id },
+          include: { workerProfile: true },
+        });
+        expect(user.workerProfile?.status).toBe('bloqueado_deuda');
+        expect(user.activeMode).toBe('employer');
+        const location = await t.prisma.workerLocation.findUnique({
+          where: { workerId: worker.id },
+        });
+        expect(location?.available ?? false).toBe(false);
+
+        // El interruptor explica el motivo y lleva a pagar; el modo empleador sigue funcionando.
+        const denied = await request(t.app.getHttpServer())
+          .patch('/me/mode')
+          .set(...bearer(worker.accessToken))
+          .send({ mode: 'worker' })
+          .expect(409);
+        expect(denied.body).toMatchObject({
+          code: 'WORKER_BLOCKED_DEBT',
+          nextAction: 'PAY_COMMISSION',
+        });
+        await request(t.app.getHttpServer())
+          .patch('/me/mode')
+          .set(...bearer(worker.accessToken))
+          .send({ mode: 'employer' })
+          .expect(200);
+        // Fuera del matching: no puede volver a estar disponible.
+        await request(t.app.getHttpServer())
+          .put('/worker/availability')
+          .set(...bearer(worker.accessToken))
+          .send({ available: true, latitude: -17.7834, longitude: -63.1821 })
+          .expect(409);
+
+        const notices = await waitFor(
+          async () => {
+            const rows = await t.prisma.notification.findMany({
+              where: { userId: worker.id, type: 'account_blocked' },
+            });
+            return rows.length > 0 ? rows : undefined;
+          },
+          { what: 'el aviso de bloqueo' },
+        );
+        expect(notices[0]?.title).toBe('Tu modo trabajador está bloqueado por deuda');
+
+        // El cron corre de nuevo: no hay otro bloqueo ni otro aviso.
+        await catchUp(minutes(period.dueAt, 65));
+        await new Promise((r) => setTimeout(r, 300));
+        expect(
+          await t.prisma.notification.count({
+            where: { userId: worker.id, type: 'account_blocked' },
+          }),
+        ).toBe(1);
+        expect(
+          await t.prisma.workerStatusEvent.count({
+            where: { workerId: worker.id, event: 'BLOCK_FOR_DEBT' },
+          }),
+        ).toBe(1);
+      } finally {
+        live.close();
+      }
+    });
+  });
 });

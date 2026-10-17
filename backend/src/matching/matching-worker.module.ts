@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { BillingDebtModule } from '../billing/billing-debt.module';
 import { JobStatusModule } from '../jobs/job-status.module';
 import { WorkerAvailabilityModule } from '../locations/locations.module';
 import { OutboxRelayModule } from '../outbox/outbox-relay.module';
@@ -22,6 +23,7 @@ import { MatchingService } from './matching.service';
     RequestStatusModule,
     JobStatusModule,
     ReviewPublisherModule,
+    BillingDebtModule,
   ],
   providers: [
     matchingConfigProvider,

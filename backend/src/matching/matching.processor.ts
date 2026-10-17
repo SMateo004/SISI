@@ -10,6 +10,7 @@ import type { Job, Queue } from 'bullmq';
 import type { AppConfigService } from '../config/app-config';
 import { WorkerAvailabilityService } from '../locations/worker-availability.service';
 import { MATCHING_JOBS, QUEUES } from '../queues/queues';
+import { DebtStateService } from '../billing/debt-state.service';
 import { JobAutoConfirmService } from '../jobs/job-autoconfirm.service';
 import { OutboxCleanupService } from '../outbox/outbox-cleanup.service';
 import { ReviewPublisher } from '../reviews/review-publisher.service';
@@ -39,6 +40,7 @@ export class MatchingProcessor
     private readonly outboxCleanup: OutboxCleanupService,
     private readonly autoConfirm: JobAutoConfirmService,
     private readonly reviews: ReviewPublisher,
+    private readonly debtState: DebtStateService,
     @InjectQueue(QUEUES.matching) private readonly queue: Queue,
     @Inject(ConfigService) private readonly config: AppConfigService,
   ) {
@@ -84,6 +86,7 @@ export class MatchingProcessor
       case MATCHING_JOBS.reconcile:
         await this.autoConfirm.sweepDue();
         await this.reviews.sweepDue();
+        await this.debtState.sweep();
         return this.reconciler.runOnce();
       case MATCHING_JOBS.sweepLocations:
         return this.availability.sweepStale();

@@ -92,13 +92,16 @@ export class WorkerStatusService {
       }
 
       const profile = await tx.workerProfile.findUniqueOrThrow({ where: { userId } });
-      return { profile, modeForcedToEmployer };
+      return { profile, modeForcedToEmployer, from: current.status };
     });
 
     if (change.modeForcedToEmployer) {
       await this.notifier.modeForcedToEmployer(userId, change.profile.status);
     }
-    return change;
+    if (change.from !== change.profile.status) {
+      await this.notifier.statusChanged(userId, change.from, change.profile.status);
+    }
+    return { profile: change.profile, modeForcedToEmployer: change.modeForcedToEmployer };
   }
 }
 

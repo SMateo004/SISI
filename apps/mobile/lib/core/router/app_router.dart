@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/otp_screen.dart';
+import '../../features/chat/presentation/chat_screen.dart';
 import '../../features/auth/presentation/phone_screen.dart';
 import '../../features/health/presentation/health_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
+import '../../features/jobs/presentation/job_history_screen.dart';
+import '../../features/jobs/presentation/job_screen.dart';
 import '../../features/matching/presentation/incoming_request_screen.dart';
-import '../../features/offers/presentation/job_contact_screen.dart';
+import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/requests/presentation/my_requests_screen.dart';
 import '../../features/requests/presentation/new_request_flow_screen.dart';
@@ -100,9 +103,31 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             IncomingRequestScreen(requestId: state.pathParameters['id']!),
       ),
       GoRoute(
+        path: Routes.jobsPath,
+        builder: (context, state) => JobHistoryScreen(
+          role: state.uri.queryParameters['rol'] == 'trabajador'
+              ? 'worker'
+              : 'employer',
+        ),
+      ),
+      // El contacto ahora vive en la pantalla del trabajo (enlaces viejos y push).
+      GoRoute(
         path: Routes.jobContactPath,
+        redirect: (context, state) => Routes.job(state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: Routes.jobChatPath,
         builder: (context, state) =>
-            JobContactScreen(jobId: state.pathParameters['id']!),
+            ChatScreen(jobId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: Routes.jobPath,
+        builder: (context, state) =>
+            JobScreen(jobId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: Routes.notifications,
+        builder: (context, state) => const NotificationsScreen(),
       ),
     ],
   );

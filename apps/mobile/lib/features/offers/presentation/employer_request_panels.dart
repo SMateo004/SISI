@@ -215,9 +215,9 @@ class AssignedPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => FilledButton.icon(
     key: const Key('see-contact'),
-    onPressed: () => context.push(Routes.jobContact(jobId)),
-    icon: const Icon(Icons.contact_phone),
-    label: const Text('Ver contacto del trabajador'),
+    onPressed: () => context.push(Routes.job(jobId)),
+    icon: const Icon(Icons.work_outline),
+    label: const Text('Ver el trabajo y el contacto'),
   );
 }
 

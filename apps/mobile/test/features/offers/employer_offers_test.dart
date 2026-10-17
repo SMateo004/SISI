@@ -4,6 +4,7 @@ import 'package:sisi_mobile/core/realtime/realtime_client.dart';
 import 'package:sisi_mobile/features/offers/domain/offer_models.dart';
 import 'package:sisi_mobile/features/requests/domain/service_request.dart';
 
+import '../../helpers/fake_jobs.dart';
 import '../../helpers/fake_matching.dart';
 import '../../helpers/fake_realtime.dart';
 import '../../helpers/fakes.dart';
@@ -22,6 +23,7 @@ Future<void> _openDetail(
     requests: requests ?? FakeRequestsRepository(mine: [request]),
     offers: offers,
     realtime: realtime,
+    jobs: FakeJobsRepository(jobs: [testJob(myRole: 'employer')]),
   );
   await tester.tap(find.text('Mis solicitudes'));
   await tester.pumpAndSettle();
@@ -112,7 +114,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(offers.accepted.single, ('a', 'o1'));
-    expect(find.text('Elegiste a tu trabajador'), findsOneWidget);
+    // Lleva a la pantalla del trabajo, con el contacto del trabajador.
+    expect(find.byKey(const Key('job-status')), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('contact-phone')),
+      200,
+    );
     expect(find.text('+59171234567'), findsOneWidget);
   });
 
@@ -128,6 +135,10 @@ void main() {
     await tester.ensureVisible(find.byKey(const Key('see-contact')));
     await tester.tap(find.byKey(const Key('see-contact')));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('contact-phone')),
+      200,
+    );
     expect(find.text('Ana Rojas'), findsOneWidget);
   });
 

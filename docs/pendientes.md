@@ -58,7 +58,7 @@ Implementadas como propuesta; cambiarlas es configuración (variables de entorno
 - [x] **Limpieza del outbox:** job diario que borra los eventos publicados hace más de `OUTBOX_RETENTION_DAYS` (7) días (Fase 4, ADR-0022).
 - [ ] **Historial de ofertas:** reemplazar una oferta pisa el monto anterior (solo queda `revision`). Si hace falta auditar montos, agregar una tabla de eventos de oferta.
 - [x] **Contacto:** la API da `telUri` y `whatsappUri` (Fase 4); la app agrega "Llamar" y "WhatsApp" con `url_launcher`.
-- [ ] **Bandeja de avisos en la app:** la API ya tiene `GET /me/notifications` y `POST /me/notifications/:id/read`; falta la pantalla.
+- [x] **Bandeja de avisos en la app:** pantalla de avisos con contador en el ícono y "Marcar todo como leído" (Fase 4).
 - [ ] **Varias instancias de la API:** el socket usa solo el transporte `websocket`, así no hacen falta sticky sessions. Si algún cliente necesitara `polling`, habría que activarlas en Render.
 - [ ] **Build de Android sin verificar en local:** las licencias del Android SDK no están aceptadas en esta máquina (`flutter doctor --android-licenses`). Lo valida el workflow mobile-release.
 

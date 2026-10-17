@@ -9,6 +9,9 @@ import 'package:sisi_mobile/features/offers/data/offers_repository.dart';
 import 'package:sisi_mobile/features/offers/domain/offer_models.dart';
 import 'package:sisi_mobile/features/profile/domain/app_user.dart';
 
+import 'package:sisi_mobile/features/reports/data/reports_repository.dart';
+
+import '../../helpers/fake_jobs.dart';
 import '../../helpers/fake_matching.dart';
 import '../../helpers/fake_realtime.dart';
 import '../../helpers/fakes.dart';
@@ -44,6 +47,7 @@ Future<void> _pumpWorker(
   FakeAvailabilityRepository? availability,
   FakeLocationService? location,
   FakeRealtimeClient? realtime,
+  FakeJobsRepository? jobs,
 }) => pumpSisiApp(
   tester,
   storedTokens: testTokens,
@@ -52,6 +56,7 @@ Future<void> _pumpWorker(
   availability: availability,
   location: location,
   realtime: realtime,
+  jobs: jobs,
 );
 
 void main() {
@@ -213,21 +218,85 @@ void main() {
       expect(offers.listIncomingCalls, greaterThan(before));
     });
 
-    testWidgets('"¡Te eligieron!" lleva al contacto del cliente', (
+    testWidgets('"Retirar oferta" pide confirmación y la retira', (
       tester,
     ) async {
       final offers = FakeOffersRepository(
         incoming: [
-          testIncoming(outcome: IncomingOutcome.elegido, jobId: 'job-1'),
+          testIncoming(
+            myOffer: const MyOffer(
+              id: 'mine',
+              type: OfferType.accept,
+              amountBs: '150.00',
+              etaMin: 12,
+              status: 'activa',
+              revision: 1,
+            ),
+          ),
         ],
       );
       await _pumpWorker(tester, offers: offers);
-      expect(find.byKey(const Key('outcome-chosen')), findsOneWidget);
-
-      await tester.tap(find.byKey(const Key('see-contact')));
+      await tester.ensureVisible(find.byKey(const Key('withdraw-offer')));
+      await tester.tap(find.byKey(const Key('withdraw-offer')));
       await tester.pumpAndSettle();
-      expect(find.text('+59171234567'), findsOneWidget);
-      expect(find.text('Ana Rojas'), findsOneWidget);
+      expect(find.text('¿Retirar tu oferta?'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('withdraw-confirm')));
+      await tester.pumpAndSettle();
+      expect(offers.withdrawn, ['r1']);
+      expect(find.text('Retiraste tu oferta.'), findsOneWidget);
+      expect(find.byKey(const Key('withdraw-offer')), findsNothing);
+      expect(find.byKey(const Key('accept-price')), findsOneWidget);
     });
+
+    testWidgets('el detalle permite reportar la solicitud', (tester) async {
+      final reports = FakeReportsRepository();
+      await pumpSisiApp(
+        tester,
+        storedTokens: testTokens,
+        me: FakeMeRepository(user: testUser(mode: ActiveMode.worker)),
+        offers: FakeOffersRepository(incoming: [testIncoming()]),
+        reports: reports,
+      );
+      await tester.ensureVisible(find.byKey(const Key('incoming-r1')));
+      await tester.tap(find.byKey(const Key('incoming-r1')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('report-request')));
+      await tester.tap(find.byKey(const Key('report-request')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('report-reason-venta_productos')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('report-send')));
+      await tester.pumpAndSettle();
+      expect(reports.created.single.$1, ReportTarget.request);
+      expect(reports.created.single.$2, 'r1');
+    });
+
+    testWidgets(
+      '"¡Te eligieron!" lleva al trabajo con el contacto del cliente',
+      (tester) async {
+        final offers = FakeOffersRepository(
+          incoming: [
+            testIncoming(outcome: IncomingOutcome.elegido, jobId: 'job-1'),
+          ],
+        );
+        // En el inicio aparece el trabajo activo; se entra desde la tarjeta.
+        await _pumpWorker(
+          tester,
+          offers: offers,
+          jobs: FakeJobsRepository(jobs: [testJob()]),
+        );
+        await tester.ensureVisible(find.byKey(const Key('see-contact')));
+        expect(find.byKey(const Key('outcome-chosen')), findsOneWidget);
+
+        await tester.tap(find.byKey(const Key('see-contact')));
+        await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(
+          find.byKey(const Key('contact-phone')),
+          200,
+        );
+        expect(find.text('+59171234567'), findsOneWidget);
+        expect(find.text('Ana Rojas'), findsOneWidget);
+      },
+    );
   });
 }

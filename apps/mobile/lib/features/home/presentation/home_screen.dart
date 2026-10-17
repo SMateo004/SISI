@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/http/api_exception.dart';
 import '../../../core/router/routes.dart';
+import '../../jobs/presentation/job_history_screen.dart';
 import '../../matching/presentation/worker_home_panel.dart';
 import '../../mode_switch/presentation/mode_switch.dart';
+import '../../notifications/presentation/notifications_screen.dart';
 import '../../profile/application/current_user.dart';
 import '../../profile/domain/app_user.dart';
 import '../../profile/presentation/user_avatar.dart';
@@ -21,6 +23,7 @@ class HomeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('SISI'),
         actions: [
+          if (user.value != null) const NotificationsBell(),
           if (user.value != null)
             Padding(
               padding: const EdgeInsets.only(right: 8),
@@ -62,6 +65,7 @@ class _HomeBody extends StatelessWidget {
           style: theme.textTheme.headlineSmall,
         ),
         const SizedBox(height: 16),
+        ActiveJobCard(role: isWorker ? 'worker' : 'employer'),
         if (user.name == null)
           Card(
             child: ListTile(
@@ -110,6 +114,20 @@ class _HomeBody extends StatelessWidget {
             ),
           ),
         ],
+        Card(
+          child: ListTile(
+            key: const Key('my-jobs'),
+            leading: const Icon(Icons.history),
+            title: const Text('Mis trabajos'),
+            subtitle: Text(
+              isWorker
+                  ? 'Historial con lo que cobraste y la comisión.'
+                  : 'Trabajos que contrataste.',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Routes.jobs(asWorker: isWorker)),
+          ),
+        ),
         if (!isWorker)
           Card(
             child: ListTile(

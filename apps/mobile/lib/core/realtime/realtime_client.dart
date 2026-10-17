@@ -7,6 +7,9 @@ abstract final class RealtimeEvents {
   static const requestExpired = 'request:expired';
   static const offerNew = 'offer:new';
   static const offerClosed = 'offer:closed';
+  static const jobStatus = 'job:status';
+  static const jobLocation = 'job:location';
+  static const chatMessage = 'chat:message';
 
   static const all = [
     requestNew,
@@ -14,6 +17,9 @@ abstract final class RealtimeEvents {
     requestExpired,
     offerNew,
     offerClosed,
+    jobStatus,
+    jobLocation,
+    chatMessage,
   ];
 }
 
@@ -25,6 +31,8 @@ class RealtimeEvent {
   final Map<String, dynamic> data;
 
   String? get requestId => data['requestId'] as String?;
+
+  String? get jobId => data['jobId'] as String?;
 
   @override
   String toString() => 'RealtimeEvent($name, $data)';

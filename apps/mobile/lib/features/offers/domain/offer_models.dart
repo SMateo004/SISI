@@ -37,9 +37,11 @@ class MyOffer {
   final String amountBs;
   final int etaMin;
 
-  /// activa, aceptada o cerrada.
+  /// activa, aceptada, cerrada o retirada.
   final String status;
   final int revision;
+
+  bool get isActive => status == 'activa';
 }
 
 /// Resultado de una solicitud que le llegó al trabajador.
@@ -173,16 +175,27 @@ class JobContact {
     required this.finalPriceBs,
     this.name,
     this.address,
+    this.telUri,
+    this.whatsappUri,
+    this.visibleUntil,
   });
 
-  factory JobContact.fromJson(Map<String, dynamic> json) => JobContact(
-    jobId: json['jobId'] as String,
-    role: json['role'] as String,
-    name: json['name'] as String?,
-    phone: json['phone'] as String,
-    address: json['address'] as String?,
-    finalPriceBs: json['finalPriceBs'] as String,
-  );
+  factory JobContact.fromJson(Map<String, dynamic> json) {
+    final visibleUntil = json['visibleUntil'];
+    return JobContact(
+      jobId: json['jobId'] as String,
+      role: json['role'] as String,
+      name: json['name'] as String?,
+      phone: json['phone'] as String,
+      address: json['address'] as String?,
+      finalPriceBs: json['finalPriceBs'] as String,
+      telUri: json['telUri'] as String?,
+      whatsappUri: json['whatsappUri'] as String?,
+      visibleUntil: visibleUntil is String
+          ? DateTime.parse(visibleUntil).toLocal()
+          : null,
+    );
+  }
 
   final String jobId;
 
@@ -192,6 +205,15 @@ class JobContact {
   final String phone;
   final String? address;
   final String finalPriceBs;
+
+  /// `tel:+591…` para "Llamar".
+  final String? telUri;
+
+  /// `https://wa.me/591…` para "WhatsApp".
+  final String? whatsappUri;
+
+  /// Hasta cuándo se ve (24 h después de terminado o cancelado).
+  final DateTime? visibleUntil;
 }
 
 /// "a 850 m" / "a 2,3 km".

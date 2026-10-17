@@ -116,6 +116,42 @@ class FakeOffersRepository implements OffersRepository {
     return mine;
   }
 
+  final withdrawn = <String>[];
+
+  @override
+  Future<MyOffer> withdraw(String requestId) async {
+    withdrawn.add(requestId);
+    incoming = [
+      for (final r in incoming)
+        r.requestId == requestId
+            ? IncomingRequest(
+                requestId: r.requestId,
+                outcome: r.outcome,
+                categorySlug: r.categorySlug,
+                categoryName: r.categoryName,
+                description: r.description,
+                distanceM: r.distanceM,
+                proposedPriceBs: r.proposedPriceBs,
+                referenceMinBs: r.referenceMinBs,
+                referenceMaxBs: r.referenceMaxBs,
+                maxCounterBs: r.maxCounterBs,
+                photoUrls: r.photoUrls,
+                ring: r.ring,
+                respondBy: r.respondBy,
+                jobId: r.jobId,
+              )
+            : r,
+    ];
+    return const MyOffer(
+      id: 'mine',
+      type: OfferType.accept,
+      amountBs: '150.00',
+      etaMin: 12,
+      status: 'retirada',
+      revision: 1,
+    );
+  }
+
   @override
   Future<List<EmployerOffer>> listOffers(String requestId) async {
     listOffersCalls++;
@@ -135,6 +171,8 @@ class FakeOffersRepository implements OffersRepository {
     name: 'Ana Rojas',
     phone: '+59171234567',
     finalPriceBs: '150.00',
+    telUri: 'tel:+59171234567',
+    whatsappUri: 'https://wa.me/59171234567',
   );
 }
 

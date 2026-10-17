@@ -82,7 +82,7 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen> {
   void _assigned(String jobId) {
     ref.invalidate(requestDetailProvider(widget.requestId));
     ref.invalidate(myRequestsProvider);
-    context.push(Routes.jobContact(jobId));
+    context.push(Routes.job(jobId));
   }
 
   Future<void> _cancel() async {

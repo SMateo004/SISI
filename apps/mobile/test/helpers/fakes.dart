@@ -22,7 +22,15 @@ import 'package:sisi_mobile/features/matching/data/availability_repository.dart'
 import 'package:sisi_mobile/features/matching/data/location_service.dart';
 import 'package:sisi_mobile/features/offers/application/employer_live.dart';
 import 'package:sisi_mobile/features/offers/data/offers_repository.dart';
+import 'package:sisi_mobile/core/links/url_opener.dart';
+import 'package:sisi_mobile/features/chat/data/chat_repository.dart';
+import 'package:sisi_mobile/features/jobs/application/job_providers.dart';
+import 'package:sisi_mobile/features/jobs/data/jobs_repository.dart';
+import 'package:sisi_mobile/features/notifications/data/notifications_repository.dart';
+import 'package:sisi_mobile/features/reports/data/reports_repository.dart';
+import 'package:sisi_mobile/features/reviews/data/reviews_repository.dart';
 
+import 'fake_jobs.dart';
 import 'fake_matching.dart';
 import 'fake_push.dart';
 import 'fake_realtime.dart';
@@ -281,6 +289,12 @@ Future<void> pumpSisiApp(
   FakeLocationService? location,
   FakePushService? push,
   FakeDevicesApi? devices,
+  FakeJobsRepository? jobs,
+  FakeChatRepository? chat,
+  FakeReviewsRepository? reviews,
+  FakeReportsRepository? reports,
+  FakeNotificationsRepository? notifications,
+  List<Uri>? openedUrls,
 }) async {
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 2.6;
@@ -316,6 +330,23 @@ Future<void> pumpSisiApp(
         searchRefreshIntervalProvider.overrideWithValue(null),
         pushServiceProvider.overrideWithValue(push ?? FakePushService()),
         devicesApiProvider.overrideWithValue(devices ?? FakeDevicesApi()),
+        jobsRepositoryProvider.overrideWithValue(jobs ?? FakeJobsRepository()),
+        chatRepositoryProvider.overrideWithValue(chat ?? FakeChatRepository()),
+        reviewsRepositoryProvider.overrideWithValue(
+          reviews ?? FakeReviewsRepository(),
+        ),
+        reportsRepositoryProvider.overrideWithValue(
+          reports ?? FakeReportsRepository(),
+        ),
+        notificationsRepositoryProvider.overrideWithValue(
+          notifications ?? FakeNotificationsRepository(),
+        ),
+        // Sin envío periódico de ubicación (pumpAndSettle no terminaría).
+        tripLocationIntervalProvider.overrideWithValue(null),
+        urlOpenerProvider.overrideWithValue((uri) async {
+          openedUrls?.add(uri);
+          return true;
+        }),
       ],
       child: const SisiApp(),
     ),

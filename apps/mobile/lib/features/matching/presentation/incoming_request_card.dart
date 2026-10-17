@@ -8,6 +8,8 @@ import '../../../shared/categories/category.dart';
 import '../../../shared/money.dart';
 import '../../offers/data/offers_repository.dart';
 import '../../offers/domain/offer_models.dart';
+import '../../reports/data/reports_repository.dart';
+import '../../reports/presentation/report_sheet.dart';
 import '../application/incoming_requests.dart';
 import 'counter_offer_dialog.dart';
 import 'countdown_text.dart';
@@ -58,6 +60,44 @@ class _IncomingRequestCardState extends ConsumerState<IncomingRequestCard> {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
       ref.invalidate(incomingRequestsProvider);
     } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _withdraw() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('¿Retirar tu oferta?'),
+        content: const Text(
+          'El cliente dejará de verla. Puedes volver a ofertar mientras la solicitud siga abierta.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('No'),
+          ),
+          FilledButton(
+            key: const Key('withdraw-confirm'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Retirar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _busy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(offersRepositoryProvider).withdraw(r.requestId);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Retiraste tu oferta.')),
+      );
+    } on ApiException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      ref.invalidate(incomingRequestsProvider);
+      ref.invalidate(incomingRequestProvider(r.requestId));
       if (mounted) setState(() => _busy = false);
     }
   }
@@ -148,9 +188,9 @@ class _IncomingRequestCardState extends ConsumerState<IncomingRequestCard> {
             const SizedBox(height: 8),
             FilledButton.icon(
               key: const Key('see-contact'),
-              onPressed: () => context.push(Routes.jobContact(r.jobId!)),
-              icon: const Icon(Icons.contact_phone),
-              label: const Text('Ver contacto'),
+              onPressed: () => context.push(Routes.job(r.jobId!)),
+              icon: const Icon(Icons.work_outline),
+              label: const Text('Ver el trabajo'),
             ),
           ],
         ];
@@ -182,7 +222,7 @@ class _IncomingRequestCardState extends ConsumerState<IncomingRequestCard> {
       case IncomingOutcome.abierta:
         return [
           CountdownText(until: r.respondBy),
-          if (offer != null) ...[
+          if (offer != null && offer.isActive) ...[
             const SizedBox(height: 8),
             _Banner(
               key: const Key('my-offer'),
@@ -190,6 +230,15 @@ class _IncomingRequestCardState extends ConsumerState<IncomingRequestCard> {
               text:
                   'Tu oferta: ${formatBs(offer.amountBs)} (${offer.type.label.toLowerCase()}) · llegarías en ${offer.etaMin} min. Puedes cambiarla mientras el cliente no elija.',
               color: theme.colorScheme.secondaryContainer,
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                key: const Key('withdraw-offer'),
+                onPressed: _busy ? null : _withdraw,
+                icon: const Icon(Icons.undo),
+                label: const Text('Retirar oferta'),
+              ),
             ),
           ],
           const SizedBox(height: 12),
@@ -212,6 +261,20 @@ class _IncomingRequestCardState extends ConsumerState<IncomingRequestCard> {
               ),
             ],
           ),
+          if (widget.expanded)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const Key('report-request'),
+                onPressed: () => showReportSheet(
+                  context,
+                  target: ReportTarget.request,
+                  targetId: r.requestId,
+                ),
+                icon: const Icon(Icons.flag_outlined),
+                label: const Text('Reportar solicitud'),
+              ),
+            ),
         ];
     }
   }

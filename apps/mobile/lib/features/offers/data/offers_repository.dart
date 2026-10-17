@@ -41,6 +41,14 @@ class OffersRepository {
     return MyOffer.fromJson(res.data!);
   });
 
+  /// Retirar la oferta activa mientras el cliente no eligió (Fase 4).
+  Future<MyOffer> withdraw(String requestId) => _guard(() async {
+    final res = await _api.delete<Map<String, dynamic>>(
+      '/requests/$requestId/offers/mine',
+    );
+    return MyOffer.fromJson(res.data!);
+  });
+
   // ---- Empleador ----
 
   Future<List<EmployerOffer>> listOffers(String requestId) => _guard(() async {

@@ -25,7 +25,8 @@ Los eventos son **avisos**: el estado verdadero está en la API. Al (re)conectar
 
 - trabajador: `GET /worker/requests` (solicitudes abiertas que le llegaron, con su oferta);
 - empleador: `GET /requests/{id}` y `GET /requests/{id}/offers`;
-- trabajo (las dos partes): `GET /jobs/{id}`, `GET /jobs/{id}/messages` y, el empleador en camino, `GET /jobs/{id}/location`.
+- trabajo (las dos partes): `GET /jobs/{id}`, `GET /jobs/{id}/messages` y, el empleador en camino, `GET /jobs/{id}/location`;
+- cobros (trabajador): `GET /me/earnings/summary`, `GET /me/billing/pay-info` y `GET /me` (estado y modo).
 
 Un evento perdido mientras no había conexión no deja a la app en un estado incorrecto.
 
@@ -121,6 +122,33 @@ Para: las dos partes del trabajo (también llega a los otros dispositivos de qui
 }
 ```
 
-## Reservados (fases siguientes)
+### `billing:due`
+Para: el trabajador (`user:{id}`). Hay una comisión para pagar (R7.6, ADR-0036). Llega al cerrar el corte (`cierre`), la víspera (`vispera`) y el día del vencimiento (`dia`), a las 09:00 locales; una sola vez por periodo y tipo. Si ya pagó, no llega. Detalle con `GET /me/billing/pay-info`.
 
-`billing:due` (Fase 5), `account:blocked`, `account:unblocked`.
+```json
+{
+  "periodId": "uuid",
+  "kind": "cierre",
+  "amountBs": "19.50",
+  "paymentReference": "SISI-2643-K7M2QX",
+  "dueAt": "2026-10-22T04:00:00.000Z"
+}
+```
+
+`dueAt` es exclusivo: jueves 00:00 local, que se muestra como "miércoles 23:59".
+
+### `account:blocked`
+Para: el trabajador. Su modo trabajador quedó bloqueado: por deuda vencida (R7.7) o por moderación (R9.3). La cuenta ya pasó a modo empleador y puede seguir pidiendo servicios (R1.6).
+
+```json
+{ "reason": "deuda", "status": "bloqueado_deuda" }
+```
+
+`reason`: `deuda` (`status: bloqueado_deuda`; la app lleva a "Pagar comisión") o `moderacion` (`status: suspendido_moderacion`).
+
+### `account:unblocked`
+Para: el trabajador. Se levantó el bloqueo (por ejemplo, al registrarse su pago). **No cambia de modo solo:** vuelve a trabajador con el interruptor.
+
+```json
+{ "status": "aprobado" }
+```

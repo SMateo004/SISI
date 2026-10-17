@@ -4427,6 +4427,784 @@
           "admin"
         ]
       }
+    },
+    "/admin/billing/receipts/upload-url": {
+      "post": {
+        "operationId": "AdminBillingController_receiptUploadUrl",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresignedUploadDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "URL para subir el comprobante de un pago (receipts/, privado)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/billing/payments": {
+      "post": {
+        "description": "Se aplica a los periodos más antiguos primero; lo que sobra queda como adelanto o saldo a favor en el periodo actual. Desbloquea si ya no queda deuda vencida.",
+        "operationId": "AdminBillingController_registerPayment",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Obligatorio (8 a 100 caracteres). Un reintento con la misma clave devuelve el resultado original.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "IDEMPOTENCY_KEY_REQUIRED, AMOUNT_INVALID, PAID_AT_INVALID…",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "IDEMPOTENCY_KEY_REUSED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registrar un pago (R7.4)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/billing/adjustments": {
+      "post": {
+        "description": "Monto con signo y motivo obligatorio. Nunca se edita un movimiento: se agrega uno nuevo.",
+        "operationId": "AdminBillingController_registerAdjustment",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Obligatorio (8 a 100 caracteres). Un reintento con la misma clave devuelve el resultado original.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterAdjustmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdjustmentResultDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "IDEMPOTENCY_KEY_REUSED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registrar un ajuste (R7.9)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/billing/workers/{id}": {
+      "get": {
+        "operationId": "AdminBillingController_worker",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminWorkerBillingDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Saldo, periodos y movimientos de un trabajador",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/billing/qr/upload-url": {
+      "post": {
+        "operationId": "AdminBillingController_qrUploadUrl",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FileUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresignedUploadDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "URL para subir la imagen del QR de cobro de la empresa",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/billing/qr": {
+      "put": {
+        "description": "Después del PUT a la URL de subida. Los trabajadores lo ven en \"Pagar comisión\".",
+        "operationId": "AdminBillingController_setQr",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetQrDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QrResultDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Configurar el QR de cobro (R7.4)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/billing/submissions": {
+      "get": {
+        "operationId": "AdminBillingController_submissions",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "pendiente",
+              "type": "string",
+              "enum": [
+                "pendiente",
+                "registrado",
+                "rechazado"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentSubmissionDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Comprobantes enviados por los trabajadores (por defecto, pendientes)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/billing/submissions/{id}/reject": {
+      "post": {
+        "description": "Para aceptarlo se registra el pago con submissionId.",
+        "operationId": "AdminBillingController_rejectSubmission",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectSubmissionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentSubmissionDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rechazar un comprobante",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/me/billing/submissions/upload-url": {
+      "post": {
+        "operationId": "BillingMeController_submissionUploadUrl",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FileUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresignedUploadDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "NOT_A_WORKER",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "URL para subir la foto de mi comprobante de pago",
+        "tags": [
+          "ganancias"
+        ]
+      }
+    },
+    "/me/billing/submissions": {
+      "post": {
+        "description": "Queda \"enviado, pendiente de verificación\". No cambia la deuda hasta que SISI registra el pago.",
+        "operationId": "BillingMeController_submit",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSubmissionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentSubmissionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "NOT_A_WORKER",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Enviar mi comprobante de pago (propuesta)",
+        "tags": [
+          "ganancias"
+        ]
+      },
+      "get": {
+        "operationId": "BillingMeController_submissions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentSubmissionDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "NOT_A_WORKER",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mis comprobantes enviados y su estado",
+        "tags": [
+          "ganancias"
+        ]
+      }
+    },
+    "/me/earnings/summary": {
+      "get": {
+        "description": "Periodo actual (bruto, comisión, neto), saldo pendiente total, próxima fecha límite y estado del tope.",
+        "operationId": "EarningsController_summary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EarningsSummaryDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Resumen de ganancias (R8.1)",
+        "tags": [
+          "ganancias"
+        ]
+      }
+    },
+    "/me/earnings/periods": {
+      "get": {
+        "operationId": "EarningsController_periods",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeriodPageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Historial de periodos (cortes semanales)",
+        "tags": [
+          "ganancias"
+        ]
+      }
+    },
+    "/me/payments": {
+      "get": {
+        "description": "Periodos cubiertos, monto, fecha, estado y enlace temporal al comprobante.",
+        "operationId": "EarningsController_payments",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentPageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Historial de pagos (R8.2)",
+        "tags": [
+          "ganancias"
+        ]
+      }
+    },
+    "/me/billing/pay-info": {
+      "get": {
+        "description": "QR de la empresa, monto para ponerte al día, monto para volver a recibir solicitudes (si el tope está alcanzado), referencia para la glosa e instrucciones.",
+        "operationId": "EarningsController_payInfo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayInfoDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Datos para pagar la comisión (R7.4)",
+        "tags": [
+          "ganancias"
+        ]
+      }
     }
   },
   "info": {
@@ -7490,6 +8268,865 @@
         "required": [
           "report",
           "outcome"
+        ]
+      },
+      "ReceiptUploadDto": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contentType": {
+            "type": "string",
+            "example": "image/jpeg"
+          },
+          "sizeBytes": {
+            "type": "number",
+            "example": 120000
+          }
+        },
+        "required": [
+          "workerId",
+          "contentType",
+          "sizeBytes"
+        ]
+      },
+      "RegisterPaymentDto": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amountBs": {
+            "type": "string",
+            "example": "29.90",
+            "description": "Monto pagado en Bs (texto, 2 decimales)"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "qr_transferencia",
+              "efectivo",
+              "otro"
+            ]
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Cuándo pagó (no futuro)"
+          },
+          "reference": {
+            "type": "string",
+            "example": "SISI-2643-K7M2QX"
+          },
+          "receiptKey": {
+            "type": "string",
+            "description": "Clave del comprobante subido (receipts/{worker}/…)"
+          },
+          "submissionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Comprobante enviado por el trabajador que se está registrando"
+          },
+          "invoiceNumber": {
+            "type": "string",
+            "description": "Número de factura (sin uso hasta la revisión tributaria)"
+          }
+        },
+        "required": [
+          "workerId",
+          "amountBs",
+          "method",
+          "paidAt"
+        ]
+      },
+      "AllocationDto": {
+        "type": "object",
+        "properties": {
+          "periodId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "paymentReference": {
+            "type": "string",
+            "example": "SISI-2643-K7M2QX"
+          },
+          "amountBs": {
+            "type": "string",
+            "example": "19.50"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "abierto",
+              "cerrado_pendiente",
+              "pagado",
+              "vencido"
+            ]
+          }
+        },
+        "required": [
+          "periodId",
+          "paymentReference",
+          "amountBs",
+          "status"
+        ]
+      },
+      "PaymentResultDto": {
+        "type": "object",
+        "properties": {
+          "paymentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amountBs": {
+            "type": "string",
+            "example": "29.90"
+          },
+          "allocations": {
+            "description": "Cómo se aplicó: más antiguo primero",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AllocationDto"
+            }
+          },
+          "balanceBs": {
+            "type": "string",
+            "example": "0.00",
+            "description": "Saldo después del pago (negativo = a favor)"
+          }
+        },
+        "required": [
+          "paymentId",
+          "workerId",
+          "amountBs",
+          "allocations",
+          "balanceBs"
+        ]
+      },
+      "RegisterAdjustmentDto": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amountBs": {
+            "type": "string",
+            "example": "-19.50",
+            "description": "Con signo: positivo aumenta la deuda; negativo la reduce (ADR-0034)"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Comisión cobrada dos veces por error",
+            "minLength": 5,
+            "maxLength": 300
+          },
+          "correctsEntryId": {
+            "type": "string",
+            "description": "Id del movimiento que corrige"
+          },
+          "periodId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Periodo (por defecto, el del movimiento corregido o el actual)"
+          }
+        },
+        "required": [
+          "workerId",
+          "amountBs",
+          "reason"
+        ]
+      },
+      "AdjustmentResultDto": {
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "string",
+            "example": "42"
+          },
+          "periodId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amountBs": {
+            "type": "string",
+            "example": "-19.50"
+          },
+          "periodStatus": {
+            "type": "string",
+            "enum": [
+              "abierto",
+              "cerrado_pendiente",
+              "pagado",
+              "vencido"
+            ]
+          },
+          "balanceBs": {
+            "type": "string",
+            "example": "0.00"
+          }
+        },
+        "required": [
+          "entryId",
+          "periodId",
+          "amountBs",
+          "periodStatus",
+          "balanceBs"
+        ]
+      },
+      "AdminPeriodDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "abierto",
+              "cerrado_pendiente",
+              "pagado",
+              "vencido"
+            ]
+          },
+          "grossBs": {
+            "type": "string",
+            "example": "150.00"
+          },
+          "commissionBs": {
+            "type": "string",
+            "example": "19.50"
+          },
+          "balanceBs": {
+            "type": "string",
+            "example": "19.50"
+          },
+          "paymentReference": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "startAt",
+          "endAt",
+          "dueAt",
+          "status",
+          "grossBs",
+          "commissionBs",
+          "balanceBs",
+          "paymentReference"
+        ]
+      },
+      "AdminLedgerEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "42"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "comision",
+              "pago",
+              "ajuste"
+            ]
+          },
+          "amountBs": {
+            "type": "string",
+            "example": "19.50"
+          },
+          "periodId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jobId": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "correctsEntryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdById": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "amountBs",
+          "periodId",
+          "jobId",
+          "paymentId",
+          "correctsEntryId",
+          "reason",
+          "createdById",
+          "createdAt"
+        ]
+      },
+      "AdminWorkerBillingDto": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "balanceBs": {
+            "type": "string",
+            "example": "19.50",
+            "description": "Saldo total = suma del ledger"
+          },
+          "periods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminPeriodDto"
+            }
+          },
+          "entries": {
+            "description": "Últimos 100 movimientos",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminLedgerEntryDto"
+            }
+          }
+        },
+        "required": [
+          "workerId",
+          "balanceBs",
+          "periods",
+          "entries"
+        ]
+      },
+      "FileUploadDto": {
+        "type": "object",
+        "properties": {
+          "contentType": {
+            "type": "string",
+            "example": "image/jpeg",
+            "description": "JPEG, PNG o HEIC"
+          },
+          "sizeBytes": {
+            "type": "number",
+            "example": 120000
+          }
+        },
+        "required": [
+          "contentType",
+          "sizeBytes"
+        ]
+      },
+      "SetQrDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Clave devuelta por qr/upload-url, después del PUT"
+          }
+        },
+        "required": [
+          "key"
+        ]
+      },
+      "QrResultDto": {
+        "type": "object",
+        "properties": {
+          "qrUrl": {
+            "type": "string",
+            "description": "URL temporal del QR"
+          }
+        },
+        "required": [
+          "qrUrl"
+        ]
+      },
+      "PaymentSubmissionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pendiente",
+              "registrado",
+              "rechazado"
+            ]
+          },
+          "declaredAmountBs": {
+            "type": "string",
+            "nullable": true,
+            "example": "29.90"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "reviewNote": {
+            "type": "string",
+            "nullable": true,
+            "description": "Motivo si se rechazó"
+          },
+          "paymentId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "receiptUrl": {
+            "type": "string",
+            "description": "URL temporal del comprobante"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "workerId",
+          "status",
+          "declaredAmountBs",
+          "note",
+          "reviewNote",
+          "paymentId",
+          "receiptUrl",
+          "createdAt"
+        ]
+      },
+      "RejectSubmissionDto": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "example": "El comprobante no se lee.",
+            "minLength": 3,
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "note"
+        ]
+      },
+      "CreateSubmissionDto": {
+        "type": "object",
+        "properties": {
+          "receiptKey": {
+            "type": "string",
+            "description": "Clave devuelta por submissions/upload-url, después del PUT"
+          },
+          "declaredAmountBs": {
+            "type": "string",
+            "example": "29.90",
+            "description": "Monto que dice haber pagado (texto)"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "receiptKey"
+        ]
+      },
+      "CurrentPeriodDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "null si todavía no hay trabajos esta semana"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Vencimiento de este periodo (miércoles 23:59 siguiente)"
+          },
+          "grossBs": {
+            "type": "string",
+            "example": "150.00",
+            "description": "Ganado en el periodo (bruto, R8.1). Monto en Bs como texto con 2 decimales (nunca número de punto flotante)."
+          },
+          "commissionBs": {
+            "type": "string",
+            "example": "19.50",
+            "description": "Comisión del periodo. Monto en Bs como texto con 2 decimales (nunca número de punto flotante)."
+          },
+          "netBs": {
+            "type": "string",
+            "example": "130.50",
+            "description": "Neto del periodo: bruto − comisión. Monto en Bs como texto con 2 decimales (nunca número de punto flotante)."
+          },
+          "paymentReference": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "startAt",
+          "endAt",
+          "dueAt",
+          "grossBs",
+          "commissionBs",
+          "netBs",
+          "paymentReference"
+        ]
+      },
+      "DebtCapStateDto": {
+        "type": "object",
+        "properties": {
+          "capBs": {
+            "type": "string",
+            "example": "150.00",
+            "description": "Monto en Bs como texto con 2 decimales (nunca número de punto flotante)."
+          },
+          "reached": {
+            "type": "boolean",
+            "description": "El saldo supera el tope: no recibe solicitudes nuevas (R7.5)"
+          },
+          "amountToUnlockBs": {
+            "type": "string",
+            "example": "12.30",
+            "description": "Lo que hay que pagar para volver a recibir solicitudes (0 si no está sobre el tope). Monto en Bs como texto con 2 decimales (nunca número de punto flotante)."
+          }
+        },
+        "required": [
+          "capBs",
+          "reached",
+          "amountToUnlockBs"
+        ]
+      },
+      "EarningsSummaryDto": {
+        "type": "object",
+        "properties": {
+          "currentPeriod": {
+            "$ref": "#/components/schemas/CurrentPeriodDto"
+          },
+          "balanceBs": {
+            "type": "string",
+            "example": "29.90",
+            "description": "Saldo pendiente total = suma del ledger, periodo abierto incluido. Negativo = saldo a favor. Monto en Bs como texto con 2 decimales (nunca número de punto flotante)."
+          },
+          "overdueOrPendingBs": {
+            "type": "string",
+            "example": "19.50",
+            "description": "Periodos cerrados impagos (\"para ponerte al día\"). Monto en Bs como texto con 2 decimales (nunca número de punto flotante)."
+          },
+          "nextDueAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Próxima fecha límite con deuda"
+          },
+          "overdue": {
+            "type": "boolean",
+            "description": "Tiene algún periodo vencido"
+          },
+          "blocked": {
+            "type": "boolean",
+            "description": "Modo trabajador bloqueado por deuda (R7.7)"
+          },
+          "debtCap": {
+            "$ref": "#/components/schemas/DebtCapStateDto"
+          }
+        },
+        "required": [
+          "currentPeriod",
+          "balanceBs",
+          "overdueOrPendingBs",
+          "nextDueAt",
+          "overdue",
+          "blocked",
+          "debtCap"
+        ]
+      },
+      "PeriodSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "abierto",
+              "cerrado_pendiente",
+              "pagado",
+              "vencido"
+            ]
+          },
+          "grossBs": {
+            "type": "string",
+            "example": "150.00",
+            "description": "Monto en Bs como texto con 2 decimales (nunca número de punto flotante)."
+          },
+          "commissionBs": {
+            "type": "string",
+            "example": "19.50",
+            "description": "Monto en Bs como texto con 2 decimales (nunca número de punto flotante)."
+          },
+          "netBs": {
+            "type": "string",
+            "example": "130.50",
+            "description": "Monto en Bs como texto con 2 decimales (nunca número de punto flotante)."
+          },
+          "balanceBs": {
+            "type": "string",
+            "example": "0.00",
+            "description": "Lo que queda por pagar de este periodo (negativo = a favor). Monto en Bs como texto con 2 decimales (nunca número de punto flotante)."
+          },
+          "paymentReference": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "startAt",
+          "endAt",
+          "dueAt",
+          "status",
+          "grossBs",
+          "commissionBs",
+          "netBs",
+          "balanceBs",
+          "paymentReference"
+        ]
+      },
+      "PeriodPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PeriodSummaryDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "PaymentAllocationDto": {
+        "type": "object",
+        "properties": {
+          "periodId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "paymentReference": {
+            "type": "string"
+          },
+          "amountBs": {
+            "type": "string",
+            "example": "19.50",
+            "description": "Monto en Bs como texto con 2 decimales (nunca número de punto flotante)."
+          }
+        },
+        "required": [
+          "periodId",
+          "paymentReference",
+          "amountBs"
+        ]
+      },
+      "MyPaymentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amountBs": {
+            "type": "string",
+            "example": "29.90",
+            "description": "Monto en Bs como texto con 2 decimales (nunca número de punto flotante)."
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "qr_transferencia",
+              "efectivo",
+              "otro"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "registrado"
+            ],
+            "description": "Un pago del historial ya está registrado; los comprobantes en revisión están en /me/billing/submissions"
+          },
+          "reference": {
+            "type": "string",
+            "nullable": true
+          },
+          "periods": {
+            "description": "Periodos que cubrió",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentAllocationDto"
+            }
+          },
+          "receiptUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Enlace temporal al comprobante (R8.2)"
+          }
+        },
+        "required": [
+          "id",
+          "amountBs",
+          "paidAt",
+          "method",
+          "status",
+          "reference",
+          "periods",
+          "receiptUrl"
+        ]
+      },
+      "PaymentPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MyPaymentDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "PayInfoDto": {
+        "type": "object",
+        "properties": {
+          "qrUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "URL temporal del QR de la empresa (null si no está cargado)"
+          },
+          "catchUpAmountBs": {
+            "type": "string",
+            "example": "19.50",
+            "description": "\"Para ponerte al día\": periodos cerrados impagos. Monto en Bs como texto con 2 decimales (nunca número de punto flotante)."
+          },
+          "unlockAmountBs": {
+            "type": "string",
+            "example": "12.30",
+            "description": "\"Para volver a recibir solicitudes\": lo que deja el saldo en el tope (0 si no está sobre el tope). Monto en Bs como texto con 2 decimales (nunca número de punto flotante)."
+          },
+          "totalBalanceBs": {
+            "type": "string",
+            "example": "29.90",
+            "description": "Saldo total, periodo abierto incluido (pago anticipado). Monto en Bs como texto con 2 decimales (nunca número de punto flotante)."
+          },
+          "paymentReference": {
+            "type": "string",
+            "nullable": true,
+            "example": "SISI-2643-K7M2QX",
+            "description": "Para la glosa: la del periodo más antiguo con deuda"
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "instructions": {
+            "description": "Pasos en español",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "gatewayEnabled": {
+            "type": "boolean",
+            "description": "Pago en línea (pasarela) disponible; hoy siempre false"
+          }
+        },
+        "required": [
+          "qrUrl",
+          "catchUpAmountBs",
+          "unlockAmountBs",
+          "totalBalanceBs",
+          "paymentReference",
+          "dueAt",
+          "instructions",
+          "gatewayEnabled"
         ]
       }
     }

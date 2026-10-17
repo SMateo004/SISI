@@ -9,6 +9,14 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
+[**adminBillingControllerQrUploadUrl**](AdminApi.md#adminbillingcontrollerqruploadurl) | **POST** /admin/billing/qr/upload-url | URL para subir la imagen del QR de cobro de la empresa
+[**adminBillingControllerReceiptUploadUrl**](AdminApi.md#adminbillingcontrollerreceiptuploadurl) | **POST** /admin/billing/receipts/upload-url | URL para subir el comprobante de un pago (receipts/, privado)
+[**adminBillingControllerRegisterAdjustment**](AdminApi.md#adminbillingcontrollerregisteradjustment) | **POST** /admin/billing/adjustments | Registrar un ajuste (R7.9)
+[**adminBillingControllerRegisterPayment**](AdminApi.md#adminbillingcontrollerregisterpayment) | **POST** /admin/billing/payments | Registrar un pago (R7.4)
+[**adminBillingControllerRejectSubmission**](AdminApi.md#adminbillingcontrollerrejectsubmission) | **POST** /admin/billing/submissions/{id}/reject | Rechazar un comprobante
+[**adminBillingControllerSetQr**](AdminApi.md#adminbillingcontrollersetqr) | **PUT** /admin/billing/qr | Configurar el QR de cobro (R7.4)
+[**adminBillingControllerSubmissions**](AdminApi.md#adminbillingcontrollersubmissions) | **GET** /admin/billing/submissions | Comprobantes enviados por los trabajadores (por defecto, pendientes)
+[**adminBillingControllerWorker**](AdminApi.md#adminbillingcontrollerworker) | **GET** /admin/billing/workers/{id} | Saldo, periodos y movimientos de un trabajador
 [**adminCategoriesControllerList**](AdminApi.md#admincategoriescontrollerlist) | **GET** /admin/categories | Todas las categorías con sus valores por ciudad
 [**adminCategoriesControllerUpdate**](AdminApi.md#admincategoriescontrollerupdate) | **PATCH** /admin/categories/{id} | Edita los valores base de una categoría
 [**adminCategoriesControllerUpsertCity**](AdminApi.md#admincategoriescontrollerupsertcity) | **PUT** /admin/categories/{id}/cities/{cityId} | Activa o ajusta una categoría en una ciudad
@@ -28,6 +36,348 @@ Method | HTTP request | Description
 [**moderationTermsControllerRemove**](AdminApi.md#moderationtermscontrollerremove) | **DELETE** /admin/moderation-terms/{id} | Desactiva un término (baja lógica)
 [**moderationTermsControllerUpdate**](AdminApi.md#moderationtermscontrollerupdate) | **PATCH** /admin/moderation-terms/{id} | Cambia la categoría, la nota o reactiva un término
 
+
+# **adminBillingControllerQrUploadUrl**
+> PresignedUploadDto adminBillingControllerQrUploadUrl(fileUploadDto)
+
+URL para subir la imagen del QR de cobro de la empresa
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final FileUploadDto fileUploadDto = ; // FileUploadDto | 
+
+try {
+    final response = api.adminBillingControllerQrUploadUrl(fileUploadDto);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminBillingControllerQrUploadUrl: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **fileUploadDto** | [**FileUploadDto**](FileUploadDto.md)|  | 
+
+### Return type
+
+[**PresignedUploadDto**](PresignedUploadDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminBillingControllerReceiptUploadUrl**
+> PresignedUploadDto adminBillingControllerReceiptUploadUrl(receiptUploadDto)
+
+URL para subir el comprobante de un pago (receipts/, privado)
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final ReceiptUploadDto receiptUploadDto = ; // ReceiptUploadDto | 
+
+try {
+    final response = api.adminBillingControllerReceiptUploadUrl(receiptUploadDto);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminBillingControllerReceiptUploadUrl: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **receiptUploadDto** | [**ReceiptUploadDto**](ReceiptUploadDto.md)|  | 
+
+### Return type
+
+[**PresignedUploadDto**](PresignedUploadDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminBillingControllerRegisterAdjustment**
+> AdjustmentResultDto adminBillingControllerRegisterAdjustment(idempotencyKey, registerAdjustmentDto)
+
+Registrar un ajuste (R7.9)
+
+Monto con signo y motivo obligatorio. Nunca se edita un movimiento: se agrega uno nuevo.
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final String idempotencyKey = idempotencyKey_example; // String | Obligatorio (8 a 100 caracteres). Un reintento con la misma clave devuelve el resultado original.
+final RegisterAdjustmentDto registerAdjustmentDto = ; // RegisterAdjustmentDto | 
+
+try {
+    final response = api.adminBillingControllerRegisterAdjustment(idempotencyKey, registerAdjustmentDto);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminBillingControllerRegisterAdjustment: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **idempotencyKey** | **String**| Obligatorio (8 a 100 caracteres). Un reintento con la misma clave devuelve el resultado original. | 
+ **registerAdjustmentDto** | [**RegisterAdjustmentDto**](RegisterAdjustmentDto.md)|  | 
+
+### Return type
+
+[**AdjustmentResultDto**](AdjustmentResultDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminBillingControllerRegisterPayment**
+> PaymentResultDto adminBillingControllerRegisterPayment(idempotencyKey, registerPaymentDto)
+
+Registrar un pago (R7.4)
+
+Se aplica a los periodos más antiguos primero; lo que sobra queda como adelanto o saldo a favor en el periodo actual. Desbloquea si ya no queda deuda vencida.
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final String idempotencyKey = idempotencyKey_example; // String | Obligatorio (8 a 100 caracteres). Un reintento con la misma clave devuelve el resultado original.
+final RegisterPaymentDto registerPaymentDto = ; // RegisterPaymentDto | 
+
+try {
+    final response = api.adminBillingControllerRegisterPayment(idempotencyKey, registerPaymentDto);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminBillingControllerRegisterPayment: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **idempotencyKey** | **String**| Obligatorio (8 a 100 caracteres). Un reintento con la misma clave devuelve el resultado original. | 
+ **registerPaymentDto** | [**RegisterPaymentDto**](RegisterPaymentDto.md)|  | 
+
+### Return type
+
+[**PaymentResultDto**](PaymentResultDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminBillingControllerRejectSubmission**
+> PaymentSubmissionDto adminBillingControllerRejectSubmission(id, rejectSubmissionDto)
+
+Rechazar un comprobante
+
+Para aceptarlo se registra el pago con submissionId.
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final String id = id_example; // String | 
+final RejectSubmissionDto rejectSubmissionDto = ; // RejectSubmissionDto | 
+
+try {
+    final response = api.adminBillingControllerRejectSubmission(id, rejectSubmissionDto);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminBillingControllerRejectSubmission: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+ **rejectSubmissionDto** | [**RejectSubmissionDto**](RejectSubmissionDto.md)|  | 
+
+### Return type
+
+[**PaymentSubmissionDto**](PaymentSubmissionDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminBillingControllerSetQr**
+> QrResultDto adminBillingControllerSetQr(setQrDto)
+
+Configurar el QR de cobro (R7.4)
+
+Después del PUT a la URL de subida. Los trabajadores lo ven en \"Pagar comisión\".
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final SetQrDto setQrDto = ; // SetQrDto | 
+
+try {
+    final response = api.adminBillingControllerSetQr(setQrDto);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminBillingControllerSetQr: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **setQrDto** | [**SetQrDto**](SetQrDto.md)|  | 
+
+### Return type
+
+[**QrResultDto**](QrResultDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminBillingControllerSubmissions**
+> List<PaymentSubmissionDto> adminBillingControllerSubmissions(status)
+
+Comprobantes enviados por los trabajadores (por defecto, pendientes)
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final String status = status_example; // String | 
+
+try {
+    final response = api.adminBillingControllerSubmissions(status);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminBillingControllerSubmissions: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **status** | **String**|  | [optional] [default to 'pendiente']
+
+### Return type
+
+[**List&lt;PaymentSubmissionDto&gt;**](PaymentSubmissionDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminBillingControllerWorker**
+> AdminWorkerBillingDto adminBillingControllerWorker(id)
+
+Saldo, periodos y movimientos de un trabajador
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final String id = id_example; // String | 
+
+try {
+    final response = api.adminBillingControllerWorker(id);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminBillingControllerWorker: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+
+### Return type
+
+[**AdminWorkerBillingDto**](AdminWorkerBillingDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **adminCategoriesControllerList**
 > List<AdminCategoryDto> adminCategoriesControllerList()

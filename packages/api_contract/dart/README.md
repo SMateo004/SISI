@@ -49,12 +49,13 @@ import 'package:sisi_api/sisi_api.dart';
 
 
 final api = SisiApi().getAdminApi();
+final FileUploadDto fileUploadDto = ; // FileUploadDto | 
 
 try {
-    final response = await api.adminCategoriesControllerList();
+    final response = await api.adminBillingControllerQrUploadUrl(fileUploadDto);
     print(response);
 } on DioException catch (e) {
-    print("Exception when calling AdminApi->adminCategoriesControllerList: $e\n");
+    print("Exception when calling AdminApi->adminBillingControllerQrUploadUrl: $e\n");
 }
 
 ```
@@ -65,6 +66,14 @@ All URIs are relative to *http://localhost*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
+[*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerQrUploadUrl**](doc/AdminApi.md#adminbillingcontrollerqruploadurl) | **POST** /admin/billing/qr/upload-url | URL para subir la imagen del QR de cobro de la empresa
+[*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerReceiptUploadUrl**](doc/AdminApi.md#adminbillingcontrollerreceiptuploadurl) | **POST** /admin/billing/receipts/upload-url | URL para subir el comprobante de un pago (receipts/, privado)
+[*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerRegisterAdjustment**](doc/AdminApi.md#adminbillingcontrollerregisteradjustment) | **POST** /admin/billing/adjustments | Registrar un ajuste (R7.9)
+[*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerRegisterPayment**](doc/AdminApi.md#adminbillingcontrollerregisterpayment) | **POST** /admin/billing/payments | Registrar un pago (R7.4)
+[*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerRejectSubmission**](doc/AdminApi.md#adminbillingcontrollerrejectsubmission) | **POST** /admin/billing/submissions/{id}/reject | Rechazar un comprobante
+[*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerSetQr**](doc/AdminApi.md#adminbillingcontrollersetqr) | **PUT** /admin/billing/qr | Configurar el QR de cobro (R7.4)
+[*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerSubmissions**](doc/AdminApi.md#adminbillingcontrollersubmissions) | **GET** /admin/billing/submissions | Comprobantes enviados por los trabajadores (por defecto, pendientes)
+[*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerWorker**](doc/AdminApi.md#adminbillingcontrollerworker) | **GET** /admin/billing/workers/{id} | Saldo, periodos y movimientos de un trabajador
 [*AdminApi*](doc/AdminApi.md) | [**adminCategoriesControllerList**](doc/AdminApi.md#admincategoriescontrollerlist) | **GET** /admin/categories | Todas las categorías con sus valores por ciudad
 [*AdminApi*](doc/AdminApi.md) | [**adminCategoriesControllerUpdate**](doc/AdminApi.md#admincategoriescontrollerupdate) | **PATCH** /admin/categories/{id} | Edita los valores base de una categoría
 [*AdminApi*](doc/AdminApi.md) | [**adminCategoriesControllerUpsertCity**](doc/AdminApi.md#admincategoriescontrollerupsertcity) | **PUT** /admin/categories/{id}/cities/{cityId} | Activa o ajusta una categoría en una ciudad
@@ -94,6 +103,13 @@ Class | Method | HTTP request | Description
 [*ChatApi*](doc/ChatApi.md) | [**chatControllerList**](doc/ChatApi.md#chatcontrollerlist) | **GET** /jobs/{id}/messages | Mensajes del trabajo
 [*ChatApi*](doc/ChatApi.md) | [**chatControllerRead**](doc/ChatApi.md#chatcontrollerread) | **POST** /jobs/{id}/messages/read | Marcar como leídos los mensajes recibidos hasta uno (incluido)
 [*ChatApi*](doc/ChatApi.md) | [**chatControllerSend**](doc/ChatApi.md#chatcontrollersend) | **POST** /jobs/{id}/messages | Enviar un mensaje (solo texto)
+[*GananciasApi*](doc/GananciasApi.md) | [**billingMeControllerSubmissionUploadUrl**](doc/GananciasApi.md#billingmecontrollersubmissionuploadurl) | **POST** /me/billing/submissions/upload-url | URL para subir la foto de mi comprobante de pago
+[*GananciasApi*](doc/GananciasApi.md) | [**billingMeControllerSubmissions**](doc/GananciasApi.md#billingmecontrollersubmissions) | **GET** /me/billing/submissions | Mis comprobantes enviados y su estado
+[*GananciasApi*](doc/GananciasApi.md) | [**billingMeControllerSubmit**](doc/GananciasApi.md#billingmecontrollersubmit) | **POST** /me/billing/submissions | Enviar mi comprobante de pago (propuesta)
+[*GananciasApi*](doc/GananciasApi.md) | [**earningsControllerPayInfo**](doc/GananciasApi.md#earningscontrollerpayinfo) | **GET** /me/billing/pay-info | Datos para pagar la comisión (R7.4)
+[*GananciasApi*](doc/GananciasApi.md) | [**earningsControllerPayments**](doc/GananciasApi.md#earningscontrollerpayments) | **GET** /me/payments | Historial de pagos (R8.2)
+[*GananciasApi*](doc/GananciasApi.md) | [**earningsControllerPeriods**](doc/GananciasApi.md#earningscontrollerperiods) | **GET** /me/earnings/periods | Historial de periodos (cortes semanales)
+[*GananciasApi*](doc/GananciasApi.md) | [**earningsControllerSummary**](doc/GananciasApi.md#earningscontrollersummary) | **GET** /me/earnings/summary | Resumen de ganancias (R8.1)
 [*HealthApi*](doc/HealthApi.md) | [**healthControllerCheck**](doc/HealthApi.md#healthcontrollercheck) | **GET** /health | Estado de la API, la base de datos (con PostGIS) y Redis
 [*MapsApi*](doc/MapsApi.md) | [**geocodingControllerReverse**](doc/MapsApi.md#geocodingcontrollerreverse) | **GET** /geocoding/reverse | Dirección sugerida para unas coordenadas
 [*MeApi*](doc/MeApi.md) | [**meControllerConfirmPhoto**](doc/MeApi.md#mecontrollerconfirmphoto) | **PUT** /me/photo | Confirma la foto subida y la deja como foto de perfil
@@ -145,13 +161,18 @@ Class | Method | HTTP request | Description
 ## Documentation For Models
 
  - [AcceptOfferResultDto](doc/AcceptOfferResultDto.md)
+ - [AdjustmentResultDto](doc/AdjustmentResultDto.md)
  - [AdminCategoryCityDto](doc/AdminCategoryCityDto.md)
  - [AdminCategoryDto](doc/AdminCategoryDto.md)
  - [AdminDisputedJobDto](doc/AdminDisputedJobDto.md)
  - [AdminHeldMessageDto](doc/AdminHeldMessageDto.md)
  - [AdminHeldRequestDto](doc/AdminHeldRequestDto.md)
  - [AdminJobsControllerResolve200Response](doc/AdminJobsControllerResolve200Response.md)
+ - [AdminLedgerEntryDto](doc/AdminLedgerEntryDto.md)
+ - [AdminPeriodDto](doc/AdminPeriodDto.md)
  - [AdminReportDto](doc/AdminReportDto.md)
+ - [AdminWorkerBillingDto](doc/AdminWorkerBillingDto.md)
+ - [AllocationDto](doc/AllocationDto.md)
  - [ApiErrorBody](doc/ApiErrorBody.md)
  - [AvailabilityDto](doc/AvailabilityDto.md)
  - [CancelJobDto](doc/CancelJobDto.md)
@@ -164,13 +185,18 @@ Class | Method | HTTP request | Description
  - [CreateReportDto](doc/CreateReportDto.md)
  - [CreateRequestDto](doc/CreateRequestDto.md)
  - [CreateReviewDto](doc/CreateReviewDto.md)
+ - [CreateSubmissionDto](doc/CreateSubmissionDto.md)
  - [CreatedRequestDto](doc/CreatedRequestDto.md)
+ - [CurrentPeriodDto](doc/CurrentPeriodDto.md)
+ - [DebtCapStateDto](doc/DebtCapStateDto.md)
  - [DisputeJobDto](doc/DisputeJobDto.md)
  - [DocumentUploadRequestDto](doc/DocumentUploadRequestDto.md)
  - [DocumentUrlDto](doc/DocumentUrlDto.md)
+ - [EarningsSummaryDto](doc/EarningsSummaryDto.md)
  - [EmployerOfferDto](doc/EmployerOfferDto.md)
  - [EmployerRatingDto](doc/EmployerRatingDto.md)
  - [FeatureFlagDto](doc/FeatureFlagDto.md)
+ - [FileUploadDto](doc/FileUploadDto.md)
  - [HealthCheckDto](doc/HealthCheckDto.md)
  - [HealthChecksDto](doc/HealthChecksDto.md)
  - [HealthResponseDto](doc/HealthResponseDto.md)
@@ -193,20 +219,33 @@ Class | Method | HTTP request | Description
  - [ModeDeniedDto](doc/ModeDeniedDto.md)
  - [ModerationTermDto](doc/ModerationTermDto.md)
  - [MyOfferDto](doc/MyOfferDto.md)
+ - [MyPaymentDto](doc/MyPaymentDto.md)
  - [MyReviewDto](doc/MyReviewDto.md)
  - [NotificationDto](doc/NotificationDto.md)
  - [NotificationPageDto](doc/NotificationPageDto.md)
  - [OfferWorkerDto](doc/OfferWorkerDto.md)
  - [OtpRequestedDto](doc/OtpRequestedDto.md)
+ - [PayInfoDto](doc/PayInfoDto.md)
+ - [PaymentAllocationDto](doc/PaymentAllocationDto.md)
+ - [PaymentPageDto](doc/PaymentPageDto.md)
+ - [PaymentResultDto](doc/PaymentResultDto.md)
+ - [PaymentSubmissionDto](doc/PaymentSubmissionDto.md)
+ - [PeriodPageDto](doc/PeriodPageDto.md)
+ - [PeriodSummaryDto](doc/PeriodSummaryDto.md)
  - [PresignedUploadDto](doc/PresignedUploadDto.md)
  - [PriceRangeDto](doc/PriceRangeDto.md)
  - [PublicReviewDto](doc/PublicReviewDto.md)
  - [PublishResultDto](doc/PublishResultDto.md)
+ - [QrResultDto](doc/QrResultDto.md)
  - [ReadAllResultDto](doc/ReadAllResultDto.md)
+ - [ReceiptUploadDto](doc/ReceiptUploadDto.md)
  - [ReceivedReviewDto](doc/ReceivedReviewDto.md)
  - [RefreshTokenDto](doc/RefreshTokenDto.md)
+ - [RegisterAdjustmentDto](doc/RegisterAdjustmentDto.md)
  - [RegisterDeviceDto](doc/RegisterDeviceDto.md)
+ - [RegisterPaymentDto](doc/RegisterPaymentDto.md)
  - [RejectRequestDto](doc/RejectRequestDto.md)
+ - [RejectSubmissionDto](doc/RejectSubmissionDto.md)
  - [ReportDto](doc/ReportDto.md)
  - [ReportedUserDto](doc/ReportedUserDto.md)
  - [RequestCategoryDto](doc/RequestCategoryDto.md)
@@ -223,6 +262,7 @@ Class | Method | HTTP request | Description
  - [SentMessageDto](doc/SentMessageDto.md)
  - [SetAvailabilityDto](doc/SetAvailabilityDto.md)
  - [SetFeatureFlagDto](doc/SetFeatureFlagDto.md)
+ - [SetQrDto](doc/SetQrDto.md)
  - [SubmitUpgradeDto](doc/SubmitUpgradeDto.md)
  - [SwitchModeDto](doc/SwitchModeDto.md)
  - [TokensDto](doc/TokensDto.md)

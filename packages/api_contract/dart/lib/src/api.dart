@@ -12,6 +12,7 @@ import 'package:sisi_api/src/api/auth_api.dart';
 import 'package:sisi_api/src/api/calificaciones_api.dart';
 import 'package:sisi_api/src/api/categories_api.dart';
 import 'package:sisi_api/src/api/chat_api.dart';
+import 'package:sisi_api/src/api/ganancias_api.dart';
 import 'package:sisi_api/src/api/health_api.dart';
 import 'package:sisi_api/src/api/maps_api.dart';
 import 'package:sisi_api/src/api/me_api.dart';
@@ -141,6 +142,12 @@ class SisiApi {
   /// by doing that all interceptors will not be executed
   ChatApi getChatApi() {
     return ChatApi(dio);
+  }
+
+  /// Get GananciasApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  GananciasApi getGananciasApi() {
+    return GananciasApi(dio);
   }
 
   /// Get HealthApi instance, base route and serializer can be overridden by a given but be careful,

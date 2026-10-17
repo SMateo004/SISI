@@ -194,6 +194,7 @@ export class OffersService {
             photos: { orderBy: { position: 'asc' } },
             job: { select: { id: true, workerId: true } },
             offers: { where: { workerId } },
+            employer: { select: { employerRatingAvg: true, employerRatingCount: true } },
           },
         },
       },
@@ -237,6 +238,10 @@ export class OffersService {
       myOffer: mine ? toMyOffer(mine) : null,
       jobId: chosen ? (r.job?.id ?? null) : null,
       notifiedAt: notification.notifiedAt.toISOString(),
+      employer: {
+        ratingAvg: toBs(r.employer.employerRatingAvg),
+        ratingCount: r.employer.employerRatingCount,
+      },
     };
   }
 

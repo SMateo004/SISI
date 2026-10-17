@@ -4,6 +4,7 @@ import { WorkerAvailabilityModule } from '../locations/locations.module';
 import { OutboxRelayModule } from '../outbox/outbox-relay.module';
 import { QueuesModule } from '../queues/queues.module';
 import { RequestStatusModule } from '../requests/request-status.module';
+import { ReviewPublisherModule } from '../reviews/reviews.module';
 import { DEBT_CAP_POLICY, NoDebtCapYetPolicy } from './debt-cap.policy';
 import { matchingConfigProvider } from './matching-config.provider';
 import { MatchingEventsHandlers } from './matching-events.handlers';
@@ -20,6 +21,7 @@ import { MatchingService } from './matching.service';
     WorkerAvailabilityModule,
     RequestStatusModule,
     JobStatusModule,
+    ReviewPublisherModule,
   ],
   providers: [
     matchingConfigProvider,

@@ -11,6 +11,7 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
+import { JobReviewsDto } from '../../reviews/dto/review.dto';
 import { JOB_ACTIONS, JOB_STATUSES, type JobAction, type JobStatus } from '../job-status.machine';
 
 export class JobCategoryDto {
@@ -102,6 +103,8 @@ export class JobDto {
   autoConfirmAt!: string | null;
   @ApiProperty({ type: JobCancellationDto, nullable: true })
   cancellation!: JobCancellationDto | null;
+  @ApiProperty({ type: JobReviewsDto, description: 'Calificaciones (ciegas hasta publicarse)' })
+  reviews!: JobReviewsDto;
   @ApiProperty({
     enum: JOB_ACTIONS,
     isArray: true,

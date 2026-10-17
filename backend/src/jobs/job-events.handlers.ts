@@ -31,7 +31,7 @@ export class JobEventsHandlers implements OnModuleInit {
     this.registry.on('job.status_changed', async ({ outboxId, payload }) => {
       const job = await this.prisma.job.findUniqueOrThrow({
         where: { id: payload.jobId },
-        include: { worker: { select: { name: true } } },
+        include: { worker: { select: { name: true } }, employer: { select: { name: true } } },
       });
       this.realtime.toUsers([job.employerId, job.workerId], 'job:status', {
         jobId: job.id,
@@ -57,6 +57,21 @@ export class JobEventsHandlers implements OnModuleInit {
       }
 
       const worker = shortName(job.worker.name);
+      if (job.status === 'terminado' && payload.from !== 'terminado') {
+        // Recordatorio de calificar para las dos partes (ADR-0032).
+        for (const [party, counterpart, toWorker] of [
+          [job.employerId, worker, false],
+          [job.workerId, shortName(job.employer.name), true],
+        ] as const) {
+          await this.notifications.notify({
+            userId: party,
+            cityId: job.cityId,
+            type: 'review_request',
+            data: { jobId: job.id, counterpartShortName: counterpart, toWorker },
+            dedupeKey: `${outboxId}:${party}:review`,
+          });
+        }
+      }
       const toEmployer = { userId: job.employerId, cityId: job.cityId };
       const toWorker = { userId: job.workerId, cityId: job.cityId };
       const key = (userId: string): string => `${outboxId}:${userId}`;

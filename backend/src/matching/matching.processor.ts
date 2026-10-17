@@ -12,6 +12,7 @@ import { WorkerAvailabilityService } from '../locations/worker-availability.serv
 import { MATCHING_JOBS, QUEUES } from '../queues/queues';
 import { JobAutoConfirmService } from '../jobs/job-autoconfirm.service';
 import { OutboxCleanupService } from '../outbox/outbox-cleanup.service';
+import { ReviewPublisher } from '../reviews/review-publisher.service';
 import { MatchingReconciler } from './matching.reconciler';
 import { MatchingService } from './matching.service';
 
@@ -37,6 +38,7 @@ export class MatchingProcessor
     private readonly availability: WorkerAvailabilityService,
     private readonly outboxCleanup: OutboxCleanupService,
     private readonly autoConfirm: JobAutoConfirmService,
+    private readonly reviews: ReviewPublisher,
     @InjectQueue(QUEUES.matching) private readonly queue: Queue,
     @Inject(ConfigService) private readonly config: AppConfigService,
   ) {
@@ -81,6 +83,7 @@ export class MatchingProcessor
         return this.matching.expire(requestId, seq);
       case MATCHING_JOBS.reconcile:
         await this.autoConfirm.sweepDue();
+        await this.reviews.sweepDue();
         return this.reconciler.runOnce();
       case MATCHING_JOBS.sweepLocations:
         return this.availability.sweepStale();

@@ -5,6 +5,7 @@ import { ModerationService } from '../moderation/moderation.service';
 import type { Prisma } from '../generated/prisma/client';
 import { shortName } from '../offers/offer.rules';
 import { PrismaService } from '../prisma/prisma.service';
+import { jobReviews } from '../reviews/reviews.service';
 import { netOf } from './commission';
 import type { AdminDisputedJobDto, JobCancelReason, JobDto, JobPageDto } from './dto/job.dto';
 import { allowedJobActions, type JobAction, type JobActorRole } from './job-status.machine';
@@ -16,6 +17,7 @@ const jobInclude = {
   },
   worker: { select: { name: true } },
   employer: { select: { name: true } },
+  reviews: true,
 } satisfies Prisma.JobInclude;
 
 type JobRow = Prisma.JobGetPayload<{ include: typeof jobInclude }>;
@@ -26,6 +28,7 @@ const iso = (d: Date | null): string | null => d?.toISOString() ?? null;
 @Injectable()
 export class JobsService {
   private readonly autoConfirmMs: number;
+  private readonly reviewWindowMs: number;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -34,6 +37,7 @@ export class JobsService {
     @Inject(ConfigService) config: AppConfigService,
   ) {
     this.autoConfirmMs = config.get('JOB_AUTOCONFIRM_MS', { infer: true });
+    this.reviewWindowMs = config.get('REVIEW_WINDOW_MS', { infer: true });
   }
 
   /** Una acción de una de las partes; su rol sale del trabajo (403 si no le toca). */
@@ -184,6 +188,11 @@ export class JobsService {
             noteHeld: mine && job.cancelNoteHeld,
           }
         : null,
+      reviews: jobReviews(
+        job,
+        role === 'worker' ? job.workerId : job.employerId,
+        this.reviewWindowMs,
+      ),
       autoConfirmed: job.autoConfirmed,
       autoConfirmAt: iso(pendingAutoConfirm),
       allowedActions: allowedJobActions(job, role),

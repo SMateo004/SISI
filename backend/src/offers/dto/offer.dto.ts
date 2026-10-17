@@ -62,6 +62,11 @@ export class PriceRangeDto {
  * Solicitud que le llegó al trabajador (R5.1): distancia, descripción, fotos y precio.
  * Nunca incluye el teléfono ni el nombre del empleador (R9.4).
  */
+export class EmployerRatingDto {
+  @ApiProperty({ example: '4.50' }) ratingAvg!: string;
+  @ApiProperty({ example: 12 }) ratingCount!: number;
+}
+
 export class IncomingRequestDto {
   @ApiProperty({ format: 'uuid' }) requestId!: string;
 
@@ -92,6 +97,11 @@ export class IncomingRequestDto {
   @ApiProperty({ type: MyOfferDto, nullable: true }) myOffer!: MyOfferDto | null;
   @ApiProperty({ type: String, nullable: true, format: 'uuid' }) jobId!: string | null;
   @ApiProperty({ type: String, format: 'date-time' }) notifiedAt!: string;
+  @ApiProperty({
+    type: () => EmployerRatingDto,
+    description: 'Calificación del empleador (la que le dieron los trabajadores)',
+  })
+  employer!: EmployerRatingDto;
 }
 
 export class AcceptOfferResultDto {

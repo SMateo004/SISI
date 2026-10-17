@@ -22,6 +22,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { RealtimeEmitterModule, RealtimeModule } from './realtime/realtime.module';
 import { RedisModule } from './redis/redis.module';
 import { RequestsModule } from './requests/requests.module';
+import { ReviewsModule } from './reviews/reviews.module';
 import { StorageModule } from './storage/storage.module';
 import { UsersModule } from './users/users.module';
 import { WorkersModule } from './workers/workers.module';
@@ -48,6 +49,7 @@ import { WorkersModule } from './workers/workers.module';
     OffersModule,
     JobsModule,
     ChatModule,
+    ReviewsModule,
     RealtimeModule,
     RealtimeEmitterModule,
   ],

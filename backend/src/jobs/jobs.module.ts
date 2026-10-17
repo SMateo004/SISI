@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ModerationModule } from '../moderation/moderation.module';
+import { ReviewPublisherModule } from '../reviews/reviews.module';
 import { AdminJobsController } from './admin-jobs.controller';
 import { JobStatusModule } from './job-status.module';
 import { JobTrackingModule } from './job-tracking.module';
@@ -8,7 +9,7 @@ import { JobsService } from './jobs.service';
 
 /** Trabajos en la API (R6, ADR-0029). */
 @Module({
-  imports: [JobStatusModule, ModerationModule, JobTrackingModule],
+  imports: [JobStatusModule, ModerationModule, JobTrackingModule, ReviewPublisherModule],
   controllers: [JobsController, AdminJobsController],
   providers: [JobsService],
   exports: [JobsService],

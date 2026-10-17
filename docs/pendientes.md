@@ -29,6 +29,8 @@ Aprobadas el 2026-10-14. Hay que reflejarlas en el documento 01 en la sección i
 - [ ] **Ventana del chat:** abierto desde la asignación hasta **24 h** después de terminado o cancelado; luego, solo lectura (`JOB_CHAT_OPEN_AFTER_MS`). Límite de **30 mensajes por minuto** por usuario (`RATE_CHAT_PER_MIN`). Solo texto: decidir si habrá **imágenes** en el chat (con moderación de imágenes).
 - [ ] **Mensajes retenidos del chat:** no se entregan y el admin solo puede verlos (`GET /admin/chat/held`). Definir si el admin puede liberarlos y si cuentan para una suspensión.
 - [ ] **Contacto después del trabajo:** el teléfono se oculta **24 h** después de terminado o cancelado (`JOB_CONTACT_VISIBLE_AFTER_MS`, 410 `CONTACT_EXPIRED`); el chat queda en solo lectura.
+- [ ] **Calificaciones:** solo trabajos terminados, dentro de **7 días** (`REVIEW_WINDOW_MS`); **ciegas** hasta que califican las dos partes o vence el plazo; comentario moderado (si coincide, no se publica y las estrellas cuentan). Recordatorio al terminar. Definir si se manda un segundo recordatorio antes de vencer.
+- [ ] **Promedio del empleador:** se guarda y se muestra a los trabajadores en las solicitudes entrantes. Definir si un promedio bajo debe filtrar o advertir algo.
 - [ ] **Trabajador ocupado:** con un trabajo asignado, en camino o en curso no recibe solicitudes ni puede ofertar. Al ser elegido, sus otras ofertas activas se retiran solas (el empleador recibe el aviso y, si era la única, su solicitud vuelve a buscar).
 
 ## Propuestas de la Fase 3 por validar

@@ -57,19 +57,22 @@ enum ActiveMode {
 
 /// Una cuenta por persona, identificada por su teléfono en E.164 (R1.1).
 model User {
-  id                 String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  phone              String     @unique
-  name               String?
+  id                  String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phone               String     @unique
+  name                String?
   /// Clave del objeto en el almacenamiento (avatars/...); la URL se firma al responder.
-  photoKey           String?    @map("photo_key")
-  role               UserRole   @default(user)
-  activeMode         ActiveMode @default(employer) @map("active_mode")
-  cityId             String     @map("city_id") @db.Uuid
-  phoneVerifiedAt    DateTime?  @map("phone_verified_at") @db.Timestamptz(3)
+  photoKey            String?    @map("photo_key")
+  role                UserRole   @default(user)
+  activeMode          ActiveMode @default(employer) @map("active_mode")
+  cityId              String     @map("city_id") @db.Uuid
+  phoneVerifiedAt     DateTime?  @map("phone_verified_at") @db.Timestamptz(3)
+  /// Promedio como empleador (lo ven los trabajadores en las solicitudes entrantes, ADR-0032).
+  employerRatingAvg   Decimal    @default(0) @map("employer_rating_avg") @db.Decimal(3, 2)
+  employerRatingCount Int        @default(0) @map("employer_rating_count")
   /// Trabajos que canceló (sin penalidad por ahora, Fase 4).
-  cancellationsCount Int        @default(0) @map("cancellations_count")
-  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt          DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  cancellationsCount  Int        @default(0) @map("cancellations_count")
+  createdAt           DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   city                   City                @relation(fields: [cityId], references: [id])
   refreshTokens          RefreshToken[]
@@ -640,6 +643,7 @@ model Job {
   employer User           @relation("JobEmployer", fields: [employerId], references: [id])
   events   JobEvent[]
   messages ChatMessage[]
+  reviews  Review[]
 
   /// Además: índice único parcial jobs_one_active_per_worker (migración 20261017020000).
   @@index([workerId, createdAt])
@@ -674,6 +678,39 @@ model ChatMessage {
   @@index([jobId, createdAt])
   @@index([status, createdAt])
   @@map("chat_messages")
+}
+
+enum ReviewerRole {
+  employer
+  worker
+
+  @@map("reviewer_role")
+}
+
+/// Calificaciones (R6.2, ADR-0032): ciegas hasta que califican ambos o vence el plazo.
+model Review {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobId        String       @map("job_id") @db.Uuid
+  cityId       String       @map("city_id") @db.Uuid
+  fromUserId   String       @map("from_user") @db.Uuid
+  toUserId     String       @map("to_user") @db.Uuid
+  /// Rol de quien califica.
+  reviewerRole ReviewerRole @map("reviewer_role")
+  /// 1 a 5 (CHECK en la migración).
+  stars        Int          @db.SmallInt
+  comment      String?
+  /// El comentario coincidió con la moderación: no se muestra (las estrellas cuentan).
+  commentHeld  Boolean      @default(false) @map("comment_held")
+  /// null = todavía ciega.
+  publishedAt  DateTime?    @map("published_at") @db.Timestamptz(3)
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  job Job @relation(fields: [jobId], references: [id])
+
+  @@unique([jobId, fromUserId])
+  @@index([toUserId, reviewerRole, publishedAt])
+  @@index([publishedAt, createdAt])
+  @@map("reviews")
 }
 
 /// Historial del trabajo (ADR-0029). Append-only: un trigger rechaza UPDATE y DELETE.

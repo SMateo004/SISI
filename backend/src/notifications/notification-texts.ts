@@ -21,6 +21,7 @@ export interface NotificationInputs {
   job_disputed: { jobId: string };
   job_resolved: { jobId: string; status: string };
   chat_message: { jobId: string; senderShortName: string; preview: string };
+  review_request: { jobId: string; counterpartShortName: string; toWorker: boolean };
   job_cancelled: {
     jobId: string;
     requestId: string;
@@ -118,6 +119,11 @@ const RENDER: { [T in NotificationType]: (d: NotificationInputs[T]) => RenderedN
     title: 'Se resolvió la revisión del trabajo',
     body:
       d.status === 'terminado' ? 'El trabajo quedó como terminado.' : 'El trabajo quedó cancelado.',
+    route: `/trabajos/${d.jobId}`,
+  }),
+  review_request: (d) => ({
+    title: d.toWorker ? 'Califica al empleador' : `Califica a ${d.counterpartShortName}`,
+    body: `¿Cómo te fue con ${d.counterpartShortName}? Tu calificación ayuda a toda la comunidad.`,
     route: `/trabajos/${d.jobId}`,
   }),
   chat_message: (d) => ({

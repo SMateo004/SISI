@@ -17,6 +17,8 @@ abstract final class Routes {
   static const jobPath = '/trabajos/:id';
   static const jobChatPath = '/trabajos/:id/chat';
   static const notifications = '/avisos';
+  static const earnings = '/ganancias';
+  static const pay = '/ganancias/pagar';
 
   static String requestDetail(String id) => '/solicitudes/$id';
 

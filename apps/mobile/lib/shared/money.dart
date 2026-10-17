@@ -25,3 +25,14 @@ int? parseBsCents(String input) {
 /// Centavos → "150.00" (formato de la API).
 String centsToApi(int cents) =>
     '${cents ~/ 100}.${(cents % 100).toString().padLeft(2, '0')}';
+
+/// Saldo con signo de la API: "-30.50" → "Bs 30,50 a favor"; "19.50" → "Bs 19,50".
+String formatBalance(String amount) => amount.startsWith('-')
+    ? '${formatBs(amount.substring(1))} a favor'
+    : formatBs(amount);
+
+/// El monto es mayor que cero ("0.00" no).
+bool isPositiveAmount(String amount) {
+  final cents = parseBsCents(amount);
+  return cents != null && cents > 0;
+}

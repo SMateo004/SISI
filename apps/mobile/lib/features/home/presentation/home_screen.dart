@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/http/api_exception.dart';
 import '../../../core/router/routes.dart';
+import '../../earnings/presentation/earnings_banners.dart';
 import '../../jobs/presentation/job_history_screen.dart';
 import '../../matching/presentation/worker_home_panel.dart';
 import '../../mode_switch/presentation/mode_switch.dart';
@@ -65,6 +66,8 @@ class _HomeBody extends StatelessWidget {
           style: theme.textTheme.headlineSmall,
         ),
         const SizedBox(height: 16),
+        // Bloqueo, tope o vencimiento: también en modo empleador (R1.6).
+        const HomeEarningsBanner(),
         ActiveJobCard(role: isWorker ? 'worker' : 'employer'),
         if (user.name == null)
           Card(
@@ -114,6 +117,19 @@ class _HomeBody extends StatelessWidget {
             ),
           ),
         ],
+        if (isWorker)
+          Card(
+            child: ListTile(
+              key: const Key('my-earnings'),
+              leading: const Icon(Icons.account_balance_wallet_outlined),
+              title: const Text('Mis ganancias'),
+              subtitle: const Text(
+                'Lo que ganaste, tu comisión y cómo pagarla.',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(Routes.earnings),
+            ),
+          ),
         Card(
           child: ListTile(
             key: const Key('my-jobs'),

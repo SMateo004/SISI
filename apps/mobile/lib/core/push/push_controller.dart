@@ -40,7 +40,9 @@ bool isPushRoute(String? route) =>
     route != null &&
     (route.startsWith('/solicitudes/') ||
         route.startsWith('/trabajo/solicitudes/') ||
-        route.startsWith('/trabajos/'));
+        route.startsWith('/trabajos/') ||
+        route == '/ganancias' ||
+        route.startsWith('/ganancias/'));
 
 /// Registra el token de push mientras hay sesión y abre la pantalla correcta al tocar
 /// un aviso (ADR-0027).

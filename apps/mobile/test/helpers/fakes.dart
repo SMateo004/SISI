@@ -24,12 +24,14 @@ import 'package:sisi_mobile/features/offers/application/employer_live.dart';
 import 'package:sisi_mobile/features/offers/data/offers_repository.dart';
 import 'package:sisi_mobile/core/links/url_opener.dart';
 import 'package:sisi_mobile/features/chat/data/chat_repository.dart';
+import 'package:sisi_mobile/features/earnings/data/earnings_repository.dart';
 import 'package:sisi_mobile/features/jobs/application/job_providers.dart';
 import 'package:sisi_mobile/features/jobs/data/jobs_repository.dart';
 import 'package:sisi_mobile/features/notifications/data/notifications_repository.dart';
 import 'package:sisi_mobile/features/reports/data/reports_repository.dart';
 import 'package:sisi_mobile/features/reviews/data/reviews_repository.dart';
 
+import 'fake_earnings.dart';
 import 'fake_jobs.dart';
 import 'fake_matching.dart';
 import 'fake_push.dart';
@@ -295,6 +297,7 @@ Future<void> pumpSisiApp(
   FakeReportsRepository? reports,
   FakeNotificationsRepository? notifications,
   List<Uri>? openedUrls,
+  FakeEarningsRepository? earnings,
 }) async {
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 2.6;
@@ -340,6 +343,9 @@ Future<void> pumpSisiApp(
         ),
         notificationsRepositoryProvider.overrideWithValue(
           notifications ?? FakeNotificationsRepository(),
+        ),
+        earningsRepositoryProvider.overrideWithValue(
+          earnings ?? FakeEarningsRepository(),
         ),
         // Sin envío periódico de ubicación (pumpAndSettle no terminaría).
         tripLocationIntervalProvider.overrideWithValue(null),

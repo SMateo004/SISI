@@ -125,6 +125,7 @@ class _ModeSwitchState extends ConsumerState<ModeSwitch> {
 String routeForAction(NextAction action) => switch (action) {
   NextAction.completeVerification ||
   NextAction.resubmitVerification => Routes.workerOnboarding,
+  NextAction.payCommission => Routes.pay,
   _ => Routes.workerStatus,
 };
 

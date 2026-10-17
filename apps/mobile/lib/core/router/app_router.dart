@@ -6,6 +6,8 @@ import '../../features/auth/presentation/otp_screen.dart';
 import '../../features/chat/presentation/chat_screen.dart';
 import '../../features/auth/presentation/phone_screen.dart';
 import '../../features/health/presentation/health_screen.dart';
+import '../../features/earnings/presentation/earnings_screen.dart';
+import '../../features/earnings/presentation/pay_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/jobs/presentation/job_history_screen.dart';
 import '../../features/jobs/presentation/job_screen.dart';
@@ -125,6 +127,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) =>
             JobScreen(jobId: state.pathParameters['id']!),
       ),
+      GoRoute(
+        path: Routes.earnings,
+        builder: (context, state) => const EarningsScreen(),
+      ),
+      GoRoute(path: Routes.pay, builder: (context, state) => const PayScreen()),
       GoRoute(
         path: Routes.notifications,
         builder: (context, state) => const NotificationsScreen(),

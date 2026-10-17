@@ -101,7 +101,8 @@ void main() {
         NextAction.payCommission,
         'Paga tu comisión pendiente',
       ),
-      'Tu verificación',
+      // Fase 5: lleva a "Pagar comisión".
+      'Pagar comisión',
     ),
     (
       'suspendido',

@@ -10,6 +10,9 @@ abstract final class RealtimeEvents {
   static const jobStatus = 'job:status';
   static const jobLocation = 'job:location';
   static const chatMessage = 'chat:message';
+  static const billingDue = 'billing:due';
+  static const accountBlocked = 'account:blocked';
+  static const accountUnblocked = 'account:unblocked';
 
   static const all = [
     requestNew,
@@ -20,6 +23,9 @@ abstract final class RealtimeEvents {
     jobStatus,
     jobLocation,
     chatMessage,
+    billingDue,
+    accountBlocked,
+    accountUnblocked,
   ];
 }
 

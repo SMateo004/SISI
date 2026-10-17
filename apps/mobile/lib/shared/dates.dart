@@ -12,3 +12,20 @@ String formatDateTime(DateTime d) =>
 
 /// "16/10/2026".
 String formatDate(DateTime d) => '${_two(d.day)}/${_two(d.month)}/${d.year}';
+
+const _weekdays = [
+  'lunes',
+  'martes',
+  'miércoles',
+  'jueves',
+  'viernes',
+  'sábado',
+  'domingo',
+];
+
+/// Fecha límite exclusiva (00:00 del día siguiente) como la lee una persona: el último
+/// minuto antes. "miércoles 21/10 a las 23:59".
+String formatDueLabel(DateTime dueAt) {
+  final d = dueAt.subtract(const Duration(minutes: 1));
+  return '${_weekdays[d.weekday - 1]} ${_two(d.day)}/${_two(d.month)} a las ${formatTime(d)}';
+}

@@ -1,6 +1,8 @@
 import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type { Redis } from 'ioredis';
 import { ApiError } from '../common/errors/api-error';
+import type { AppConfigService } from '../config/app-config';
 import type {
   ModerationTerm,
   ModerationTermKind,
@@ -15,7 +17,7 @@ import {
   normalizeTokens,
   type WordPattern,
 } from './normalize';
-import { checkPattern, MATCH_TIMEOUT_MS, REGEX_FLAGS, runWithTimeout } from './regex-safety';
+import { checkPattern, REGEX_FLAGS, runWithTimeout } from './regex-safety';
 
 export interface ModerationMatch {
   termId: string;
@@ -54,6 +56,7 @@ export class ModerationService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
+    @Inject(ConfigService) private readonly config: AppConfigService,
   ) {}
 
   async check(text: string): Promise<ModerationResult> {
@@ -72,7 +75,7 @@ export class ModerationService {
       // Todos los regex de un texto comparten un mismo presupuesto de tiempo.
       const result = runWithTimeout(
         () => terms.regexes.filter(({ regex }) => regex.test(normalized)).map(({ term }) => term),
-        MATCH_TIMEOUT_MS,
+        this.config.get('MODERATION_REGEX_TIMEOUT_MS', { infer: true }),
       );
       if (result.ok) matches.push(...result.value.map(toMatch));
       else {

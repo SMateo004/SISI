@@ -159,6 +159,8 @@ export const envSchema = z
     RATE_OFFER_IP_PER_MIN: positiveInt(60),
     /** Mensajes de chat por usuario (ADR-0031). */
     RATE_CHAT_PER_MIN: positiveInt(30),
+    /** Presupuesto de los regex de moderación por texto; si se excede, se retiene (ADR-0018). */
+    MODERATION_REGEX_TIMEOUT_MS: positiveInt(50),
 
     // Ubicación y disponibilidad del trabajador (ADR-0024). Propuestas en docs/pendientes.md.
     WORKER_LOCATION_PERSIST_MS: positiveInt(30_000),

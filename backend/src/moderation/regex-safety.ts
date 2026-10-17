@@ -12,7 +12,6 @@ export const MAX_PATTERN_LENGTH = 100;
  * ocupada (pausas de GC, otros procesos).
  */
 export const SAVE_TEST_TIMEOUT_MS = 100;
-export const MATCH_TIMEOUT_MS = 50;
 export const REGEX_FLAGS = 'iu';
 
 export type PatternCheck = { ok: true; regex: RegExp } | { ok: false; reason: string };

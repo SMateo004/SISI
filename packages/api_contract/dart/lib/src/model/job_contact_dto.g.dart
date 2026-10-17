@@ -19,6 +19,12 @@ abstract class _$JobContactDtoCWProxy {
 
   JobContactDto finalPriceBs(String finalPriceBs);
 
+  JobContactDto telUri(String telUri);
+
+  JobContactDto whatsappUri(String whatsappUri);
+
+  JobContactDto visibleUntil(DateTime? visibleUntil);
+
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `JobContactDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -32,6 +38,9 @@ abstract class _$JobContactDtoCWProxy {
     String phone,
     String? address,
     String finalPriceBs,
+    String telUri,
+    String whatsappUri,
+    DateTime? visibleUntil,
   });
 }
 
@@ -61,6 +70,17 @@ class _$JobContactDtoCWProxyImpl implements _$JobContactDtoCWProxy {
       this(finalPriceBs: finalPriceBs);
 
   @override
+  JobContactDto telUri(String telUri) => this(telUri: telUri);
+
+  @override
+  JobContactDto whatsappUri(String whatsappUri) =>
+      this(whatsappUri: whatsappUri);
+
+  @override
+  JobContactDto visibleUntil(DateTime? visibleUntil) =>
+      this(visibleUntil: visibleUntil);
+
+  @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `JobContactDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -74,6 +94,9 @@ class _$JobContactDtoCWProxyImpl implements _$JobContactDtoCWProxy {
     Object? phone = const $CopyWithPlaceholder(),
     Object? address = const $CopyWithPlaceholder(),
     Object? finalPriceBs = const $CopyWithPlaceholder(),
+    Object? telUri = const $CopyWithPlaceholder(),
+    Object? whatsappUri = const $CopyWithPlaceholder(),
+    Object? visibleUntil = const $CopyWithPlaceholder(),
   }) {
     return JobContactDto(
       jobId: jobId == const $CopyWithPlaceholder()
@@ -100,6 +123,18 @@ class _$JobContactDtoCWProxyImpl implements _$JobContactDtoCWProxy {
           ? _value.finalPriceBs
           // ignore: cast_nullable_to_non_nullable
           : finalPriceBs as String,
+      telUri: telUri == const $CopyWithPlaceholder()
+          ? _value.telUri
+          // ignore: cast_nullable_to_non_nullable
+          : telUri as String,
+      whatsappUri: whatsappUri == const $CopyWithPlaceholder()
+          ? _value.whatsappUri
+          // ignore: cast_nullable_to_non_nullable
+          : whatsappUri as String,
+      visibleUntil: visibleUntil == const $CopyWithPlaceholder()
+          ? _value.visibleUntil
+          // ignore: cast_nullable_to_non_nullable
+          : visibleUntil as DateTime?,
     );
   }
 }
@@ -125,6 +160,9 @@ JobContactDto _$JobContactDtoFromJson(Map<String, dynamic> json) =>
           'phone',
           'address',
           'finalPriceBs',
+          'telUri',
+          'whatsappUri',
+          'visibleUntil',
         ],
       );
       final val = JobContactDto(
@@ -137,6 +175,12 @@ JobContactDto _$JobContactDtoFromJson(Map<String, dynamic> json) =>
         phone: $checkedConvert('phone', (v) => v as String),
         address: $checkedConvert('address', (v) => v as String?),
         finalPriceBs: $checkedConvert('finalPriceBs', (v) => v as String),
+        telUri: $checkedConvert('telUri', (v) => v as String),
+        whatsappUri: $checkedConvert('whatsappUri', (v) => v as String),
+        visibleUntil: $checkedConvert(
+          'visibleUntil',
+          (v) => v == null ? null : DateTime.parse(v as String),
+        ),
       );
       return val;
     });
@@ -149,6 +193,9 @@ Map<String, dynamic> _$JobContactDtoToJson(JobContactDto instance) =>
       'phone': instance.phone,
       'address': instance.address,
       'finalPriceBs': instance.finalPriceBs,
+      'telUri': instance.telUri,
+      'whatsappUri': instance.whatsappUri,
+      'visibleUntil': instance.visibleUntil?.toIso8601String(),
     };
 
 const _$JobContactDtoRoleEnumEnumMap = {

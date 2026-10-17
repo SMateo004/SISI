@@ -4,6 +4,7 @@
 
 // ignore_for_file: unused_element
 import 'package:sisi_api/src/model/my_offer_dto.dart';
+import 'package:sisi_api/src/model/employer_rating_dto.dart';
 import 'package:sisi_api/src/model/incoming_photo_dto.dart';
 import 'package:sisi_api/src/model/price_range_dto.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
@@ -50,6 +51,8 @@ class IncomingRequestDto {
     required  this.jobId,
 
     required  this.notifiedAt,
+
+    required  this.employer,
   });
 
   @JsonKey(
@@ -224,6 +227,19 @@ class IncomingRequestDto {
 
 
 
+      /// Calificación del empleador (la que le dieron los trabajadores)
+  @JsonKey(
+    
+    name: r'employer',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final EmployerRatingDto employer;
+
+
+
 
 
     @override
@@ -241,7 +257,8 @@ class IncomingRequestDto {
       other.respondBy == respondBy &&
       other.myOffer == myOffer &&
       other.jobId == jobId &&
-      other.notifiedAt == notifiedAt;
+      other.notifiedAt == notifiedAt &&
+      other.employer == employer;
 
     @override
     int get hashCode =>
@@ -258,7 +275,8 @@ class IncomingRequestDto {
         respondBy.hashCode +
         (myOffer == null ? 0 : myOffer.hashCode) +
         (jobId == null ? 0 : jobId.hashCode) +
-        notifiedAt.hashCode;
+        notifiedAt.hashCode +
+        employer.hashCode;
 
   factory IncomingRequestDto.fromJson(Map<String, dynamic> json) => _$IncomingRequestDtoFromJson(json);
 

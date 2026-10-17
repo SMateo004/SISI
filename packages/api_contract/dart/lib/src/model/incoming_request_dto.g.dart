@@ -35,6 +35,8 @@ abstract class _$IncomingRequestDtoCWProxy {
 
   IncomingRequestDto notifiedAt(DateTime notifiedAt);
 
+  IncomingRequestDto employer(EmployerRatingDto employer);
+
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `IncomingRequestDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -56,6 +58,7 @@ abstract class _$IncomingRequestDtoCWProxy {
     MyOfferDto? myOffer,
     String? jobId,
     DateTime notifiedAt,
+    EmployerRatingDto employer,
   });
 }
 
@@ -116,6 +119,10 @@ class _$IncomingRequestDtoCWProxyImpl implements _$IncomingRequestDtoCWProxy {
       this(notifiedAt: notifiedAt);
 
   @override
+  IncomingRequestDto employer(EmployerRatingDto employer) =>
+      this(employer: employer);
+
+  @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `IncomingRequestDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -137,6 +144,7 @@ class _$IncomingRequestDtoCWProxyImpl implements _$IncomingRequestDtoCWProxy {
     Object? myOffer = const $CopyWithPlaceholder(),
     Object? jobId = const $CopyWithPlaceholder(),
     Object? notifiedAt = const $CopyWithPlaceholder(),
+    Object? employer = const $CopyWithPlaceholder(),
   }) {
     return IncomingRequestDto(
       requestId: requestId == const $CopyWithPlaceholder()
@@ -195,6 +203,10 @@ class _$IncomingRequestDtoCWProxyImpl implements _$IncomingRequestDtoCWProxy {
           ? _value.notifiedAt
           // ignore: cast_nullable_to_non_nullable
           : notifiedAt as DateTime,
+      employer: employer == const $CopyWithPlaceholder()
+          ? _value.employer
+          // ignore: cast_nullable_to_non_nullable
+          : employer as EmployerRatingDto,
     );
   }
 }
@@ -229,6 +241,7 @@ IncomingRequestDto _$IncomingRequestDtoFromJson(Map<String, dynamic> json) =>
           'myOffer',
           'jobId',
           'notifiedAt',
+          'employer',
         ],
       );
       final val = IncomingRequestDto(
@@ -267,6 +280,10 @@ IncomingRequestDto _$IncomingRequestDtoFromJson(Map<String, dynamic> json) =>
           'notifiedAt',
           (v) => DateTime.parse(v as String),
         ),
+        employer: $checkedConvert(
+          'employer',
+          (v) => EmployerRatingDto.fromJson(v as Map<String, dynamic>),
+        ),
       );
       return val;
     });
@@ -287,6 +304,7 @@ Map<String, dynamic> _$IncomingRequestDtoToJson(IncomingRequestDto instance) =>
       'myOffer': instance.myOffer?.toJson(),
       'jobId': instance.jobId,
       'notifiedAt': instance.notifiedAt.toIso8601String(),
+      'employer': instance.employer.toJson(),
     };
 
 const _$IncomingRequestDtoOutcomeEnumEnumMap = {

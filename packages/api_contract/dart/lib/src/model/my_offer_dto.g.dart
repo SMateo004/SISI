@@ -179,4 +179,5 @@ const _$MyOfferDtoStatusEnumEnumMap = {
   MyOfferDtoStatusEnum.activa: 'activa',
   MyOfferDtoStatusEnum.aceptada: 'aceptada',
   MyOfferDtoStatusEnum.cerrada: 'cerrada',
+  MyOfferDtoStatusEnum.retirada: 'retirada',
 };

@@ -11,7 +11,9 @@ Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**notificationsControllerList**](NotificacionesApi.md#notificationscontrollerlist) | **GET** /me/notifications | Mis avisos, del más reciente al más antiguo
 [**notificationsControllerMarkRead**](NotificacionesApi.md#notificationscontrollermarkread) | **POST** /me/notifications/{id}/read | Marcar un aviso como leído
+[**notificationsControllerReadAll**](NotificacionesApi.md#notificationscontrollerreadall) | **POST** /me/notifications/read-all | Marcar todos mis avisos como leídos
 [**notificationsControllerRegisterDevice**](NotificacionesApi.md#notificationscontrollerregisterdevice) | **POST** /me/devices | Registrar el token de push (FCM) de este dispositivo
+[**notificationsControllerUnreadCount**](NotificacionesApi.md#notificationscontrollerunreadcount) | **GET** /me/notifications/unread-count | Cuántos avisos tengo sin leer
 [**notificationsControllerUnregisterDevice**](NotificacionesApi.md#notificationscontrollerunregisterdevice) | **DELETE** /me/devices/{token} | Dar de baja el token de push (al cerrar sesión)
 
 
@@ -96,6 +98,43 @@ void (empty response body)
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **notificationsControllerReadAll**
+> ReadAllResultDto notificationsControllerReadAll()
+
+Marcar todos mis avisos como leídos
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getNotificacionesApi();
+
+try {
+    final response = api.notificationsControllerReadAll();
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling NotificacionesApi->notificationsControllerReadAll: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**ReadAllResultDto**](ReadAllResultDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **notificationsControllerRegisterDevice**
 > notificationsControllerRegisterDevice(registerDeviceDto)
 
@@ -134,6 +173,43 @@ void (empty response body)
 ### HTTP request headers
 
  - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **notificationsControllerUnreadCount**
+> UnreadCountDto notificationsControllerUnreadCount()
+
+Cuántos avisos tengo sin leer
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getNotificacionesApi();
+
+try {
+    final response = api.notificationsControllerUnreadCount();
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling NotificacionesApi->notificationsControllerUnreadCount: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**UnreadCountDto**](UnreadCountDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

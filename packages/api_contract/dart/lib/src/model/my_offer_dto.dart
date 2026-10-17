@@ -173,7 +173,9 @@ activa(r'activa'),
 @JsonValue(r'aceptada')
 aceptada(r'aceptada'),
 @JsonValue(r'cerrada')
-cerrada(r'cerrada');
+cerrada(r'cerrada'),
+@JsonValue(r'retirada')
+retirada(r'retirada');
 
 const MyOfferDtoStatusEnum(this.value);
 

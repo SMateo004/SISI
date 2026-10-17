@@ -15,6 +15,7 @@ Method | HTTP request | Description
 [**offersControllerIncomingOne**](OfertasApi.md#offerscontrollerincomingone) | **GET** /worker/requests/{id} | Detalle de una solicitud que me llegó (R5.1)
 [**offersControllerList**](OfertasApi.md#offerscontrollerlist) | **GET** /requests/{id}/offers | Ofertas de mi solicitud (R5.3)
 [**offersControllerOffer**](OfertasApi.md#offerscontrolleroffer) | **POST** /requests/{id}/offers | Ofertar: aceptar el precio o contraofertar (R5.2)
+[**offersControllerWithdraw**](OfertasApi.md#offerscontrollerwithdraw) | **DELETE** /requests/{id}/offers/mine | Retirar mi oferta
 
 
 # **offersControllerAccept**
@@ -67,7 +68,7 @@ Name | Type | Description  | Notes
 
 Contacto de la contraparte (R5.4, R9.4)
 
-Solo para el empleador y el trabajador del trabajo. Al trabajador también le da la dirección.
+Solo para el empleador y el trabajador del trabajo. Al trabajador también le da la dirección. Se oculta 24 h después de terminado o cancelado.
 
 ### Example
 ```dart
@@ -271,6 +272,49 @@ Name | Type | Description  | Notes
 ### HTTP request headers
 
  - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **offersControllerWithdraw**
+> MyOfferDto offersControllerWithdraw(id)
+
+Retirar mi oferta
+
+Mientras el empleador no haya elegido. Si era la única, la solicitud vuelve a buscar trabajadores.
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getOfertasApi();
+final String id = id_example; // String | 
+
+try {
+    final response = api.offersControllerWithdraw(id);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling OfertasApi->offersControllerWithdraw: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+
+### Return type
+
+[**MyOfferDto**](MyOfferDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

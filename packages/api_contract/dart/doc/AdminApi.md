@@ -12,6 +12,11 @@ Method | HTTP request | Description
 [**adminCategoriesControllerList**](AdminApi.md#admincategoriescontrollerlist) | **GET** /admin/categories | Todas las categorías con sus valores por ciudad
 [**adminCategoriesControllerUpdate**](AdminApi.md#admincategoriescontrollerupdate) | **PATCH** /admin/categories/{id} | Edita los valores base de una categoría
 [**adminCategoriesControllerUpsertCity**](AdminApi.md#admincategoriescontrollerupsertcity) | **PUT** /admin/categories/{id}/cities/{cityId} | Activa o ajusta una categoría en una ciudad
+[**adminChatControllerHeld**](AdminApi.md#adminchatcontrollerheld) | **GET** /admin/chat/held | Mensajes de chat retenidos (los 100 más recientes)
+[**adminJobsControllerDisputed**](AdminApi.md#adminjobscontrollerdisputed) | **GET** /admin/jobs/disputed | Trabajos con un problema reportado, sin resolver
+[**adminJobsControllerResolve**](AdminApi.md#adminjobscontrollerresolve) | **POST** /admin/jobs/{id}/resolve | Resolver una disputa
+[**adminReportsControllerList**](AdminApi.md#adminreportscontrollerlist) | **GET** /admin/reports | Reportes por estado (por defecto, pendientes)
+[**adminReportsControllerResolve**](AdminApi.md#adminreportscontrollerresolve) | **POST** /admin/reports/{id}/resolve | Marcar un reporte como válido o descartado
 [**adminRequestsControllerList**](AdminApi.md#adminrequestscontrollerlist) | **GET** /admin/requests | Solicitudes por estado (por defecto, las retenidas por moderación)
 [**adminRequestsControllerReject**](AdminApi.md#adminrequestscontrollerreject) | **POST** /admin/requests/{id}/reject | Rechaza una solicitud retenida
 [**adminRequestsControllerRelease**](AdminApi.md#adminrequestscontrollerrelease) | **POST** /admin/requests/{id}/release | Libera una solicitud retenida: pasa a \&quot;buscando\&quot;
@@ -139,6 +144,211 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**AdminCategoryDto**](AdminCategoryDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminChatControllerHeld**
+> List<AdminHeldMessageDto> adminChatControllerHeld()
+
+Mensajes de chat retenidos (los 100 más recientes)
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+
+try {
+    final response = api.adminChatControllerHeld();
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminChatControllerHeld: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**List&lt;AdminHeldMessageDto&gt;**](AdminHeldMessageDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminJobsControllerDisputed**
+> List<AdminDisputedJobDto> adminJobsControllerDisputed()
+
+Trabajos con un problema reportado, sin resolver
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+
+try {
+    final response = api.adminJobsControllerDisputed();
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminJobsControllerDisputed: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**List&lt;AdminDisputedJobDto&gt;**](AdminDisputedJobDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminJobsControllerResolve**
+> AdminJobsControllerResolve200Response adminJobsControllerResolve(id, resolveDisputeDto)
+
+Resolver una disputa
+
+confirm → terminado con comisión (job.completed); cancel → cancelado sin comisión. La nota queda en el historial.
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final String id = id_example; // String | 
+final ResolveDisputeDto resolveDisputeDto = ; // ResolveDisputeDto | 
+
+try {
+    final response = api.adminJobsControllerResolve(id, resolveDisputeDto);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminJobsControllerResolve: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+ **resolveDisputeDto** | [**ResolveDisputeDto**](ResolveDisputeDto.md)|  | 
+
+### Return type
+
+[**AdminJobsControllerResolve200Response**](AdminJobsControllerResolve200Response.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminReportsControllerList**
+> List<AdminReportDto> adminReportsControllerList(status)
+
+Reportes por estado (por defecto, pendientes)
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final String status = status_example; // String | 
+
+try {
+    final response = api.adminReportsControllerList(status);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminReportsControllerList: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **status** | **String**|  | [optional] [default to 'pendiente']
+
+### Return type
+
+[**List&lt;AdminReportDto&gt;**](AdminReportDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminReportsControllerResolve**
+> ResolveReportResultDto adminReportsControllerResolve(id, resolveReportDto)
+
+Marcar un reporte como válido o descartado
+
+Con 3 reportes válidos de personas distintas, el trabajador queda suspendido (R9.3) o, si solo es empleador, marcado para revisión.
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final String id = id_example; // String | 
+final ResolveReportDto resolveReportDto = ; // ResolveReportDto | 
+
+try {
+    final response = api.adminReportsControllerResolve(id, resolveReportDto);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminReportsControllerResolve: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+ **resolveReportDto** | [**ResolveReportDto**](ResolveReportDto.md)|  | 
+
+### Return type
+
+[**ResolveReportResultDto**](ResolveReportResultDto.md)
 
 ### Authorization
 

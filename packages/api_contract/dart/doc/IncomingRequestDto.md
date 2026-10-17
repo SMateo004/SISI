@@ -22,6 +22,7 @@ Name | Type | Description | Notes
 **myOffer** | [**MyOfferDto**](MyOfferDto.md) |  | 
 **jobId** | **String** |  | 
 **notifiedAt** | [**DateTime**](DateTime.md) |  | 
+**employer** | [**EmployerRatingDto**](EmployerRatingDto.md) | Calificación del empleador (la que le dieron los trabajadores) | 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

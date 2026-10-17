@@ -31,6 +31,12 @@ class JobContactDto {
     required  this.address,
 
     required  this.finalPriceBs,
+
+    required  this.telUri,
+
+    required  this.whatsappUri,
+
+    required  this.visibleUntil,
   });
 
   @JsonKey(
@@ -107,6 +113,45 @@ class JobContactDto {
 
 
 
+      /// Para el botón \"Llamar\"
+  @JsonKey(
+    
+    name: r'telUri',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final String telUri;
+
+
+
+      /// Para el botón \"WhatsApp\" (sin \"+\", como pide wa.me)
+  @JsonKey(
+    
+    name: r'whatsappUri',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final String whatsappUri;
+
+
+
+      /// Hasta cuándo se ve el contacto (24 h después de terminado o cancelado)
+  @JsonKey(
+    
+    name: r'visibleUntil',
+    required: true,
+    includeIfNull: true,
+  )
+
+
+  final DateTime? visibleUntil;
+
+
+
 
 
     @override
@@ -116,7 +161,10 @@ class JobContactDto {
       other.name == name &&
       other.phone == phone &&
       other.address == address &&
-      other.finalPriceBs == finalPriceBs;
+      other.finalPriceBs == finalPriceBs &&
+      other.telUri == telUri &&
+      other.whatsappUri == whatsappUri &&
+      other.visibleUntil == visibleUntil;
 
     @override
     int get hashCode =>
@@ -125,7 +173,10 @@ class JobContactDto {
         (name == null ? 0 : name.hashCode) +
         phone.hashCode +
         (address == null ? 0 : address.hashCode) +
-        finalPriceBs.hashCode;
+        finalPriceBs.hashCode +
+        telUri.hashCode +
+        whatsappUri.hashCode +
+        (visibleUntil == null ? 0 : visibleUntil.hashCode);
 
   factory JobContactDto.fromJson(Map<String, dynamic> json) => _$JobContactDtoFromJson(json);
 

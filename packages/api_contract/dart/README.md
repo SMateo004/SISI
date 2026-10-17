@@ -68,6 +68,11 @@ Class | Method | HTTP request | Description
 [*AdminApi*](doc/AdminApi.md) | [**adminCategoriesControllerList**](doc/AdminApi.md#admincategoriescontrollerlist) | **GET** /admin/categories | Todas las categorías con sus valores por ciudad
 [*AdminApi*](doc/AdminApi.md) | [**adminCategoriesControllerUpdate**](doc/AdminApi.md#admincategoriescontrollerupdate) | **PATCH** /admin/categories/{id} | Edita los valores base de una categoría
 [*AdminApi*](doc/AdminApi.md) | [**adminCategoriesControllerUpsertCity**](doc/AdminApi.md#admincategoriescontrollerupsertcity) | **PUT** /admin/categories/{id}/cities/{cityId} | Activa o ajusta una categoría en una ciudad
+[*AdminApi*](doc/AdminApi.md) | [**adminChatControllerHeld**](doc/AdminApi.md#adminchatcontrollerheld) | **GET** /admin/chat/held | Mensajes de chat retenidos (los 100 más recientes)
+[*AdminApi*](doc/AdminApi.md) | [**adminJobsControllerDisputed**](doc/AdminApi.md#adminjobscontrollerdisputed) | **GET** /admin/jobs/disputed | Trabajos con un problema reportado, sin resolver
+[*AdminApi*](doc/AdminApi.md) | [**adminJobsControllerResolve**](doc/AdminApi.md#adminjobscontrollerresolve) | **POST** /admin/jobs/{id}/resolve | Resolver una disputa
+[*AdminApi*](doc/AdminApi.md) | [**adminReportsControllerList**](doc/AdminApi.md#adminreportscontrollerlist) | **GET** /admin/reports | Reportes por estado (por defecto, pendientes)
+[*AdminApi*](doc/AdminApi.md) | [**adminReportsControllerResolve**](doc/AdminApi.md#adminreportscontrollerresolve) | **POST** /admin/reports/{id}/resolve | Marcar un reporte como válido o descartado
 [*AdminApi*](doc/AdminApi.md) | [**adminRequestsControllerList**](doc/AdminApi.md#adminrequestscontrollerlist) | **GET** /admin/requests | Solicitudes por estado (por defecto, las retenidas por moderación)
 [*AdminApi*](doc/AdminApi.md) | [**adminRequestsControllerReject**](doc/AdminApi.md#adminrequestscontrollerreject) | **POST** /admin/requests/{id}/reject | Rechaza una solicitud retenida
 [*AdminApi*](doc/AdminApi.md) | [**adminRequestsControllerRelease**](doc/AdminApi.md#adminrequestscontrollerrelease) | **POST** /admin/requests/{id}/release | Libera una solicitud retenida: pasa a \&quot;buscando\&quot;
@@ -82,7 +87,13 @@ Class | Method | HTTP request | Description
 [*AuthApi*](doc/AuthApi.md) | [**authControllerRefresh**](doc/AuthApi.md#authcontrollerrefresh) | **POST** /auth/refresh | Renueva la sesión (rota el refresh token)
 [*AuthApi*](doc/AuthApi.md) | [**authControllerRequestOtp**](doc/AuthApi.md#authcontrollerrequestotp) | **POST** /auth/otp/request | Envía un código de 6 dígitos al celular
 [*AuthApi*](doc/AuthApi.md) | [**authControllerVerifyOtp**](doc/AuthApi.md#authcontrollerverifyotp) | **POST** /auth/otp/verify | Valida el código e inicia sesión
+[*CalificacionesApi*](doc/CalificacionesApi.md) | [**reviewsControllerForJob**](doc/CalificacionesApi.md#reviewscontrollerforjob) | **GET** /jobs/{id}/reviews | Calificaciones del trabajo (la mía y, si ya es visible, la recibida)
+[*CalificacionesApi*](doc/CalificacionesApi.md) | [**reviewsControllerForUser**](doc/CalificacionesApi.md#reviewscontrollerforuser) | **GET** /users/{id}/reviews | Calificaciones publicadas de un usuario
+[*CalificacionesApi*](doc/CalificacionesApi.md) | [**reviewsControllerSubmit**](doc/CalificacionesApi.md#reviewscontrollersubmit) | **POST** /jobs/{id}/review | Calificar a la contraparte (1 a 5 estrellas y comentario opcional)
 [*CategoriesApi*](doc/CategoriesApi.md) | [**categoriesControllerList**](doc/CategoriesApi.md#categoriescontrollerlist) | **GET** /categories | Categorías activas en mi ciudad
+[*ChatApi*](doc/ChatApi.md) | [**chatControllerList**](doc/ChatApi.md#chatcontrollerlist) | **GET** /jobs/{id}/messages | Mensajes del trabajo
+[*ChatApi*](doc/ChatApi.md) | [**chatControllerRead**](doc/ChatApi.md#chatcontrollerread) | **POST** /jobs/{id}/messages/read | Marcar como leídos los mensajes recibidos hasta uno (incluido)
+[*ChatApi*](doc/ChatApi.md) | [**chatControllerSend**](doc/ChatApi.md#chatcontrollersend) | **POST** /jobs/{id}/messages | Enviar un mensaje (solo texto)
 [*HealthApi*](doc/HealthApi.md) | [**healthControllerCheck**](doc/HealthApi.md#healthcontrollercheck) | **GET** /health | Estado de la API, la base de datos (con PostGIS) y Redis
 [*MapsApi*](doc/MapsApi.md) | [**geocodingControllerReverse**](doc/MapsApi.md#geocodingcontrollerreverse) | **GET** /geocoding/reverse | Dirección sugerida para unas coordenadas
 [*MeApi*](doc/MeApi.md) | [**meControllerConfirmPhoto**](doc/MeApi.md#mecontrollerconfirmphoto) | **PUT** /me/photo | Confirma la foto subida y la deja como foto de perfil
@@ -91,7 +102,9 @@ Class | Method | HTTP request | Description
 [*MeApi*](doc/MeApi.md) | [**meControllerUpdate**](doc/MeApi.md#mecontrollerupdate) | **PATCH** /me | Actualiza mi nombre (la foto se cambia con /me/photo)
 [*NotificacionesApi*](doc/NotificacionesApi.md) | [**notificationsControllerList**](doc/NotificacionesApi.md#notificationscontrollerlist) | **GET** /me/notifications | Mis avisos, del más reciente al más antiguo
 [*NotificacionesApi*](doc/NotificacionesApi.md) | [**notificationsControllerMarkRead**](doc/NotificacionesApi.md#notificationscontrollermarkread) | **POST** /me/notifications/{id}/read | Marcar un aviso como leído
+[*NotificacionesApi*](doc/NotificacionesApi.md) | [**notificationsControllerReadAll**](doc/NotificacionesApi.md#notificationscontrollerreadall) | **POST** /me/notifications/read-all | Marcar todos mis avisos como leídos
 [*NotificacionesApi*](doc/NotificacionesApi.md) | [**notificationsControllerRegisterDevice**](doc/NotificacionesApi.md#notificationscontrollerregisterdevice) | **POST** /me/devices | Registrar el token de push (FCM) de este dispositivo
+[*NotificacionesApi*](doc/NotificacionesApi.md) | [**notificationsControllerUnreadCount**](doc/NotificacionesApi.md#notificationscontrollerunreadcount) | **GET** /me/notifications/unread-count | Cuántos avisos tengo sin leer
 [*NotificacionesApi*](doc/NotificacionesApi.md) | [**notificationsControllerUnregisterDevice**](doc/NotificacionesApi.md#notificationscontrollerunregisterdevice) | **DELETE** /me/devices/{token} | Dar de baja el token de push (al cerrar sesión)
 [*OfertasApi*](doc/OfertasApi.md) | [**offersControllerAccept**](doc/OfertasApi.md#offerscontrolleraccept) | **POST** /requests/{id}/offers/{offerId}/accept | Elegir una oferta (R5.4)
 [*OfertasApi*](doc/OfertasApi.md) | [**offersControllerContact**](doc/OfertasApi.md#offerscontrollercontact) | **GET** /jobs/{id}/contact | Contacto de la contraparte (R5.4, R9.4)
@@ -99,6 +112,9 @@ Class | Method | HTTP request | Description
 [*OfertasApi*](doc/OfertasApi.md) | [**offersControllerIncomingOne**](doc/OfertasApi.md#offerscontrollerincomingone) | **GET** /worker/requests/{id} | Detalle de una solicitud que me llegó (R5.1)
 [*OfertasApi*](doc/OfertasApi.md) | [**offersControllerList**](doc/OfertasApi.md#offerscontrollerlist) | **GET** /requests/{id}/offers | Ofertas de mi solicitud (R5.3)
 [*OfertasApi*](doc/OfertasApi.md) | [**offersControllerOffer**](doc/OfertasApi.md#offerscontrolleroffer) | **POST** /requests/{id}/offers | Ofertar: aceptar el precio o contraofertar (R5.2)
+[*OfertasApi*](doc/OfertasApi.md) | [**offersControllerWithdraw**](doc/OfertasApi.md#offerscontrollerwithdraw) | **DELETE** /requests/{id}/offers/mine | Retirar mi oferta
+[*ReportesApi*](doc/ReportesApi.md) | [**reportsControllerCreate**](doc/ReportesApi.md#reportscontrollercreate) | **POST** /reports | Reportar una solicitud, un perfil, un mensaje o un trabajo
+[*ReportesApi*](doc/ReportesApi.md) | [**reportsControllerMine**](doc/ReportesApi.md#reportscontrollermine) | **GET** /reports/mine | Mis reportes y su estado
 [*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerCancel**](doc/RequestsApi.md#requestscontrollercancel) | **POST** /requests/{id}/cancel | Cancela la solicitud (mientras no esté asignada)
 [*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerConfirmPhoto**](doc/RequestsApi.md#requestscontrollerconfirmphoto) | **PUT** /requests/{id}/photos | Confirma una foto subida (verifica el objeto con HEAD)
 [*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerCreate**](doc/RequestsApi.md#requestscontrollercreate) | **POST** /requests | Crea una solicitud en borrador
@@ -107,6 +123,15 @@ Class | Method | HTTP request | Description
 [*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerListMine**](doc/RequestsApi.md#requestscontrollerlistmine) | **GET** /requests/mine | Mis solicitudes (más recientes primero)
 [*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerPhotoUploadUrl**](doc/RequestsApi.md#requestscontrollerphotouploadurl) | **POST** /requests/{id}/photos/upload-url | URL prefirmada para subir una foto (máx. 4, solo en borrador)
 [*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerPublish**](doc/RequestsApi.md#requestscontrollerpublish) | **POST** /requests/{id}/publish | Publica la solicitud
+[*TrabajosApi*](doc/TrabajosApi.md) | [**jobsControllerCancel**](doc/TrabajosApi.md#jobscontrollercancel) | **POST** /jobs/{id}/cancel | Cancelar el trabajo (cualquiera de las dos partes)
+[*TrabajosApi*](doc/TrabajosApi.md) | [**jobsControllerConfirm**](doc/TrabajosApi.md#jobscontrollerconfirm) | **POST** /jobs/{id}/confirm | Confirmar el término (empleador, R6.2)
+[*TrabajosApi*](doc/TrabajosApi.md) | [**jobsControllerDispute**](doc/TrabajosApi.md#jobscontrollerdispute) | **POST** /jobs/{id}/dispute | Hubo un problema (empleador)
+[*TrabajosApi*](doc/TrabajosApi.md) | [**jobsControllerFinish**](doc/TrabajosApi.md#jobscontrollerfinish) | **POST** /jobs/{id}/finish | Terminé el trabajo (trabajador)
+[*TrabajosApi*](doc/TrabajosApi.md) | [**jobsControllerGet**](doc/TrabajosApi.md#jobscontrollerget) | **GET** /jobs/{id} | Detalle del trabajo
+[*TrabajosApi*](doc/TrabajosApi.md) | [**jobsControllerList**](doc/TrabajosApi.md#jobscontrollerlist) | **GET** /jobs | Historial de trabajos (R8.3)
+[*TrabajosApi*](doc/TrabajosApi.md) | [**jobsControllerLocation**](doc/TrabajosApi.md#jobscontrollerlocation) | **GET** /jobs/{id}/location | Ubicación del trabajador en camino (empleador)
+[*TrabajosApi*](doc/TrabajosApi.md) | [**jobsControllerOnTheWay**](doc/TrabajosApi.md#jobscontrollerontheway) | **POST** /jobs/{id}/on-the-way | Voy en camino (trabajador)
+[*TrabajosApi*](doc/TrabajosApi.md) | [**jobsControllerStart**](doc/TrabajosApi.md#jobscontrollerstart) | **POST** /jobs/{id}/start | Empecé el trabajo (trabajador)
 [*WorkerApi*](doc/WorkerApi.md) | [**workerLocationsControllerGet**](doc/WorkerApi.md#workerlocationscontrollerget) | **GET** /worker/availability | Mi disponibilidad y última ubicación recibida
 [*WorkerApi*](doc/WorkerApi.md) | [**workerLocationsControllerSet**](doc/WorkerApi.md#workerlocationscontrollerset) | **PUT** /worker/availability | Toggle \&quot;Disponible\&quot;
 [*WorkerApi*](doc/WorkerApi.md) | [**workerLocationsControllerUpdate**](doc/WorkerApi.md#workerlocationscontrollerupdate) | **POST** /worker/location | Ubicación en vivo (solo con \&quot;Disponible\&quot; y la app en primer plano)
@@ -122,59 +147,94 @@ Class | Method | HTTP request | Description
  - [AcceptOfferResultDto](doc/AcceptOfferResultDto.md)
  - [AdminCategoryCityDto](doc/AdminCategoryCityDto.md)
  - [AdminCategoryDto](doc/AdminCategoryDto.md)
+ - [AdminDisputedJobDto](doc/AdminDisputedJobDto.md)
+ - [AdminHeldMessageDto](doc/AdminHeldMessageDto.md)
  - [AdminHeldRequestDto](doc/AdminHeldRequestDto.md)
+ - [AdminJobsControllerResolve200Response](doc/AdminJobsControllerResolve200Response.md)
+ - [AdminReportDto](doc/AdminReportDto.md)
  - [ApiErrorBody](doc/ApiErrorBody.md)
  - [AvailabilityDto](doc/AvailabilityDto.md)
+ - [CancelJobDto](doc/CancelJobDto.md)
  - [CategoryDto](doc/CategoryDto.md)
+ - [ChatMessageDto](doc/ChatMessageDto.md)
+ - [ChatPageDto](doc/ChatPageDto.md)
  - [ConfirmUploadDto](doc/ConfirmUploadDto.md)
  - [CreateModerationTermDto](doc/CreateModerationTermDto.md)
  - [CreateOfferDto](doc/CreateOfferDto.md)
+ - [CreateReportDto](doc/CreateReportDto.md)
  - [CreateRequestDto](doc/CreateRequestDto.md)
+ - [CreateReviewDto](doc/CreateReviewDto.md)
  - [CreatedRequestDto](doc/CreatedRequestDto.md)
+ - [DisputeJobDto](doc/DisputeJobDto.md)
  - [DocumentUploadRequestDto](doc/DocumentUploadRequestDto.md)
  - [DocumentUrlDto](doc/DocumentUrlDto.md)
  - [EmployerOfferDto](doc/EmployerOfferDto.md)
+ - [EmployerRatingDto](doc/EmployerRatingDto.md)
  - [FeatureFlagDto](doc/FeatureFlagDto.md)
  - [HealthCheckDto](doc/HealthCheckDto.md)
  - [HealthChecksDto](doc/HealthChecksDto.md)
  - [HealthResponseDto](doc/HealthResponseDto.md)
  - [IncomingPhotoDto](doc/IncomingPhotoDto.md)
  - [IncomingRequestDto](doc/IncomingRequestDto.md)
+ - [JobCancellationDto](doc/JobCancellationDto.md)
+ - [JobCategoryDto](doc/JobCategoryDto.md)
  - [JobContactDto](doc/JobContactDto.md)
+ - [JobCounterpartDto](doc/JobCounterpartDto.md)
+ - [JobDto](doc/JobDto.md)
+ - [JobLocationDto](doc/JobLocationDto.md)
+ - [JobPageDto](doc/JobPageDto.md)
+ - [JobReviewsDto](doc/JobReviewsDto.md)
+ - [JobTimelineDto](doc/JobTimelineDto.md)
  - [LocationUpdateDto](doc/LocationUpdateDto.md)
  - [LocationUpdateResultDto](doc/LocationUpdateResultDto.md)
  - [LoginResponseDto](doc/LoginResponseDto.md)
+ - [MarkReadDto](doc/MarkReadDto.md)
+ - [MarkReadResultDto](doc/MarkReadResultDto.md)
  - [ModeDeniedDto](doc/ModeDeniedDto.md)
  - [ModerationTermDto](doc/ModerationTermDto.md)
  - [MyOfferDto](doc/MyOfferDto.md)
+ - [MyReviewDto](doc/MyReviewDto.md)
  - [NotificationDto](doc/NotificationDto.md)
  - [NotificationPageDto](doc/NotificationPageDto.md)
  - [OfferWorkerDto](doc/OfferWorkerDto.md)
  - [OtpRequestedDto](doc/OtpRequestedDto.md)
  - [PresignedUploadDto](doc/PresignedUploadDto.md)
  - [PriceRangeDto](doc/PriceRangeDto.md)
+ - [PublicReviewDto](doc/PublicReviewDto.md)
  - [PublishResultDto](doc/PublishResultDto.md)
+ - [ReadAllResultDto](doc/ReadAllResultDto.md)
+ - [ReceivedReviewDto](doc/ReceivedReviewDto.md)
  - [RefreshTokenDto](doc/RefreshTokenDto.md)
  - [RegisterDeviceDto](doc/RegisterDeviceDto.md)
  - [RejectRequestDto](doc/RejectRequestDto.md)
+ - [ReportDto](doc/ReportDto.md)
+ - [ReportedUserDto](doc/ReportedUserDto.md)
  - [RequestCategoryDto](doc/RequestCategoryDto.md)
  - [RequestDto](doc/RequestDto.md)
  - [RequestOtpDto](doc/RequestOtpDto.md)
  - [RequestPageDto](doc/RequestPageDto.md)
  - [RequestPhotoDto](doc/RequestPhotoDto.md)
  - [RequestWarningDto](doc/RequestWarningDto.md)
+ - [ResolveDisputeDto](doc/ResolveDisputeDto.md)
+ - [ResolveReportDto](doc/ResolveReportDto.md)
+ - [ResolveReportResultDto](doc/ResolveReportResultDto.md)
  - [ReverseGeocodeDto](doc/ReverseGeocodeDto.md)
+ - [SendMessageDto](doc/SendMessageDto.md)
+ - [SentMessageDto](doc/SentMessageDto.md)
  - [SetAvailabilityDto](doc/SetAvailabilityDto.md)
  - [SetFeatureFlagDto](doc/SetFeatureFlagDto.md)
  - [SubmitUpgradeDto](doc/SubmitUpgradeDto.md)
  - [SwitchModeDto](doc/SwitchModeDto.md)
  - [TokensDto](doc/TokensDto.md)
+ - [TrackedPointDto](doc/TrackedPointDto.md)
+ - [UnreadCountDto](doc/UnreadCountDto.md)
  - [UpdateCategoryDto](doc/UpdateCategoryDto.md)
  - [UpdateMeDto](doc/UpdateMeDto.md)
  - [UpdateModerationTermDto](doc/UpdateModerationTermDto.md)
  - [UploadRequestDto](doc/UploadRequestDto.md)
  - [UpsertCategoryCityDto](doc/UpsertCategoryCityDto.md)
  - [UserDto](doc/UserDto.md)
+ - [UserReviewsDto](doc/UserReviewsDto.md)
  - [VerifyOtpDto](doc/VerifyOtpDto.md)
  - [WorkerDocumentStatusDto](doc/WorkerDocumentStatusDto.md)
  - [WorkerProfileDto](doc/WorkerProfileDto.md)

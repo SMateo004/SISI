@@ -14,6 +14,9 @@ Name | Type | Description | Notes
 **phone** | **String** |  | 
 **address** | **String** | Dirección del trabajo (solo para el trabajador) | 
 **finalPriceBs** | **String** |  | 
+**telUri** | **String** | Para el botón \"Llamar\" | 
+**whatsappUri** | **String** | Para el botón \"WhatsApp\" (sin \"+\", como pide wa.me) | 
+**visibleUntil** | [**DateTime**](DateTime.md) | Hasta cuándo se ve el contacto (24 h después de terminado o cancelado) | 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

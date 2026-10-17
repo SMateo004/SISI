@@ -2278,6 +2278,80 @@
         ]
       }
     },
+    "/me/notifications/unread-count": {
+      "get": {
+        "operationId": "NotificationsController_unreadCount",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCountDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cuántos avisos tengo sin leer",
+        "tags": [
+          "notificaciones"
+        ]
+      }
+    },
+    "/me/notifications/read-all": {
+      "post": {
+        "operationId": "NotificationsController_readAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadAllResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Marcar todos mis avisos como leídos",
+        "tags": [
+          "notificaciones"
+        ]
+      }
+    },
     "/me/notifications/{id}/read": {
       "post": {
         "operationId": "NotificationsController_markRead",
@@ -2570,6 +2644,73 @@
         ]
       }
     },
+    "/requests/{id}/offers/mine": {
+      "delete": {
+        "description": "Mientras el empleador no haya elegido. Si era la única, la solicitud vuelve a buscar trabajadores.",
+        "operationId": "OffersController_withdraw",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyOfferDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "REQUEST_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "NO_ACTIVE_OFFER u OFFERS_CLOSED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Retirar mi oferta",
+        "tags": [
+          "ofertas"
+        ]
+      }
+    },
     "/requests/{id}/offers/{offerId}/accept": {
       "post": {
         "description": "Crea el trabajo, asigna la solicitud y cierra las demás ofertas. Después, el contacto se pide con GET /jobs/{jobId}/contact.",
@@ -2624,7 +2765,7 @@
             }
           },
           "409": {
-            "description": "REQUEST_ALREADY_ASSIGNED, OFFERS_CLOSED u OFFER_NOT_AVAILABLE",
+            "description": "REQUEST_ALREADY_ASSIGNED, OFFERS_CLOSED, OFFER_NOT_AVAILABLE o WORKER_BUSY (la oferta se retira)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2647,7 +2788,7 @@
     },
     "/jobs/{id}/contact": {
       "get": {
-        "description": "Solo para el empleador y el trabajador del trabajo. Al trabajador también le da la dirección.",
+        "description": "Solo para el empleador y el trabajador del trabajo. Al trabajador también le da la dirección. Se oculta 24 h después de terminado o cancelado.",
         "operationId": "OffersController_contact",
         "parameters": [
           {
@@ -2689,6 +2830,16 @@
                 }
               }
             }
+          },
+          "410": {
+            "description": "CONTACT_EXPIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2699,6 +2850,1581 @@
         "summary": "Contacto de la contraparte (R5.4, R9.4)",
         "tags": [
           "ofertas"
+        ]
+      }
+    },
+    "/jobs": {
+      "get": {
+        "description": "Como trabajador incluye la comisión y el neto de cada trabajo terminado.",
+        "operationId": "JobsController_list",
+        "parameters": [
+          {
+            "name": "role",
+            "required": true,
+            "in": "query",
+            "description": "Historial como trabajador o como empleador",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "worker",
+                "employer"
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobPageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "JOB_ACTION_FORBIDDEN: no le toca a tu rol",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JOB_NOT_FOUND (también para terceros)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "JOB_TRANSITION_NOT_ALLOWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Historial de trabajos (R8.3)",
+        "tags": [
+          "trabajos"
+        ]
+      }
+    },
+    "/jobs/{id}": {
+      "get": {
+        "description": "Estado, línea de tiempo y acciones permitidas. Solo para las dos partes.",
+        "operationId": "JobsController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "JOB_ACTION_FORBIDDEN: no le toca a tu rol",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JOB_NOT_FOUND (también para terceros)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "JOB_TRANSITION_NOT_ALLOWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Detalle del trabajo",
+        "tags": [
+          "trabajos"
+        ]
+      }
+    },
+    "/jobs/{id}/on-the-way": {
+      "post": {
+        "description": "asignado → en_camino",
+        "operationId": "JobsController_onTheWay",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "JOB_ACTION_FORBIDDEN: no le toca a tu rol",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JOB_NOT_FOUND (también para terceros)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "JOB_TRANSITION_NOT_ALLOWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Voy en camino (trabajador)",
+        "tags": [
+          "trabajos"
+        ]
+      }
+    },
+    "/jobs/{id}/start": {
+      "post": {
+        "description": "en_camino → en_curso",
+        "operationId": "JobsController_start",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "JOB_ACTION_FORBIDDEN: no le toca a tu rol",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JOB_NOT_FOUND (también para terceros)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "JOB_TRANSITION_NOT_ALLOWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Empecé el trabajo (trabajador)",
+        "tags": [
+          "trabajos"
+        ]
+      }
+    },
+    "/jobs/{id}/finish": {
+      "post": {
+        "description": "Solo en curso. Queda esperando la confirmación del empleador; si no responde en el plazo (24 h), se confirma solo.",
+        "operationId": "JobsController_finish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "JOB_ACTION_FORBIDDEN: no le toca a tu rol",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JOB_NOT_FOUND (también para terceros)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "JOB_TRANSITION_NOT_ALLOWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Terminé el trabajo (trabajador)",
+        "tags": [
+          "trabajos"
+        ]
+      }
+    },
+    "/jobs/{id}/confirm": {
+      "post": {
+        "description": "en_curso → terminado. Calcula la comisión (R6.3).",
+        "operationId": "JobsController_confirm",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "JOB_ACTION_FORBIDDEN: no le toca a tu rol",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JOB_NOT_FOUND (también para terceros)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "JOB_TRANSITION_NOT_ALLOWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Confirmar el término (empleador, R6.2)",
+        "tags": [
+          "trabajos"
+        ]
+      }
+    },
+    "/jobs/{id}/dispute": {
+      "post": {
+        "description": "Después de que el trabajador marcó terminado. Frena la autoconfirmación; lo resuelve un administrador.",
+        "operationId": "JobsController_dispute",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisputeJobDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "JOB_ACTION_FORBIDDEN: no le toca a tu rol",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JOB_NOT_FOUND (también para terceros)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "JOB_TRANSITION_NOT_ALLOWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Hubo un problema (empleador)",
+        "tags": [
+          "trabajos"
+        ]
+      }
+    },
+    "/jobs/{id}/cancel": {
+      "post": {
+        "description": "Solo asignado o en camino; en curso ya no. Motivo de la lista y nota opcional (moderada). Sin penalidad; la solicitud queda cancelada y el empleador puede volver a publicarla.",
+        "operationId": "JobsController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelJobDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "JOB_ACTION_FORBIDDEN: no le toca a tu rol",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JOB_NOT_FOUND (también para terceros)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "JOB_TRANSITION_NOT_ALLOWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cancelar el trabajo (cualquiera de las dos partes)",
+        "tags": [
+          "trabajos"
+        ]
+      }
+    },
+    "/jobs/{id}/location": {
+      "get": {
+        "description": "Para resincronizar el mapa; en vivo llega por job:location. Solo mientras va en camino (409 JOB_LOCATION_UNAVAILABLE).",
+        "operationId": "JobsController_location",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobLocationDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "JOB_ACTION_FORBIDDEN: no le toca a tu rol",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JOB_NOT_FOUND (también para terceros)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "JOB_TRANSITION_NOT_ALLOWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ubicación del trabajador en camino (empleador)",
+        "tags": [
+          "trabajos"
+        ]
+      }
+    },
+    "/admin/jobs/disputed": {
+      "get": {
+        "operationId": "AdminJobsController_disputed",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminDisputedJobDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Trabajos con un problema reportado, sin resolver",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/jobs/{id}/resolve": {
+      "post": {
+        "description": "confirm → terminado con comisión (job.completed); cancel → cancelado sin comisión. La nota queda en el historial.",
+        "operationId": "AdminJobsController_resolve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveDisputeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "terminado"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "JOB_TRANSITION_NOT_ALLOWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Resolver una disputa",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/jobs/{id}/messages": {
+      "get": {
+        "description": "Del más reciente al más antiguo. Los retenidos solo los ve quien los envió. En vivo llegan por chat:message.",
+        "operationId": "ChatController_list",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "default": 30,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatPageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JOB_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mensajes del trabajo",
+        "tags": [
+          "chat"
+        ]
+      },
+      "post": {
+        "description": "Se modera (R9.2): si coincide, queda retenido, no se entrega y vuelve con `notice`. Abierto hasta 24 h después de terminado o cancelado.",
+        "operationId": "ChatController_send",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SentMessageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "MESSAGE_EMPTY o validación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JOB_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CHAT_CLOSED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Enviar un mensaje (solo texto)",
+        "tags": [
+          "chat"
+        ]
+      }
+    },
+    "/jobs/{id}/messages/read": {
+      "post": {
+        "operationId": "ChatController_read",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkReadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkReadResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JOB_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Marcar como leídos los mensajes recibidos hasta uno (incluido)",
+        "tags": [
+          "chat"
+        ]
+      }
+    },
+    "/admin/chat/held": {
+      "get": {
+        "operationId": "AdminChatController_held",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminHeldMessageDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mensajes de chat retenidos (los 100 más recientes)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/jobs/{id}/review": {
+      "post": {
+        "description": "Una vez por trabajo, solo terminado y dentro de los 7 días. Es ciega: la contraparte la ve cuando califiquen los dos o venza el plazo. El comentario se modera.",
+        "operationId": "ReviewsController_submit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobReviewsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JOB_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ALREADY_REVIEWED, REVIEW_NOT_ALLOWED o REVIEW_WINDOW_CLOSED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Calificar a la contraparte (1 a 5 estrellas y comentario opcional)",
+        "tags": [
+          "calificaciones"
+        ]
+      }
+    },
+    "/jobs/{id}/reviews": {
+      "get": {
+        "operationId": "ReviewsController_forJob",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobReviewsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JOB_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Calificaciones del trabajo (la mía y, si ya es visible, la recibida)",
+        "tags": [
+          "calificaciones"
+        ]
+      }
+    },
+    "/users/{id}/reviews": {
+      "get": {
+        "description": "Como trabajador o como empleador, con su promedio.",
+        "operationId": "ReviewsController_forUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "role",
+            "required": true,
+            "in": "query",
+            "description": "Como trabajador o como empleador",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "worker",
+                "employer"
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReviewsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "USER_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Calificaciones publicadas de un usuario",
+        "tags": [
+          "calificaciones"
+        ]
+      }
+    },
+    "/reports": {
+      "post": {
+        "description": "Solo algo con lo que tuviste relación. Un reporte por objetivo. Un mensaje reportado deja de mostrarse para quien lo reportó.",
+        "operationId": "ReportsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "REPORT_TARGET_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ALREADY_REPORTED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reportar una solicitud, un perfil, un mensaje o un trabajo",
+        "tags": [
+          "reportes"
+        ]
+      }
+    },
+    "/reports/mine": {
+      "get": {
+        "operationId": "ReportsController_mine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReportDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED o TOKEN_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mis reportes y su estado",
+        "tags": [
+          "reportes"
+        ]
+      }
+    },
+    "/admin/reports": {
+      "get": {
+        "operationId": "AdminReportsController_list",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "pendiente",
+              "type": "string",
+              "enum": [
+                "pendiente",
+                "valido",
+                "descartado"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminReportDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reportes por estado (por defecto, pendientes)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/reports/{id}/resolve": {
+      "post": {
+        "description": "Con 3 reportes válidos de personas distintas, el trabajador queda suspendido (R9.3) o, si solo es empleador, marcado para revisión.",
+        "operationId": "AdminReportsController_resolve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolveReportResultDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "REPORT_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "REPORT_ALREADY_RESOLVED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Marcar un reporte como válido o descartado",
+        "tags": [
+          "admin"
         ]
       }
     }
@@ -4317,6 +6043,31 @@
           "nextCursor"
         ]
       },
+      "UnreadCountDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "example": 3,
+            "description": "Avisos sin leer (para el contador del ícono)"
+          }
+        },
+        "required": [
+          "count"
+        ]
+      },
+      "ReadAllResultDto": {
+        "type": "object",
+        "properties": {
+          "updated": {
+            "type": "number",
+            "example": 3
+          }
+        },
+        "required": [
+          "updated"
+        ]
+      },
       "PriceRangeDto": {
         "type": "object",
         "properties": {
@@ -4380,7 +6131,8 @@
             "enum": [
               "activa",
               "aceptada",
-              "cerrada"
+              "cerrada",
+              "retirada"
             ]
           },
           "revision": {
@@ -4399,6 +6151,23 @@
           "status",
           "revision",
           "updatedAt"
+        ]
+      },
+      "EmployerRatingDto": {
+        "type": "object",
+        "properties": {
+          "ratingAvg": {
+            "type": "string",
+            "example": "4.50"
+          },
+          "ratingCount": {
+            "type": "number",
+            "example": 12
+          }
+        },
+        "required": [
+          "ratingAvg",
+          "ratingCount"
         ]
       },
       "IncomingRequestDto": {
@@ -4477,6 +6246,14 @@
           "notifiedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "employer": {
+            "description": "Calificación del empleador (la que le dieron los trabajadores)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmployerRatingDto"
+              }
+            ]
           }
         },
         "required": [
@@ -4493,7 +6270,8 @@
           "respondBy",
           "myOffer",
           "jobId",
-          "notifiedAt"
+          "notifiedAt",
+          "employer"
         ]
       },
       "CreateOfferDto": {
@@ -4637,6 +6415,22 @@
           "finalPriceBs": {
             "type": "string",
             "example": "180.00"
+          },
+          "telUri": {
+            "type": "string",
+            "example": "tel:+59171234567",
+            "description": "Para el botón \"Llamar\""
+          },
+          "whatsappUri": {
+            "type": "string",
+            "example": "https://wa.me/59171234567",
+            "description": "Para el botón \"WhatsApp\" (sin \"+\", como pide wa.me)"
+          },
+          "visibleUntil": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Hasta cuándo se ve el contacto (24 h después de terminado o cancelado)"
           }
         },
         "required": [
@@ -4645,7 +6439,1057 @@
           "name",
           "phone",
           "address",
-          "finalPriceBs"
+          "finalPriceBs",
+          "telUri",
+          "whatsappUri",
+          "visibleUntil"
+        ]
+      },
+      "JobCategoryDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "example": "plomeria"
+          },
+          "name": {
+            "type": "string",
+            "example": "Plomería"
+          }
+        },
+        "required": [
+          "slug",
+          "name"
+        ]
+      },
+      "JobCounterpartDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "shortName": {
+            "type": "string",
+            "example": "María P."
+          }
+        },
+        "required": [
+          "userId",
+          "shortName"
+        ]
+      },
+      "JobTimelineDto": {
+        "type": "object",
+        "properties": {
+          "assignedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "onTheWayAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "workerFinishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "El trabajador marcó \"Terminé\""
+          },
+          "disputedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "cancelledAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "assignedAt",
+          "onTheWayAt",
+          "startedAt",
+          "workerFinishedAt",
+          "disputedAt",
+          "completedAt",
+          "cancelledAt"
+        ]
+      },
+      "JobCancellationDto": {
+        "type": "object",
+        "properties": {
+          "by": {
+            "type": "string",
+            "enum": [
+              "worker",
+              "employer",
+              "admin"
+            ],
+            "description": "Quién canceló"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "cambio_de_planes",
+              "no_llega_o_no_responde",
+              "desacuerdo_de_precio",
+              "emergencia",
+              "otro"
+            ],
+            "nullable": true
+          },
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nota de quien canceló. Si la moderación la retuvo, solo la ve quien la escribió."
+          },
+          "noteHeld": {
+            "type": "boolean",
+            "description": "La nota quedó retenida por moderación (solo para quien la escribió)"
+          }
+        },
+        "required": [
+          "by",
+          "reason",
+          "note",
+          "noteHeld"
+        ]
+      },
+      "MyReviewDto": {
+        "type": "object",
+        "properties": {
+          "stars": {
+            "type": "number"
+          },
+          "comment": {
+            "type": "string",
+            "nullable": true
+          },
+          "commentHeld": {
+            "type": "boolean",
+            "description": "El comentario quedó retenido por moderación (no se publica)"
+          },
+          "published": {
+            "type": "boolean",
+            "description": "Ya es visible (calificaron ambos o venció el plazo)"
+          }
+        },
+        "required": [
+          "stars",
+          "comment",
+          "commentHeld",
+          "published"
+        ]
+      },
+      "ReceivedReviewDto": {
+        "type": "object",
+        "properties": {
+          "stars": {
+            "type": "number"
+          },
+          "comment": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "stars",
+          "comment"
+        ]
+      },
+      "JobReviewsDto": {
+        "type": "object",
+        "properties": {
+          "canReview": {
+            "type": "boolean",
+            "description": "Puedo calificar ahora"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "mine": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MyReviewDto"
+              }
+            ]
+          },
+          "theirs": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReceivedReviewDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "canReview",
+          "deadline",
+          "mine",
+          "theirs"
+        ]
+      },
+      "JobDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "asignado",
+              "en_camino",
+              "en_curso",
+              "terminado",
+              "cancelado"
+            ]
+          },
+          "myRole": {
+            "type": "string",
+            "enum": [
+              "worker",
+              "employer"
+            ],
+            "description": "Mi rol en este trabajo"
+          },
+          "category": {
+            "$ref": "#/components/schemas/JobCategoryDto"
+          },
+          "description": {
+            "type": "string"
+          },
+          "counterpart": {
+            "$ref": "#/components/schemas/JobCounterpartDto"
+          },
+          "finalPriceBs": {
+            "type": "string",
+            "example": "150.00"
+          },
+          "commissionBs": {
+            "type": "string",
+            "nullable": true,
+            "example": "19.50",
+            "description": "Comisión (R6.3, R8.3). Solo para el trabajador y con el trabajo terminado."
+          },
+          "netBs": {
+            "type": "string",
+            "nullable": true,
+            "example": "130.50",
+            "description": "Lo que recibe el trabajador: precio final − comisión. Solo para el trabajador."
+          },
+          "timeline": {
+            "$ref": "#/components/schemas/JobTimelineDto"
+          },
+          "autoConfirmed": {
+            "type": "boolean",
+            "description": "Se confirmó solo, pasado el plazo sin respuesta del empleador"
+          },
+          "autoConfirmAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Cuándo se confirmará solo, si el empleador no responde"
+          },
+          "cancellation": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JobCancellationDto"
+              }
+            ]
+          },
+          "reviews": {
+            "description": "Calificaciones (ciegas hasta publicarse)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JobReviewsDto"
+              }
+            ]
+          },
+          "allowedActions": {
+            "type": "array",
+            "description": "Lo que puedo hacer ahora (para mostrar los botones)",
+            "items": {
+              "type": "string",
+              "enum": [
+                "START_TRIP",
+                "START_WORK",
+                "FINISH",
+                "CONFIRM",
+                "AUTO_CONFIRM",
+                "DISPUTE",
+                "RESOLVE_CONFIRM",
+                "RESOLVE_CANCEL",
+                "CANCEL"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "requestId",
+          "status",
+          "myRole",
+          "category",
+          "description",
+          "counterpart",
+          "finalPriceBs",
+          "commissionBs",
+          "netBs",
+          "timeline",
+          "autoConfirmed",
+          "autoConfirmAt",
+          "cancellation",
+          "reviews",
+          "allowedActions"
+        ]
+      },
+      "JobPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Cursor para la siguiente página"
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "DisputeJobDto": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "example": "El trabajo quedó a medias.",
+            "maxLength": 500
+          }
+        }
+      },
+      "CancelJobDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "cambio_de_planes",
+              "no_llega_o_no_responde",
+              "desacuerdo_de_precio",
+              "emergencia",
+              "otro"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "example": "Me surgió una emergencia familiar.",
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "TrackedPointDto": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "example": -17.7834
+          },
+          "longitude": {
+            "type": "number",
+            "example": -63.1821
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude",
+          "at"
+        ]
+      },
+      "JobLocationDto": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "location": {
+            "nullable": true,
+            "description": "null si todavía no envió su ubicación",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrackedPointDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "jobId",
+          "location"
+        ]
+      },
+      "AdminDisputedJobDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "employerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "category": {
+            "$ref": "#/components/schemas/JobCategoryDto"
+          },
+          "finalPriceBs": {
+            "type": "string",
+            "example": "150.00"
+          },
+          "workerFinishedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "disputedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "disputeNote": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "requestId",
+          "workerId",
+          "employerId",
+          "category",
+          "finalPriceBs",
+          "workerFinishedAt",
+          "disputedAt",
+          "disputeNote"
+        ]
+      },
+      "ResolveDisputeDto": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "confirm",
+              "cancel"
+            ],
+            "description": "confirm = terminado con comisión; cancel = cancelado sin comisión"
+          },
+          "note": {
+            "type": "string",
+            "example": "Se verificó con ambas partes.",
+            "minLength": 3,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "decision",
+          "note"
+        ]
+      },
+      "ChatMessageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "senderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mine": {
+            "type": "boolean",
+            "description": "Lo envié yo"
+          },
+          "body": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "entregado",
+              "retenido"
+            ],
+            "description": "retenido = no se entregó (moderación); solo lo ve quien lo envió"
+          },
+          "readAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "jobId",
+          "senderId",
+          "mine",
+          "body",
+          "status",
+          "readAt",
+          "createdAt"
+        ]
+      },
+      "ChatPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Del más reciente al más antiguo",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessageDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "open": {
+            "type": "boolean",
+            "description": "Se pueden enviar mensajes"
+          },
+          "closesAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Cuándo pasa a solo lectura (24 h después de terminado o cancelado)"
+          },
+          "unread": {
+            "type": "number",
+            "description": "Mensajes de la contraparte sin leer"
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor",
+          "open",
+          "closesAt",
+          "unread"
+        ]
+      },
+      "SendMessageDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "example": "Llego en 10 minutos.",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "SentMessageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "senderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mine": {
+            "type": "boolean",
+            "description": "Lo envié yo"
+          },
+          "body": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "entregado",
+              "retenido"
+            ],
+            "description": "retenido = no se entregó (moderación); solo lo ve quien lo envió"
+          },
+          "readAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "notice": {
+            "type": "string",
+            "nullable": true,
+            "example": "Tu mensaje no se envió porque no cumple las normas de uso de SISI.",
+            "description": "Aviso neutral para quien envió un mensaje retenido"
+          }
+        },
+        "required": [
+          "id",
+          "jobId",
+          "senderId",
+          "mine",
+          "body",
+          "status",
+          "readAt",
+          "createdAt",
+          "notice"
+        ]
+      },
+      "MarkReadDto": {
+        "type": "object",
+        "properties": {
+          "upToId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Último mensaje leído (incluido)"
+          }
+        },
+        "required": [
+          "upToId"
+        ]
+      },
+      "MarkReadResultDto": {
+        "type": "object",
+        "properties": {
+          "updated": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "updated"
+        ]
+      },
+      "AdminHeldMessageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "senderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "type": "string"
+          },
+          "matches": {
+            "type": "object",
+            "description": "Términos que coincidieron"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "jobId",
+          "senderId",
+          "body",
+          "matches",
+          "createdAt"
+        ]
+      },
+      "CreateReviewDto": {
+        "type": "object",
+        "properties": {
+          "stars": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 5,
+            "example": 5
+          },
+          "comment": {
+            "type": "string",
+            "example": "Muy puntual y prolijo.",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "stars"
+        ]
+      },
+      "PublicReviewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "stars": {
+            "type": "number"
+          },
+          "comment": {
+            "type": "string",
+            "nullable": true
+          },
+          "reviewerShortName": {
+            "type": "string",
+            "example": "Carla M."
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "stars",
+          "comment",
+          "reviewerShortName",
+          "publishedAt"
+        ]
+      },
+      "UserReviewsDto": {
+        "type": "object",
+        "properties": {
+          "ratingAvg": {
+            "type": "string",
+            "example": "4.80"
+          },
+          "ratingCount": {
+            "type": "number"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicReviewDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "ratingAvg",
+          "ratingCount",
+          "items",
+          "nextCursor"
+        ]
+      },
+      "CreateReportDto": {
+        "type": "object",
+        "properties": {
+          "targetType": {
+            "type": "string",
+            "enum": [
+              "request",
+              "user",
+              "chat_message",
+              "job"
+            ]
+          },
+          "targetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "servicios_sexuales",
+              "drogas",
+              "armas",
+              "ilegal",
+              "inmoral",
+              "venta_productos",
+              "acoso",
+              "fraude",
+              "no_se_presento",
+              "suplantacion",
+              "otro"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "Me pidió pagar por fuera de la app."
+          }
+        },
+        "required": [
+          "targetType",
+          "targetId",
+          "reason"
+        ]
+      },
+      "ReportDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "targetType": {
+            "type": "string",
+            "enum": [
+              "request",
+              "user",
+              "chat_message",
+              "job"
+            ]
+          },
+          "targetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "servicios_sexuales",
+              "drogas",
+              "armas",
+              "ilegal",
+              "inmoral",
+              "venta_productos",
+              "acoso",
+              "fraude",
+              "no_se_presento",
+              "suplantacion",
+              "otro"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pendiente",
+              "valido",
+              "descartado"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "targetType",
+          "targetId",
+          "reason",
+          "status",
+          "createdAt"
+        ]
+      },
+      "ReportedUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "validReporters": {
+            "type": "number",
+            "description": "Personas distintas con un reporte válido contra este usuario"
+          },
+          "workerStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "flaggedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Marcado para revisión (solo empleador con 3 reportes válidos)"
+          }
+        },
+        "required": [
+          "id",
+          "validReporters",
+          "workerStatus",
+          "flaggedAt"
+        ]
+      },
+      "AdminReportDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "targetType": {
+            "type": "string",
+            "enum": [
+              "request",
+              "user",
+              "chat_message",
+              "job"
+            ]
+          },
+          "targetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "servicios_sexuales",
+              "drogas",
+              "armas",
+              "ilegal",
+              "inmoral",
+              "venta_productos",
+              "acoso",
+              "fraude",
+              "no_se_presento",
+              "suplantacion",
+              "otro"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pendiente",
+              "valido",
+              "descartado"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reporterId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "noteHeld": {
+            "type": "boolean"
+          },
+          "resolution": {
+            "type": "string",
+            "nullable": true
+          },
+          "reportedUser": {
+            "$ref": "#/components/schemas/ReportedUserDto"
+          }
+        },
+        "required": [
+          "id",
+          "targetType",
+          "targetId",
+          "reason",
+          "status",
+          "createdAt",
+          "reporterId",
+          "note",
+          "noteHeld",
+          "resolution",
+          "reportedUser"
+        ]
+      },
+      "ResolveReportDto": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "description": "true = válido (cuenta para la suspensión); false = descartado"
+          },
+          "resolution": {
+            "type": "string",
+            "example": "Se verificó el mensaje.",
+            "minLength": 3,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "valid",
+          "resolution"
+        ]
+      },
+      "ResolveReportResultDto": {
+        "type": "object",
+        "properties": {
+          "report": {
+            "$ref": "#/components/schemas/AdminReportDto"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "suspend",
+              "flag",
+              "none"
+            ],
+            "description": "suspend = el trabajador quedó suspendido; flag = marcado para revisión"
+          }
+        },
+        "required": [
+          "report",
+          "outcome"
         ]
       }
     }

@@ -61,6 +61,8 @@ describe('Nombre corto (R5.3)', () => {
   it('nombre y la inicial del apellido', () => {
     expect(shortName('María Pérez Gómez')).toBe('María P.');
     expect(shortName('  juan  carlos ')).toBe('juan C.');
+    expect(shortName(null)).toBe('Trabajador');
+    expect(shortName('  ', 'Cliente')).toBe('Cliente');
     expect(shortName('Ana')).toBe('Ana');
     expect(shortName(null)).toBe('Trabajador');
     expect(shortName('')).toBe('Trabajador');

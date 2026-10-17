@@ -79,10 +79,10 @@ export const counterCap = (priceMaxBs: string, maxFactor: number): string =>
   toBs(decimal(priceMaxBs).mul(maxFactor));
 
 /** "María Pérez Gómez" → "María P." (R5.3: el empleador ve un nombre corto). */
-export function shortName(name: string | null): string {
+export function shortName(name: string | null, fallback = 'Trabajador'): string {
   const parts = (name ?? '').trim().split(/\s+/).filter(Boolean);
   const [first, second] = parts;
-  if (!first) return 'Trabajador';
+  if (!first) return fallback;
   return second ? `${first} ${second.charAt(0).toUpperCase()}.` : first;
 }
 

@@ -50,7 +50,10 @@ export class ChatEventsHandlers implements OnModuleInit {
         type: 'chat_message',
         data: {
           jobId: message.jobId,
-          senderShortName: shortName(sender.name),
+          senderShortName: shortName(
+            sender.name,
+            message.senderId === job.workerId ? 'el trabajador' : 'el cliente',
+          ),
           preview: chatPreview(message.body),
         },
         dedupeKey: `${outboxId}:${recipientId}`,

@@ -135,7 +135,11 @@ export class ReviewsService {
         id: r.id,
         stars: r.stars,
         comment: r.commentHeld ? null : r.comment,
-        reviewerShortName: shortName(names.get(r.fromUserId) ?? null),
+        // Las recibidas como trabajador las escriben clientes, y al revés.
+        reviewerShortName: shortName(
+          names.get(r.fromUserId) ?? null,
+          role === 'worker' ? 'Cliente' : 'Trabajador',
+        ),
         publishedAt: r.publishedAt?.toISOString() ?? '',
       })),
       nextCursor: rows.length > PAGE ? (page.at(-1)?.id ?? null) : null,

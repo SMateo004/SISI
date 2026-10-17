@@ -165,7 +165,10 @@ export class JobsService {
       myRole: role,
       category: job.request.category,
       description: job.request.description,
-      counterpart: { userId: counterpart.userId, shortName: shortName(counterpart.name) },
+      counterpart: {
+        userId: counterpart.userId,
+        shortName: shortName(counterpart.name, role === 'worker' ? 'Cliente' : 'Trabajador'),
+      },
       finalPriceBs: job.finalPriceBs.toFixed(2),
       commissionBs: showMoney && job.commissionBs ? job.commissionBs.toFixed(2) : null,
       netBs:

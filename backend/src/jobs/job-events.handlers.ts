@@ -61,7 +61,7 @@ export class JobEventsHandlers implements OnModuleInit {
         // Recordatorio de calificar para las dos partes (ADR-0032).
         for (const [party, counterpart, toWorker] of [
           [job.employerId, worker, false],
-          [job.workerId, shortName(job.employer.name), true],
+          [job.workerId, shortName(job.employer.name, 'el cliente'), true],
         ] as const) {
           await this.notifications.notify({
             userId: party,

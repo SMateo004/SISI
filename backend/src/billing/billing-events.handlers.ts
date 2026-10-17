@@ -44,6 +44,27 @@ export class BillingEventsHandlers implements OnModuleInit {
       await this.debtCap.check(payload.workerId);
     });
 
+    // Pago registrado: aviso, desbloqueo si ya no queda deuda vencida y tope.
+    this.registry.on('billing.payment_registered', async ({ payload }) => {
+      const payment = await this.prisma.payment.findUniqueOrThrow({
+        where: { id: payload.paymentId },
+      });
+      const balance = await this.ledger.workerBalance(this.prisma, payment.workerId);
+      await this.notifications.notify({
+        userId: payment.workerId,
+        cityId: payment.cityId,
+        type: 'billing_payment_registered',
+        data: {
+          paymentId: payment.id,
+          amountBs: payment.amountBs.toFixed(2),
+          balanceBs: balance.toFixed(2),
+        },
+        dedupeKey: `billing:payment:${payment.id}`,
+      });
+      await this.debtState.reconcile(payment.workerId);
+      await this.debtCap.check(payment.workerId);
+    });
+
     this.registry.on('billing.notice', async ({ payload }) => {
       // Vencido (R7.7): el bloqueo avisa con account:blocked y push.
       if (payload.kind === 'vencido') {

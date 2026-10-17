@@ -19,6 +19,10 @@ export const STORAGE_PREFIX = {
   avatars: (userId: string) => `avatars/${userId}/`,
   /** Fotos de solicitudes: el empleador y, desde la Fase 3, los trabajadores notificados. */
   requests: (requestId: string) => `requests/${requestId}/`,
+  /** Comprobantes de pago (R8.2): el trabajador dueño y el admin, con URL temporal. */
+  receipts: (workerId: string) => `receipts/${workerId}/`,
+  /** Archivos de la empresa (QR de cobro, ADR-0037). */
+  company: () => 'company/',
 } as const;
 
 export function isAllowedImageType(value: string): value is AllowedImageType {

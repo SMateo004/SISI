@@ -30,6 +30,7 @@ export interface NotificationInputs {
     today: boolean;
   };
   billing_cap_reached: { balanceBs: string; capBs: string };
+  billing_payment_registered: { paymentId: string; amountBs: string; balanceBs: string };
   account_blocked: { reason: 'deuda' | 'moderacion' };
   account_unblocked: { status: string };
   review_request: { jobId: string; counterpartShortName: string; toWorker: boolean };
@@ -141,6 +142,17 @@ const RENDER: { [T in NotificationType]: (d: NotificationInputs[T]) => RenderedN
     title: d.today ? 'Hoy vence tu comisión' : 'Mañana vence tu comisión',
     body: `Paga ${bs(d.amountBs)} hasta el ${d.dueLabel} para seguir recibiendo trabajos. Referencia: ${d.reference}.`,
     route: '/ganancias/pagar',
+  }),
+  billing_payment_registered: (d) => ({
+    title: 'Registramos tu pago',
+    body: `Recibimos ${bs(d.amountBs)}. ${
+      decimal(d.balanceBs).gt(0)
+        ? `Te queda por pagar ${bs(d.balanceBs)}.`
+        : decimal(d.balanceBs).lt(0)
+          ? `Tienes ${bs(decimal(d.balanceBs).neg().toFixed(2))} a favor.`
+          : 'Estás al día.'
+    }`,
+    route: '/ganancias',
   }),
   billing_cap_reached: (d) => ({
     title: 'Paga para seguir recibiendo solicitudes',

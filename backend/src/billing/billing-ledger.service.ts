@@ -132,6 +132,33 @@ export class BillingLedgerService {
     return period;
   }
 
+  /**
+   * Recalcula el estado de un periodo cerrado después de un pago o ajuste (fila ya
+   * bloqueada por quien llama). Un periodo abierto no se toca: lo cierra el cron.
+   * Un pagado que vuelve a deber (ajuste en contra) vuelve a pendiente o vencido.
+   */
+  async refreshClosedStatus(
+    tx: Prisma.TransactionClient,
+    periodId: string,
+    now: Date,
+  ): Promise<string> {
+    const period = await tx.billingPeriod.findUniqueOrThrow({ where: { id: periodId } });
+    if (period.status === 'abierto') return period.status;
+    const balance = await this.periodBalance(tx, periodId);
+    const next = balance.lte(0) ? 'pagado' : now >= period.dueAt ? 'vencido' : 'cerrado_pendiente';
+    if (next !== period.status) {
+      await tx.billingPeriod.update({
+        where: { id: periodId },
+        data: {
+          status: next,
+          paidAt: next === 'pagado' ? now : null,
+          ...(next === 'vencido' && !period.overdueAt ? { overdueAt: now } : {}),
+        },
+      });
+    }
+    return next;
+  }
+
   /** Saldo de un periodo: suma de sus movimientos (positivo = debe). */
   async periodBalance(
     tx: Prisma.TransactionClient | PrismaService,

@@ -52,6 +52,8 @@ export interface OutboxPayloads {
     workerId: string;
     kind: 'cierre' | 'vispera' | 'dia' | 'vencido';
   };
+  /** Un admin registró un pago (R7.4): aviso, desbloqueo si corresponde y tope (ADR-0037). */
+  'billing.payment_registered': { paymentId: string; workerId: string };
   /** Mensaje de chat entregado (no retenido): chat:message y push si no está conectado. */
   'chat.message_sent': { jobId: string; messageId: string };
   /**

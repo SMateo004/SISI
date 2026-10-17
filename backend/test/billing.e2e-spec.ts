@@ -14,6 +14,7 @@ import {
   login,
   loginAsAdmin,
   type TestApp,
+  uniqueSuffix,
   waitFor,
 } from './utils/test-app';
 import request from 'supertest';
@@ -522,6 +523,276 @@ describe('Cobros (e2e, ADR-0034)', () => {
       ).toBeNull();
       expect(await t.app.get(DebtCapService).ineligible([capped.id, other.id])).toEqual(
         new Set([capped.id]),
+      );
+    });
+  });
+
+  const payment = (
+    token: string,
+    body: Record<string, unknown>,
+    key: string | null = `pago-${uniqueSuffix()}`,
+  ) => {
+    const req = request(t.app.getHttpServer())
+      .post('/admin/billing/payments')
+      .set(...bearer(token));
+    if (key) req.set('Idempotency-Key', key);
+    return req.send(body);
+  };
+
+  const adjustment = (
+    token: string,
+    body: Record<string, unknown>,
+    key = `ajuste-${uniqueSuffix()}`,
+  ) =>
+    request(t.app.getHttpServer())
+      .post('/admin/billing/adjustments')
+      .set(...bearer(token))
+      .set('Idempotency-Key', key)
+      .send(body);
+
+  const statusOf = async (workerId: string) =>
+    (await t.prisma.workerProfile.findUniqueOrThrow({ where: { userId: workerId } })).status;
+
+  /** Trabajador con un periodo vencido de 19,50 (semana propia) y ya bloqueado. */
+  const blockedWorker = async (week: number) => {
+    const { job, period } = await periodWithCommission(week);
+    await catchUp(minutes(period.endAt, 5));
+    await catchUp(minutes(period.dueAt, 5));
+    await waitFor(
+      async () => ((await statusOf(job.worker.id)) === 'bloqueado_deuda' ? true : undefined),
+      { what: 'el bloqueo por deuda' },
+    );
+    return { job, period, worker: job.worker };
+  };
+
+  describe('pagos (R7.4, ADR-0037)', () => {
+    it('un pago completo deja el periodo pagado, desbloquea y avisa con account:unblocked', async () => {
+      const admin = await loginAsAdmin(t);
+      const { period, worker } = await blockedWorker(20);
+      const live = await connectSocket(t, worker.accessToken);
+      try {
+        const res = await payment(admin.accessToken, {
+          workerId: worker.id,
+          amountBs: '19.50',
+          method: 'qr_transferencia',
+          paidAt: new Date().toISOString(),
+          reference: period.paymentReference,
+        }).expect(200);
+        expect(res.body).toMatchObject({
+          workerId: worker.id,
+          amountBs: '19.50',
+          balanceBs: '0.00',
+          allocations: [
+            {
+              periodId: period.id,
+              paymentReference: period.paymentReference,
+              amountBs: '19.50',
+              status: 'pagado',
+            },
+          ],
+        });
+        expect(await live.next('account:unblocked')).toEqual({ status: 'aprobado' });
+        expect(await statusOf(worker.id)).toBe('aprobado');
+        // No cambia de modo solo: usa el interruptor.
+        expect(
+          (await t.prisma.user.findUniqueOrThrow({ where: { id: worker.id } })).activeMode,
+        ).toBe('employer');
+        const after = await t.prisma.billingPeriod.findUniqueOrThrow({ where: { id: period.id } });
+        expect(after.status).toBe('pagado');
+        expect(after.paidAt).not.toBeNull();
+        const paid = await waitFor(
+          async () =>
+            (await t.prisma.notification.findFirst({
+              where: { userId: worker.id, type: 'billing_payment_registered' },
+            })) ?? undefined,
+          { what: 'el aviso del pago' },
+        );
+        expect(paid.body).toBe('Recibimos Bs 19,50. Estás al día.');
+      } finally {
+        live.close();
+      }
+    });
+
+    it('un pago parcial reduce el saldo pero no desbloquea', async () => {
+      const admin = await loginAsAdmin(t);
+      const { period, worker } = await blockedWorker(21);
+      await payment(admin.accessToken, {
+        workerId: worker.id,
+        amountBs: '10.00',
+        method: 'efectivo',
+        paidAt: new Date().toISOString(),
+      }).expect(200);
+      expect(await ledgerBalance(t, worker.id)).toBe('9.50');
+      expect(
+        (await t.prisma.billingPeriod.findUniqueOrThrow({ where: { id: period.id } })).status,
+      ).toBe('vencido');
+      await new Promise((r) => setTimeout(r, 500));
+      expect(await statusOf(worker.id)).toBe('bloqueado_deuda');
+    });
+
+    it('un pago de más cubre lo antiguo y deja saldo a favor en el periodo actual', async () => {
+      const admin = await loginAsAdmin(t);
+      const { period, worker } = await blockedWorker(22);
+      const res = await payment(admin.accessToken, {
+        workerId: worker.id,
+        amountBs: '50.00',
+        method: 'qr_transferencia',
+        paidAt: new Date().toISOString(),
+      }).expect(200);
+      const body = res.body as {
+        allocations: { periodId: string; amountBs: string }[];
+        balanceBs: string;
+      };
+      expect(body.allocations.map((a) => a.amountBs)).toEqual(['19.50', '30.50']);
+      expect(body.allocations[0]?.periodId).toBe(period.id);
+      expect(body.balanceBs).toBe('-30.50');
+      const current = await t.prisma.billingPeriod.findUniqueOrThrow({
+        where: { id: body.allocations[1]?.periodId ?? '' },
+      });
+      expect(current.status).toBe('abierto');
+    });
+
+    it('doble envío con la misma Idempotency-Key: un solo pago y la misma respuesta', async () => {
+      const admin = await loginAsAdmin(t);
+      const { worker } = await blockedWorker(23);
+      const body = {
+        workerId: worker.id,
+        amountBs: '19.50',
+        method: 'qr_transferencia',
+        paidAt: '2026-10-17T12:00:00.000Z',
+      };
+      const key = `doble-${uniqueSuffix()}`;
+      const [a, b] = await Promise.all([
+        payment(admin.accessToken, body, key),
+        payment(admin.accessToken, body, key),
+      ]);
+      expect([a.status, b.status]).toEqual([200, 200]);
+      expect(a.body).toEqual(b.body);
+      expect(await t.prisma.payment.count({ where: { workerId: worker.id } })).toBe(1);
+      expect(await ledgerBalance(t, worker.id)).toBe('0.00');
+      // Un reintento después también devuelve lo mismo.
+      const retry = await payment(admin.accessToken, body, key).expect(200);
+      expect(retry.body).toEqual(a.body);
+      // La misma clave con otro cuerpo se rechaza; sin clave, también.
+      const reused = await payment(admin.accessToken, { ...body, amountBs: '1.00' }, key).expect(
+        409,
+      );
+      expect(reused.body).toMatchObject({ code: 'IDEMPOTENCY_KEY_REUSED' });
+      const missing = await payment(admin.accessToken, body, null).expect(400);
+      expect(missing.body).toMatchObject({ code: 'IDEMPOTENCY_KEY_REQUIRED' });
+      expect(await t.prisma.payment.count({ where: { workerId: worker.id } })).toBe(1);
+    });
+
+    it('un admin no registra pagos ni ajustes sobre su propia cuenta; un no admin no registra nada', async () => {
+      const admin = await loginAsAdmin(t);
+      await t.prisma.workerProfile.upsert({
+        where: { userId: admin.user.id },
+        create: { userId: admin.user.id },
+        update: {},
+      });
+      const self = await payment(admin.accessToken, {
+        workerId: admin.user.id,
+        amountBs: '10.00',
+        method: 'efectivo',
+        paidAt: new Date().toISOString(),
+      }).expect(403);
+      expect(self.body).toMatchObject({ code: 'SELF_REVIEW_FORBIDDEN' });
+      const selfAdjust = await adjustment(admin.accessToken, {
+        workerId: admin.user.id,
+        amountBs: '-10.00',
+        reason: 'Me perdono la deuda',
+      }).expect(403);
+      expect(selfAdjust.body).toMatchObject({ code: 'SELF_REVIEW_FORBIDDEN' });
+
+      const { job } = await periodWithCommission(24);
+      const worker = job.worker;
+      const intruder = await login(t);
+      await payment(intruder.accessToken, {
+        workerId: worker.id,
+        amountBs: '19.50',
+        method: 'efectivo',
+        paidAt: new Date().toISOString(),
+      }).expect(403);
+      await adjustment(intruder.accessToken, {
+        workerId: worker.id,
+        amountBs: '-19.50',
+        reason: 'Intento sin permiso',
+      }).expect(403);
+      expect(await ledgerBalance(t, worker.id)).toBe('19.50');
+    });
+
+    it('ajustes: a favor desbloquea; en contra de un periodo pagado lo vuelve a vencido', async () => {
+      const admin = await loginAsAdmin(t);
+      const { period, worker } = await blockedWorker(25);
+      const commission = await t.prisma.ledgerEntry.findFirstOrThrow({
+        where: { periodId: period.id, type: 'comision' },
+      });
+      const credit = await adjustment(admin.accessToken, {
+        workerId: worker.id,
+        amountBs: '-19.50',
+        reason: 'Comisión cobrada por error',
+        correctsEntryId: commission.id.toString(),
+      }).expect(200);
+      expect(credit.body).toMatchObject({
+        periodId: period.id,
+        amountBs: '-19.50',
+        periodStatus: 'pagado',
+        balanceBs: '0.00',
+      });
+      await waitFor(async () => ((await statusOf(worker.id)) === 'aprobado' ? true : undefined), {
+        what: 'el desbloqueo por ajuste',
+      });
+      const debit = await adjustment(admin.accessToken, {
+        workerId: worker.id,
+        amountBs: '19.50',
+        reason: 'El ajuste anterior fue un error',
+        periodId: period.id,
+      }).expect(200);
+      expect(debit.body).toMatchObject({ periodStatus: 'vencido', balanceBs: '19.50' });
+      await waitFor(
+        async () => ((await statusOf(worker.id)) === 'bloqueado_deuda' ? true : undefined),
+        { what: 'el nuevo bloqueo' },
+      );
+      // Sin motivo no hay ajuste.
+      await adjustment(admin.accessToken, {
+        workerId: worker.id,
+        amountBs: '-1.00',
+        reason: '',
+      }).expect(400);
+      const view = await request(t.app.getHttpServer())
+        .get(`/admin/billing/workers/${worker.id}`)
+        .set(...bearer(admin.accessToken))
+        .expect(200);
+      expect((view.body as { entries: { type: string }[] }).entries.map((e) => e.type)).toEqual([
+        'ajuste',
+        'ajuste',
+        'comision',
+      ]);
+    });
+
+    it('pagar libera el tope de inmediato', async () => {
+      const admin = await loginAsAdmin(t);
+      const job = await assignJob(t);
+      await addDebt(job.worker.id, '140.00');
+      await completeJob(t, job);
+      await waitCommission(job.worker.id);
+      const cap = t.app.get(DebtCapService);
+      expect(await cap.ineligible([job.worker.id])).toEqual(new Set([job.worker.id]));
+      await payment(admin.accessToken, {
+        workerId: job.worker.id,
+        amountBs: '9.50',
+        method: 'qr_transferencia',
+        paidAt: new Date().toISOString(),
+      }).expect(200);
+      expect(await ledgerBalance(t, job.worker.id)).toBe('150.00');
+      expect(await cap.ineligible([job.worker.id])).toEqual(new Set());
+      await waitFor(
+        async () =>
+          (await t.prisma.workerProfile.findUniqueOrThrow({ where: { userId: job.worker.id } }))
+            .debtCapReachedAt === null
+            ? true
+            : undefined,
+        { what: 'la marca del tope limpia' },
       );
     });
   });

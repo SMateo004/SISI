@@ -884,3 +884,50 @@ model BillingNotice {
   @@id([periodId, kind])
   @@map("billing_notices")
 }
+
+enum PaymentMethod {
+  qr_transferencia
+  efectivo
+  otro
+
+  @@map("payment_method")
+}
+
+/// Pago registrado por un admin (R7.4, ADR-0037). Se reparte en el ledger: un movimiento
+/// `pago` por periodo cubierto, todos con este payment_id.
+model Payment {
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workerId       String        @map("worker_id") @db.Uuid
+  cityId         String        @map("city_id") @db.Uuid
+  /// Primer periodo que cubre (el más antiguo con saldo).
+  periodId       String        @map("period_id") @db.Uuid
+  amountBs       Decimal       @map("amount_bs") @db.Decimal(12, 2)
+  method         PaymentMethod
+  /// Referencia que el trabajador escribió en la glosa, o la del banco.
+  reference      String?
+  /// Comprobante en el bucket privado (receipts/{worker}/…).
+  receiptKey     String?       @map("receipt_key")
+  /// Número de factura de la comisión: sin uso hasta la revisión tributaria (pendiente).
+  invoiceNumber  String?       @map("invoice_number")
+  registeredById String        @map("registered_by_id") @db.Uuid
+  paidAt         DateTime      @map("paid_at") @db.Timestamptz(3)
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([workerId, paidAt])
+  @@map("payments")
+}
+
+/// Claves de idempotencia de las operaciones de dinero del admin (pagos y ajustes): un
+/// reintento con la misma clave devuelve la respuesta original sin repetir el movimiento.
+model IdempotencyKey {
+  scope       String
+  key         String
+  actorId     String   @map("actor_id") @db.Uuid
+  /// Huella del cuerpo: la misma clave con otro cuerpo se rechaza.
+  requestHash String   @map("request_hash")
+  response    Json?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@id([scope, key])
+  @@map("idempotency_keys")
+}

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
+import { BillingModule } from './billing/billing.module';
 import { ChatModule } from './chat/chat.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
@@ -52,6 +53,7 @@ import { WorkersModule } from './workers/workers.module';
     ChatModule,
     ReviewsModule,
     ReportsModule,
+    BillingModule,
     RealtimeModule,
     RealtimeEmitterModule,
   ],

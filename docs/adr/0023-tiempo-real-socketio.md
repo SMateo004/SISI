@@ -17,9 +17,10 @@ El matching (R4) y las ofertas (R5) necesitan avisos inmediatos: la solicitud en
 - **Eventos:** solo los nombres del doc 02 §6. Payloads tipados en `realtime.events.ts` y documentados en `docs/realtime-events.md`.
 - **Resincronización:** los eventos son avisos. Al reconectar, la app pide el estado por REST.
 - **El anillo actual no tiene evento propio** (no está en §6): la app lo refresca por REST cada 15 s mientras busca.
+- **Solo websocket** (Fase 4): el servidor acepta únicamente el transporte `websocket` (`transports: ['websocket']`); el cliente de la app ya lo usaba. Sin long-polling no hacen falta sticky sessions, que Render no garantiza entre instancias. Lo cubre un e2e que rechaza a un cliente de polling; en la app web de Flutter se verifica en la prueba manual de la fase.
 
 ## Consecuencias
-- Varias instancias de la API funcionan sin sticky sessions mientras el cliente use el transporte `websocket` (con `polling` harían falta sticky sessions en Render).
+- Varias instancias de la API funcionan sin sticky sessions: el servidor solo acepta `websocket`. Un cliente detrás de un proxy que bloquee WebSocket no podrá conectarse; la app sigue funcionando por REST (resincronización).
 - Redis pasa a ser crítico para el tiempo real (ya lo era para colas y límites).
 - Los eventos pueden perderse sin conexión: por diseño, nada depende de ellos.
 - Versiones: socket.io 4.8.4, @socket.io/redis-adapter 8.3.0, @socket.io/redis-emitter 5.1.0, @nestjs/websockets y @nestjs/platform-socket.io 12.1.3 (peer NestJS ^12, sin scripts de instalación).

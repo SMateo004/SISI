@@ -1,3 +1,4 @@
+import { io } from 'socket.io-client';
 import { JwtService } from '@nestjs/jwt';
 import { RealtimeEmitter } from '../src/realtime/realtime.emitter';
 import { connectSocket, type TestSocket } from './utils/socket';
@@ -30,6 +31,26 @@ describe('Tiempo real: Socket.IO (e2e, ADR-0023)', () => {
   it('rechaza el handshake sin token o con un token inválido', async () => {
     await expect(connect(undefined)).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
     await expect(connect('no-es-un-jwt')).rejects.toMatchObject({ code: 'TOKEN_INVALID' });
+  });
+
+  it('solo acepta websocket: un cliente con long-polling no se conecta', async () => {
+    const a = await login(t);
+    const polling = io(t.url, {
+      auth: { token: a.accessToken },
+      transports: ['polling'],
+      reconnection: false,
+      forceNew: true,
+    });
+    const result = await new Promise<string>((resolve) => {
+      polling.once('connect', () => {
+        resolve('connected');
+      });
+      polling.once('connect_error', () => {
+        resolve('rejected');
+      });
+    });
+    polling.close();
+    expect(result).toBe('rejected');
   });
 
   it('con token válido entra a su sala y recibe lo que emite el worker (redis-emitter)', async () => {

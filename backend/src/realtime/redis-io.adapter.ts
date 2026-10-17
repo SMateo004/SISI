@@ -27,6 +27,9 @@ export class RedisIoAdapter extends IoAdapter {
   override createIOServer(port: number, options?: ServerOptions): Server {
     const server = super.createIOServer(port, {
       ...options,
+      // Solo websocket: sin long-polling no hace falta afinidad de sesión entre instancias
+      // (Render no la garantiza, ADR-0023).
+      transports: ['websocket'],
       cors: { origin: this.origins.length > 0 ? this.origins : false, credentials: true },
     } as ServerOptions);
     server.adapter(createAdapter(this.pub, this.sub));

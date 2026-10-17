@@ -587,28 +587,61 @@ enum JobStatus {
 
 /// Trabajo asignado al aceptar una oferta (R5.4, ADR-0026).
 model Job {
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   /// Única: una solicitud tiene a lo sumo un trabajo (segunda barrera contra la doble asignación).
-  requestId     String    @unique @map("request_id") @db.Uuid
-  workerId      String    @map("worker_id") @db.Uuid
-  employerId    String    @map("employer_id") @db.Uuid
-  cityId        String    @map("city_id") @db.Uuid
-  offerId       String    @unique @map("offer_id") @db.Uuid
-  finalPriceBs  Decimal   @map("final_price_bs") @db.Decimal(10, 2)
+  requestId        String    @unique @map("request_id") @db.Uuid
+  workerId         String    @map("worker_id") @db.Uuid
+  employerId       String    @map("employer_id") @db.Uuid
+  cityId           String    @map("city_id") @db.Uuid
+  offerId          String    @unique @map("offer_id") @db.Uuid
+  finalPriceBs     Decimal   @map("final_price_bs") @db.Decimal(10, 2)
   /// Copia de la comisión efectiva de la categoría al asignar (CategoryResolver, ADR-0016).
-  commissionPct Decimal   @map("commission_pct") @db.Decimal(5, 2)
-  /// Se calcula al terminar (R6.3, Fase 4/5).
-  commissionBs  Decimal?  @map("commission_bs") @db.Decimal(10, 2)
-  status        JobStatus @default(asignado)
-  assignedAt    DateTime  @default(now()) @map("assigned_at") @db.Timestamptz(3)
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  commissionPct    Decimal   @map("commission_pct") @db.Decimal(5, 2)
+  /// Se calcula al terminar: final × pct / 100, HALF_UP a 2 decimales (R6.3, ADR-0030).
+  commissionBs     Decimal?  @map("commission_bs") @db.Decimal(10, 2)
+  /// Solo lo cambia JobStatusService (ADR-0029).
+  status           JobStatus @default(asignado)
+  assignedAt       DateTime  @default(now()) @map("assigned_at") @db.Timestamptz(3)
+  onTheWayAt       DateTime? @map("on_the_way_at") @db.Timestamptz(3)
+  startedAt        DateTime? @map("started_at") @db.Timestamptz(3)
+  /// El trabajador marcó "Terminé" (solo desde en_curso); arranca la autoconfirmación.
+  workerFinishedAt DateTime? @map("worker_finished_at") @db.Timestamptz(3)
+  /// El empleador reportó un problema: sin autoconfirmación; lo resuelve el admin.
+  disputedAt       DateTime? @map("disputed_at") @db.Timestamptz(3)
+  disputeNote      String?   @map("dispute_note")
+  completedAt      DateTime? @map("completed_at") @db.Timestamptz(3)
+  autoConfirmed    Boolean   @default(false) @map("auto_confirmed")
+  cancelledAt      DateTime? @map("cancelled_at") @db.Timestamptz(3)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   request  ServiceRequest @relation(fields: [requestId], references: [id])
   worker   User           @relation("JobWorker", fields: [workerId], references: [id])
   employer User           @relation("JobEmployer", fields: [employerId], references: [id])
+  events   JobEvent[]
 
+  /// Además: índice único parcial jobs_one_active_per_worker (migración 20261017020000).
   @@index([workerId, createdAt])
   @@index([employerId, createdAt])
   @@map("jobs")
+}
+
+/// Historial del trabajo (ADR-0029). Append-only: un trigger rechaza UPDATE y DELETE.
+model JobEvent {
+  id         BigInt    @id @default(autoincrement())
+  jobId      String    @map("job_id") @db.Uuid
+  action     String
+  fromStatus JobStatus @map("from_status")
+  toStatus   JobStatus @map("to_status")
+  /// worker | employer | system | admin.
+  actorRole  String    @map("actor_role")
+  /// null = sistema.
+  actorId    String?   @map("actor_id") @db.Uuid
+  note       String?
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  job Job @relation(fields: [jobId], references: [id])
+
+  @@index([jobId, id])
+  @@map("job_events")
 }

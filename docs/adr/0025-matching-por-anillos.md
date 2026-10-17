@@ -39,6 +39,7 @@ R4 define candidatos (R4.1), anillos (R4.2), espera por anillo (R4.3), orden (R4
   - el reintento nunca corta el plazo de un aviso recién enviado;
   - al cumplirse el mínimo, sin ofertas, expira.
 - **Cierres numerados:** cada cierre o expiración programado lleva `close_seq` en el jobId (`close_{id}_{seq}`, `expire_{id}_{seq}`), porque BullMQ ignora un jobId repetido mientras el anterior siga guardado. Un job con un número viejo no hace nada. El reconciliador arma el jobId con el `close_seq` de la base.
+- **Trabajador ocupado** (Fase 4, ADR-0029): con un trabajo asignado, en camino o en curso queda excluido (`ocupado`, después de `no_disponible`): no recibe avisos ni puede ofertar. La consulta lo calcula con un `EXISTS` sobre `jobs`.
 - **Avisos:** por cada notificado, evento de outbox `request.notified`; el handler une al trabajador a la sala, emite `request:new` y envía el push. `request_notifications` registra quién, en qué anillo, a qué distancia y cuándo.
 - **Cancelación:** en la misma transacción se cierran las ofertas y se escribe `request.cancelled`. El handler quita los jobs pendientes y avisa con `offer:closed`.
 - **Interruptor por ciudad:** flag `matching.enabled` (seed: encendido en Santa Cruz). Apagado, el job falla y se reintenta; luego lo retoma el reconciliador al volver a encenderlo.
@@ -46,6 +47,6 @@ R4 define candidatos (R4.1), anillos (R4.2), espera por anillo (R4.3), orden (R4
 - **Apagado ordenado:** relay y workers de BullMQ se detienen en `beforeApplicationShutdown` y Prisma se desconecta al final, para no reabrir conexiones durante un deploy.
 
 ## Consecuencias
-- Sin trabajadores cerca, la solicitud expira casi de inmediato (todos los anillos vacíos). Si se prefiere un tiempo mínimo de búsqueda, es un parámetro nuevo (docs/pendientes.md).
+- Sin trabajadores cerca, la solicitud sigue buscando el tiempo mínimo (3 min) y luego expira.
 - La consulta trae todos los disponibles de la categoría dentro del anillo. Si una ciudad crece mucho, se puede limitar en SQL o prefiltrar con Redis GEO sin cambiar la regla pura.
 - El tope de deuda se conecta en la Fase 5 implementando `DebtCapPolicy`.

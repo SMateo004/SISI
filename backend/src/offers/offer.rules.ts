@@ -94,6 +94,8 @@ export function notEligibleMessage(reason: Exclusion): string {
     case 'no_disponible':
     case 'ubicacion_vencida':
       return 'Activa "Disponible" y comparte tu ubicación para ofertar.';
+    case 'ocupado':
+      return 'Tienes un trabajo en curso: termínalo antes de ofertar en otro.';
     case 'fuera_de_su_radio':
       return 'Esta solicitud quedó fuera de tu radio de trabajo.';
     case 'tope_de_deuda':

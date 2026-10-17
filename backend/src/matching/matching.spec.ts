@@ -22,6 +22,7 @@ const row = (over: Partial<CandidateRow> = {}): CandidateRow => ({
   distanceM: 800,
   ratingAvg: 4.5,
   alreadyNotified: false,
+  busy: false,
   ...over,
 });
 
@@ -52,6 +53,7 @@ describe('Selección de candidatos (R4.1, ADR-0025)', () => {
     ['fuera_de_su_radio', row({ maxRadiusKm: null })],
     ['fuera_del_anillo', row({ distanceM: 2001 })],
     ['ya_notificado', row({ alreadyNotified: true })],
+    ['ocupado', row({ busy: true })],
   ] as const)('excluye: %s', (reason, candidate) => {
     expect(exclusionOf(candidate, ctx())).toBe(reason);
   });

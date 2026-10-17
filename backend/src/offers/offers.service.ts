@@ -32,6 +32,7 @@ import {
   shortName,
   type TransportMode,
 } from './offer.rules';
+import { withdrawLockedOffer } from './offer-withdrawal';
 import { OffersRepository } from './offers.repository';
 
 const OPEN = new Set(['buscando', 'con_ofertas']);
@@ -257,28 +258,14 @@ export class OffersService {
         );
       }
       if (!OPEN.has(request.status)) throw offersClosed();
-      const withdrawn = await tx.offer.update({
-        where: { id: existing.id },
-        data: { status: 'retirada' },
-      });
-      const remaining = await tx.offer.count({ where: { requestId, status: 'activa' } });
-      const reopened = remaining === 0 && request.status === 'con_ofertas';
-      if (reopened) {
-        // Sin plazo de elección pendiente y con un cierre nuevo (ADR-0025).
-        await this.status.apply(
-          requestId,
-          'LAST_OFFER_WITHDRAWN',
-          workerId,
-          { data: { expiresAt: null, closeSeq: request.closeSeq + 1 } },
-          tx,
-        );
-      }
-      await this.outbox.add(tx, 'offer.withdrawn', requestId, {
-        requestId,
-        offerId: withdrawn.id,
-        reopened,
-      });
-      return withdrawn;
+      await withdrawLockedOffer(
+        tx,
+        { status: this.status, outbox: this.outbox },
+        request,
+        existing.id,
+        workerId,
+      );
+      return tx.offer.findUniqueOrThrow({ where: { id: existing.id } });
     });
     return toMyOffer(offer);
   }
@@ -321,13 +308,18 @@ export class OffersService {
    * Elegir una oferta (R5.4). En una transacción con la solicitud bloqueada: crea el
    * trabajo, pasa la solicitud a asignada y cierra las demás ofertas. Una segunda
    * aceptación concurrente espera el bloqueo y recibe 409.
+   *
+   * Doble asignación (Fase 4): también se bloquea el perfil del trabajador, así que dos
+   * empleadores que eligen al mismo trabajador a la vez van en serie. Si ya tiene un
+   * trabajo activo, su oferta se retira (se confirma esa parte) y responde 409
+   * WORKER_BUSY. El índice único parcial jobs_one_active_per_worker es la última barrera.
    */
   async accept(
     employerId: string,
     requestId: string,
     offerId: string,
   ): Promise<AcceptOfferResultDto> {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const request = await lockRequest(tx, requestId);
       if (request?.employerId !== employerId) throw notFound();
       if (request.status === 'asignada') {
@@ -351,6 +343,23 @@ export class OffersService {
       const category = await this.categories.forCity(request.categoryId, request.cityId);
       if (!category) throw notFound();
 
+      await tx.$queryRaw`
+        SELECT user_id FROM worker_profiles WHERE user_id = ${offer.workerId}::uuid FOR UPDATE`;
+      const busy = await tx.job.findFirst({
+        where: { workerId: offer.workerId, status: { in: ['asignado', 'en_camino', 'en_curso'] } },
+        select: { id: true },
+      });
+      if (busy) {
+        await withdrawLockedOffer(
+          tx,
+          { status: this.status, outbox: this.outbox },
+          request,
+          offer.id,
+          null,
+        );
+        return { busy: true as const };
+      }
+
       const job = await tx.job.create({
         data: {
           requestId,
@@ -369,8 +378,16 @@ export class OffersService {
         data: { status: 'cerrada' },
       });
       await this.outbox.add(tx, 'request.assigned', requestId, { requestId, jobId: job.id });
-      return { jobId: job.id, requestId };
+      return { busy: false as const, jobId: job.id, requestId };
     });
+    if (result.busy) {
+      throw new ApiError(
+        HttpStatus.CONFLICT,
+        'WORKER_BUSY',
+        'Este trabajador acaba de tomar otro trabajo. Elige otra oferta.',
+      );
+    }
+    return { jobId: result.jobId, requestId: result.requestId };
   }
 
   // ---- Contacto ----

@@ -20,6 +20,7 @@ export type RequestStatus = (typeof REQUEST_STATUSES)[number];
  * CANCEL: el empleador mientras no esté asignada.
  * RECEIVE_OFFER / ASSIGN / EXPIRE: matching y ofertas (Fase 3).
  * LAST_OFFER_WITHDRAWN: el trabajador retira la única oferta activa; vuelve a buscar (Fase 4).
+ * JOB_CANCELLED: se canceló el trabajo de una solicitud asignada (Fase 4, ADR-0029).
  */
 export const REQUEST_EVENTS = [
   'PUBLISH_CLEAN',
@@ -31,6 +32,7 @@ export const REQUEST_EVENTS = [
   'ASSIGN',
   'EXPIRE',
   'LAST_OFFER_WITHDRAWN',
+  'JOB_CANCELLED',
 ] as const;
 export type RequestEvent = (typeof REQUEST_EVENTS)[number];
 
@@ -49,6 +51,7 @@ const TRANSITIONS: Record<RequestEvent, Partial<Record<RequestStatus, RequestSta
   ASSIGN: { con_ofertas: 'asignada' },
   EXPIRE: { buscando: 'expirada', con_ofertas: 'expirada' },
   LAST_OFFER_WITHDRAWN: { con_ofertas: 'buscando' },
+  JOB_CANCELLED: { asignada: 'cancelada' },
 };
 
 const MESSAGES: Partial<Record<RequestEvent, string>> = {

@@ -11,6 +11,7 @@ export const RealtimeEvents = {
   requestExpired: 'request:expired',
   offerNew: 'offer:new',
   offerClosed: 'offer:closed',
+  jobStatus: 'job:status',
 } as const;
 
 export type RealtimeEventName = (typeof RealtimeEvents)[keyof typeof RealtimeEvents];
@@ -51,6 +52,11 @@ export interface RealtimePayloads {
    * un trabajador retiró su oferta (`offerId`).
    */
   'offer:closed': { requestId: string; reason: OfferClosedReason; offerId?: string };
+  /**
+   * A las dos partes: el trabajo cambió (ADR-0029). `action` dice qué pasó (FINISH y
+   * DISPUTE no cambian el estado). Detalle por GET /jobs/:id.
+   */
+  'job:status': { jobId: string; requestId: string; status: string; action: string };
 }
 
 export const rooms = {

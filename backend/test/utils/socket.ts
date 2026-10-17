@@ -1,5 +1,9 @@
 import { io, type Socket } from 'socket.io-client';
-import type { RealtimeEventName, RealtimePayloads } from '../../src/realtime/realtime.events';
+import {
+  type RealtimeEventName,
+  RealtimeEvents,
+  type RealtimePayloads,
+} from '../../src/realtime/realtime.events';
 import type { TestApp } from './test-app';
 
 /** Cliente Socket.IO de prueba que guarda lo que recibe y permite esperarlo. */
@@ -14,13 +18,7 @@ export interface TestSocket {
   close(): void;
 }
 
-const ALL_EVENTS: RealtimeEventName[] = [
-  'request:new',
-  'request:assigned',
-  'request:expired',
-  'offer:new',
-  'offer:closed',
-];
+const ALL_EVENTS: RealtimeEventName[] = Object.values(RealtimeEvents);
 
 /** Conecta con el token dado; falla con el `code` del servidor si el handshake es rechazado. */
 export async function connectSocket(t: TestApp, token: string | undefined): Promise<TestSocket> {

@@ -17,6 +17,8 @@ export interface CandidateRow {
   distanceM: number;
   ratingAvg: number;
   alreadyNotified: boolean;
+  /** Tiene un trabajo asignado, en camino o en curso (Fase 4): queda ocupado. */
+  busy: boolean;
 }
 
 export interface SelectionContext {
@@ -32,6 +34,7 @@ export type Exclusion =
   | 'no_aprobado'
   | 'no_modo_trabajador'
   | 'no_disponible'
+  | 'ocupado'
   | 'ubicacion_vencida'
   | 'sin_categoria'
   | 'fuera_de_su_radio'
@@ -45,6 +48,7 @@ export function exclusionOf(row: CandidateRow, ctx: SelectionContext): Exclusion
   if (row.status !== 'aprobado') return 'no_aprobado';
   if (row.activeMode !== 'worker') return 'no_modo_trabajador';
   if (!row.available) return 'no_disponible';
+  if (row.busy) return 'ocupado';
   if (!row.locatedAt || ctx.now - row.locatedAt.getTime() > ctx.staleLocationMs) {
     return 'ubicacion_vencida';
   }

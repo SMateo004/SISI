@@ -30,6 +30,27 @@ export interface OutboxPayloads {
   'offer.withdrawn': { requestId: string; offerId: string; reopened: boolean };
   /** El empleador eligió una oferta (R5.4): request:assigned, offer:closed y aviso al elegido. */
   'request.assigned': { requestId: string; jobId: string };
+  /** Cambió el trabajo (ADR-0029): job:status y push a las dos partes; FINISH programa la autoconfirmación. */
+  'job.status_changed': {
+    jobId: string;
+    action: string;
+    from: string;
+    to: string;
+    actorRole: string;
+  };
+  /**
+   * El trabajo terminó (R6.3, ADR-0030). Lo consume la Fase 5 para el ledger; montos como
+   * texto con 2 decimales.
+   */
+  'job.completed': {
+    jobId: string;
+    workerId: string;
+    cityId: string;
+    finalPriceBs: string;
+    commissionPct: string;
+    commissionBs: string;
+    completedAt: string;
+  };
 }
 
 export type OutboxEventType = keyof OutboxPayloads;

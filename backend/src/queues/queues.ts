@@ -24,6 +24,8 @@ export const MATCHING_JOBS = {
   sweepLocations: 'sweep_locations',
   /** Limpieza de eventos publicados del outbox (ADR-0022). */
   outboxCleanup: 'outbox_cleanup',
+  /** Autoconfirmación de un trabajo (ADR-0029). */
+  autoconfirm: 'autoconfirm',
 } as const;
 
 export const jobIds = {
@@ -31,6 +33,7 @@ export const jobIds = {
   close: (requestId: string, seq: number): string => `close_${requestId}_${seq}`,
   expire: (requestId: string, seq: number): string => `expire_${requestId}_${seq}`,
   event: (outboxId: bigint): string => `evt_${outboxId}`,
+  autoconfirm: (jobId: string): string => `autoconfirm_${jobId}`,
 };
 
 /** Un job listo para encolar. */

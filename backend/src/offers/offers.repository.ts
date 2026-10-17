@@ -17,6 +17,7 @@ interface Raw {
   distanceM: number | null;
   ratingAvg: string;
   hasCategory: boolean;
+  busy: boolean;
   transport: TransportMode | null;
 }
 
@@ -41,6 +42,11 @@ export class OffersRepository {
              wp.max_radius_km AS "maxRadiusKm",
              ST_Distance(wl.geog, r.geog)::float8 AS "distanceM",
              wp.rating_avg::text AS "ratingAvg",
+             EXISTS (
+               SELECT 1 FROM jobs j
+               WHERE j.worker_id = wp.user_id
+                 AND j.status IN ('asignado', 'en_camino', 'en_curso')
+             ) AS busy,
              EXISTS (
                SELECT 1 FROM worker_categories wc
                WHERE wc.worker_id = wp.user_id AND wc.category_id = r.category_id

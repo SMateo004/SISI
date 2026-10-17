@@ -110,6 +110,8 @@ export const envSchema = z
     MATCHING_RECONCILE_MS: positiveInt(60_000),
     /** Eventos publicados del outbox que se conservan (luego se borran). */
     OUTBOX_RETENTION_DAYS: positiveInt(7),
+    /** Plazo para que el empleador confirme después del "Terminé" (ADR-0029). */
+    JOB_AUTOCONFIRM_MS: positiveInt(86_400_000),
     OUTBOX_CLEANUP_MS: positiveInt(86_400_000),
 
     // Matching por anillos (R4, ADR-0025). Valores en propuesta: docs/pendientes.md.

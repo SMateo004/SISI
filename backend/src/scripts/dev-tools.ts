@@ -5,7 +5,10 @@ import { NestFactory } from '@nestjs/core';
 import { normalizePhone } from '../common/phone/phone';
 import type { AppConfigService } from '../config/app-config';
 import { AppConfigModule } from '../config/config.module';
+import { JobStatusModule } from '../jobs/job-status.module';
+import { JobStatusService } from '../jobs/job-status.service';
 import { WorkerAvailabilityModule } from '../locations/locations.module';
+import { OutboxModule } from '../outbox/outbox.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisModule } from '../redis/redis.module';
@@ -28,10 +31,18 @@ import { type WorkerEventInput, WorkerStatusService } from '../workers/worker-st
  *   npm run dev:tools -- create-category --name "Plomería (prueba)" --min 80 --max 250
  *   npm run dev:tools -- make-admin --phone 70012345
  *   npm run dev:tools -- quick-worker --phone 70012345 --categories plomeria,limpieza --transport moto --radius 10
+ *   npm run dev:tools -- resolve-dispute --job <uuid> --decision confirm --reason "Se verificó con ambas partes"
  */
 @Module({
   // WorkerStatusService apaga la disponibilidad al bloquear o suspender (Redis, ADR-0024).
-  imports: [AppConfigModule, PrismaModule, RedisModule, WorkerAvailabilityModule],
+  imports: [
+    AppConfigModule,
+    PrismaModule,
+    RedisModule,
+    WorkerAvailabilityModule,
+    OutboxModule,
+    JobStatusModule,
+  ],
   providers: [
     WorkerStatusService,
     { provide: DEBT_STATUS_PROVIDER, useClass: NoBillingYetDebtProvider },
@@ -58,6 +69,8 @@ async function main(): Promise<void> {
       radius: { type: 'string' },
       min: { type: 'string' },
       max: { type: 'string' },
+      job: { type: 'string' },
+      decision: { type: 'string' },
     },
   });
 
@@ -167,9 +180,25 @@ async function main(): Promise<void> {
         );
         break;
       }
+      case 'resolve-dispute': {
+        // Igual que POST /admin/jobs/:id/resolve (ADR-0029), con actor admin sin cuenta.
+        if (!values.job || (values.decision !== 'confirm' && values.decision !== 'cancel')) {
+          throw new Error('Usa --job <uuid> --decision confirm|cancel --reason "nota"');
+        }
+        const { to } = await app
+          .get(JobStatusService)
+          .apply(
+            values.job,
+            values.decision === 'confirm' ? 'RESOLVE_CONFIRM' : 'RESOLVE_CANCEL',
+            { role: 'admin', id: null },
+            { note: values.reason ?? 'Resuelto con dev-tools' },
+          );
+        logger.log(`Trabajo ${values.job} ahora ${to}`);
+        break;
+      }
       default:
         throw new Error(
-          'Comandos: review-worker, worker-event, create-category, make-admin, quick-worker (ver src/scripts/dev-tools.ts)',
+          'Comandos: review-worker, worker-event, create-category, make-admin, quick-worker, resolve-dispute (ver src/scripts/dev-tools.ts)',
         );
     }
   } finally {

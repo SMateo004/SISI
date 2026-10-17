@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { JobStatusModule } from '../jobs/job-status.module';
 import { WorkerAvailabilityModule } from '../locations/locations.module';
 import { OutboxRelayModule } from '../outbox/outbox-relay.module';
 import { QueuesModule } from '../queues/queues.module';
@@ -13,7 +14,13 @@ import { MatchingService } from './matching.service';
 
 /** Jobs de matching del proceso worker (ADR-0025). */
 @Module({
-  imports: [QueuesModule, OutboxRelayModule, WorkerAvailabilityModule, RequestStatusModule],
+  imports: [
+    QueuesModule,
+    OutboxRelayModule,
+    WorkerAvailabilityModule,
+    RequestStatusModule,
+    JobStatusModule,
+  ],
   providers: [
     matchingConfigProvider,
     { provide: DEBT_CAP_POLICY, useClass: NoDebtCapYetPolicy },

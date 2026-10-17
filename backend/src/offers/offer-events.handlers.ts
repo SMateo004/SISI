@@ -2,14 +2,19 @@ import { Injectable, type OnModuleInit } from '@nestjs/common';
 import { toBs } from '../categories/effective-category';
 import { MatchingService } from '../matching/matching.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { OutboxService } from '../outbox/outbox.service';
 import { EventHandlersRegistry } from '../outbox/event-handlers.registry';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeEmitter } from '../realtime/realtime.emitter';
+import { lockRequest } from '../requests/request-lock';
+import { RequestStatusService } from '../requests/request-status.service';
+import { withdrawLockedOffer } from './offer-withdrawal';
 import { shortName } from './offer.rules';
 
 /**
  * Efectos de las ofertas en el worker (ADR-0026): offer:new al empleador, y al asignar,
- * request:assigned, offer:closed a los no elegidos y aviso al elegido.
+ * request:assigned, offer:closed a los no elegidos y aviso al elegido. Al elegido se le
+ * retiran sus otras ofertas activas: queda ocupado (Fase 4).
  */
 @Injectable()
 export class OfferEventsHandlers implements OnModuleInit {
@@ -19,6 +24,8 @@ export class OfferEventsHandlers implements OnModuleInit {
     private readonly realtime: RealtimeEmitter,
     private readonly notifications: NotificationsService,
     private readonly matching: MatchingService,
+    private readonly status: RequestStatusService,
+    private readonly outbox: OutboxService,
   ) {}
 
   onModuleInit(): void {
@@ -94,6 +101,8 @@ export class OfferEventsHandlers implements OnModuleInit {
       });
       this.realtime.leaveRequest(job.requestId);
 
+      await this.withdrawOtherOffers(job.workerId, job.requestId);
+
       await this.notifications.notify({
         userId: job.workerId,
         cityId: job.request.cityId,
@@ -102,5 +111,34 @@ export class OfferEventsHandlers implements OnModuleInit {
         dedupeKey: `${outboxId}:${job.workerId}`,
       });
     });
+  }
+  /**
+   * El trabajador elegido ya no puede tomar otra: se retiran sus ofertas activas en otras
+   * solicitudes (cada una en su transacción, con su solicitud bloqueada). El empleador de
+   * cada una recibe offer:closed por offer.withdrawn; si era la única, sigue el matching.
+   */
+  private async withdrawOtherOffers(workerId: string, assignedRequestId: string): Promise<void> {
+    const offers = await this.prisma.offer.findMany({
+      where: { workerId, status: 'activa', requestId: { not: assignedRequestId } },
+      select: { id: true, requestId: true },
+    });
+    for (const offer of offers) {
+      await this.prisma.$transaction(async (tx) => {
+        const request = await lockRequest(tx, offer.requestId);
+        const current = await tx.offer.findUnique({
+          where: { id: offer.id },
+          select: { status: true },
+        });
+        if (!request || current?.status !== 'activa') return;
+        if (request.status !== 'buscando' && request.status !== 'con_ofertas') return;
+        await withdrawLockedOffer(
+          tx,
+          { status: this.status, outbox: this.outbox },
+          request,
+          offer.id,
+          null,
+        );
+      });
+    }
   }
 }

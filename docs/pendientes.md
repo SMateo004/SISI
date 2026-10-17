@@ -21,6 +21,12 @@ Aprobadas el 2026-10-14. Hay que reflejarlas en el documento 01 en la sección i
 | Bloqueo y modo | Si pasa a `bloqueado_deuda` o `suspendido_moderacion` estando en modo trabajador, la cuenta cambia sola a `employer` y se le notifica. Al desbloquearse no vuelve sola: usa el interruptor. | R1.6 |
 | Teléfonos | MVP: solo +591. Prefijos permitidos en configuración (`PHONE_ALLOWED_COUNTRY_CODES`). | R1.1 |
 
+## Propuestas de la Fase 4 por validar
+- [ ] **Autoconfirmación:** si el empleador no confirma ni reporta un problema **24 h** después del "Terminé" del trabajador, el trabajo se confirma solo y se cobra la comisión (`JOB_AUTOCONFIRM_MS`, ADR-0029).
+- [ ] **Confirmar sin "Terminé":** el empleador puede confirmar un trabajo en curso aunque el trabajador no haya marcado "Terminé" (R6.2 solo exige la confirmación del empleador).
+- [ ] **Disputa ("Hubo un problema"):** solo el empleador, solo después del "Terminé". El trabajo queda en curso, sin autoconfirmación y sin comisión, hasta que un administrador lo resuelve: **confirmar** (terminado, con comisión) o **cancelar** (cancelado, sin comisión; la solicitud queda cancelada). Sin plazo para resolver. Definir: plazo de resolución, si el trabajador puede responder, y qué pasa con las calificaciones de un trabajo cancelado por disputa.
+- [ ] **Trabajador ocupado:** con un trabajo asignado, en camino o en curso no recibe solicitudes ni puede ofertar. Al ser elegido, sus otras ofertas activas se retiran solas (el empleador recibe el aviso y, si era la única, su solicitud vuelve a buscar).
+
 ## Propuestas de la Fase 3 por validar
 Implementadas como propuesta; cambiarlas es configuración (variables de entorno, ver `backend/.env.example`).
 
@@ -38,7 +44,7 @@ Implementadas como propuesta; cambiarlas es configuración (variables de entorno
 - [ ] **Qué ve el empleador de una oferta:** nombre corto ("María P."), calificación, precio, tipo y ETA. Si el trabajador no cargó su nombre aparece "Trabajador". ¿Exigir nombre para trabajar?
 
 ## Detectadas en la Fase 3
-- [ ] **Retirar una oferta:** no existe; el trabajador solo puede reemplazarla mientras no se elija ninguna. Confirmar si hace falta.
+- [x] **Retirar una oferta:** `DELETE /requests/:id/offers/mine` (Fase 4). Si era la única, la solicitud vuelve a buscando.
 - [ ] **Push en iOS:** pendiente hasta tener la cuenta de Apple Developer (llave APNs en Firebase). Ver README, "Firebase".
 - [ ] **Firebase sin configurar:** staging corre con `PUSH_PROVIDER=fake` (solo log). Crear el proyecto y cargar las variables (README, "Firebase") antes de probar push en staging.
 - [x] **Limpieza del outbox:** job diario que borra los eventos publicados hace más de `OUTBOX_RETENTION_DAYS` (7) días (Fase 4, ADR-0022).

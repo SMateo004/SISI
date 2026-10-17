@@ -10,6 +10,7 @@ import { SisiThrottlerGuard } from './common/rate-limit/sisi-throttler.guard';
 import { AppConfigModule } from './config/config.module';
 import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
 import { HealthModule } from './health/health.module';
+import { JobsModule } from './jobs/jobs.module';
 import { LocationsModule } from './locations/locations.module';
 import { MapsModule } from './maps/maps.module';
 import { ModerationModule } from './moderation/moderation.module';
@@ -44,6 +45,7 @@ import { WorkersModule } from './workers/workers.module';
     LocationsModule,
     NotificationsModule,
     OffersModule,
+    JobsModule,
     RealtimeModule,
   ],
   providers: [

@@ -21,6 +21,7 @@ export function applyE2eEnv(): void {
   process.env.MATCHING_RECONCILE_MS = '3600000';
   process.env.LOCATION_SWEEP_MS = '3600000';
   process.env.OUTBOX_CLEANUP_MS = '3600000';
+  process.env.JOB_AUTOCONFIRM_MS = '3000';
   // Anillos y plazos en milisegundos (nunca los 45 s reales). 3 s deja margen para actuar
   // dentro de un anillo (ofertar, cancelar) aunque la máquina esté cargada.
   process.env.MATCHING_RING_WAIT_MS = '3000';

@@ -133,7 +133,8 @@ export class OffersController {
   @ApiNotFoundResponse({ type: ApiErrorBody, description: 'REQUEST_NOT_FOUND' })
   @ApiConflictResponse({
     type: ApiErrorBody,
-    description: 'REQUEST_ALREADY_ASSIGNED, OFFERS_CLOSED u OFFER_NOT_AVAILABLE',
+    description:
+      'REQUEST_ALREADY_ASSIGNED, OFFERS_CLOSED, OFFER_NOT_AVAILABLE o WORKER_BUSY (la oferta se retira)',
   })
   accept(
     @CurrentUser() current: AuthenticatedUser,

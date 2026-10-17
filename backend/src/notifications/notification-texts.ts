@@ -14,6 +14,12 @@ export interface NotificationInputs {
   request_expired: { requestId: string; category: string };
   request_released: { requestId: string; category: string };
   request_rejected: { requestId: string; category: string };
+  job_on_the_way: { jobId: string; workerShortName: string };
+  job_started: { jobId: string; workerShortName: string };
+  job_finished: { jobId: string; workerShortName: string };
+  job_completed: { jobId: string; netBs: string; commissionBs: string; auto: boolean };
+  job_disputed: { jobId: string };
+  job_resolved: { jobId: string; status: string };
 }
 
 export type NotificationType = keyof NotificationInputs;
@@ -64,6 +70,37 @@ const RENDER: { [T in NotificationType]: (d: NotificationInputs[T]) => RenderedN
     title: 'Tu solicitud no fue publicada',
     body: 'No cumple las normas de uso de SISI.',
     route: `/solicitudes/${d.requestId}`,
+  }),
+  job_on_the_way: (d) => ({
+    title: `${d.workerShortName} va en camino`,
+    body: 'Puedes seguir su ubicación en el mapa.',
+    route: `/trabajos/${d.jobId}`,
+  }),
+  job_started: (d) => ({
+    title: 'Empezó el trabajo',
+    body: `${d.workerShortName} marcó que empezó.`,
+    route: `/trabajos/${d.jobId}`,
+  }),
+  job_finished: (d) => ({
+    title: `${d.workerShortName} terminó el trabajo`,
+    body: 'Confírmalo o avísanos si hubo un problema. Si no respondes, se confirmará solo.',
+    route: `/trabajos/${d.jobId}`,
+  }),
+  job_completed: (d) => ({
+    title: d.auto ? 'El trabajo se confirmó solo' : 'El empleador confirmó el trabajo',
+    body: `Recibes ${bs(d.netBs)} (comisión ${bs(d.commissionBs)}).`,
+    route: `/trabajos/${d.jobId}`,
+  }),
+  job_disputed: (d) => ({
+    title: 'El empleador reportó un problema',
+    body: 'El equipo de SISI revisará el trabajo y te avisará.',
+    route: `/trabajos/${d.jobId}`,
+  }),
+  job_resolved: (d) => ({
+    title: 'Se resolvió la revisión del trabajo',
+    body:
+      d.status === 'terminado' ? 'El trabajo quedó como terminado.' : 'El trabajo quedó cancelado.',
+    route: `/trabajos/${d.jobId}`,
   }),
 };
 

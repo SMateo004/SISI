@@ -12,6 +12,7 @@ interface RawCandidate {
   distanceM: number;
   ratingAvg: string;
   alreadyNotified: boolean;
+  busy: boolean;
 }
 
 /**
@@ -38,6 +39,11 @@ export class MatchingRepository {
              wp.max_radius_km AS "maxRadiusKm",
              ST_Distance(wl.geog, r.geog)::float8 AS "distanceM",
              wp.rating_avg::text AS "ratingAvg",
+             EXISTS (
+               SELECT 1 FROM jobs j
+               WHERE j.worker_id = wp.user_id
+                 AND j.status IN ('asignado', 'en_camino', 'en_curso')
+             ) AS busy,
              EXISTS (
                SELECT 1 FROM request_notifications rn
                WHERE rn.request_id = r.id AND rn.worker_id = wp.user_id

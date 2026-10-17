@@ -33,7 +33,12 @@ R4 define candidatos (R4.1), anillos (R4.2), espera por anillo (R4.3), orden (R4
   - **un anillo sin candidatos nuevos amplía de inmediato** (decidido en el plan);
   - con ≥ `ENOUGH_OFFERS` ofertas activas no amplía y pasa al cierre;
   - el cierre nunca corta antes el plazo del último aviso.
-- **Cierre (R4.5):** sin ofertas, `expirada` + `request:expired` + aviso al empleador. Con ofertas, `expires_at = ahora + gracia`; si no elige a tiempo, `expirada` y las ofertas se cierran (`offer:closed`).
+- **Cierre (R4.5):** con ofertas, `expires_at = ahora + gracia`; si el empleador no elige a tiempo, `expirada` y las ofertas se cierran (`offer:closed`). Sin ofertas, expira solo después del **tiempo mínimo de búsqueda**.
+- **Tiempo mínimo de búsqueda** (Fase 4, propuesta: `MATCHING_MIN_SEARCH_MS=180000`, `MATCHING_RESCAN_MS=45000`):
+  - sin ofertas y antes de `published_at + mínimo`, el cierre vuelve a consultar el radio del último anillo (sin repetir a los ya avisados) y se reprograma cada 45 s;
+  - el reintento nunca corta el plazo de un aviso recién enviado;
+  - al cumplirse el mínimo, sin ofertas, expira.
+- **Cierres numerados:** cada cierre o expiración programado lleva `close_seq` en el jobId (`close_{id}_{seq}`, `expire_{id}_{seq}`), porque BullMQ ignora un jobId repetido mientras el anterior siga guardado. Un job con un número viejo no hace nada. El reconciliador arma el jobId con el `close_seq` de la base.
 - **Avisos:** por cada notificado, evento de outbox `request.notified`; el handler une al trabajador a la sala, emite `request:new` y envía el push. `request_notifications` registra quién, en qué anillo, a qué distancia y cuándo.
 - **Cancelación:** en la misma transacción se cierran las ofertas y se escribe `request.cancelled`. El handler quita los jobs pendientes y avisa con `offer:closed`.
 - **Interruptor por ciudad:** flag `matching.enabled` (seed: encendido en Santa Cruz). Apagado, el job falla y se reintenta; luego lo retoma el reconciliador al volver a encenderlo.

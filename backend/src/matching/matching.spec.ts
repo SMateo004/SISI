@@ -6,7 +6,7 @@ import {
 } from './candidates';
 import { expectedMatchingJob } from './expected-job';
 import { parseRings } from './matching.config';
-import { closeDecision, closeDelay, nextStep, shouldExpand } from './ring-plan';
+import { closeDecision, closeDelay, nextStep, rescanDelay, shouldExpand } from './ring-plan';
 
 const NOW = 1_800_000_000_000;
 const RINGS = parseRings('2:5,5:10,10:10');
@@ -144,19 +144,56 @@ describe('Progresión de anillos (R4.2, R4.3)', () => {
   });
 });
 
-describe('Cierre y expiración (R4.5)', () => {
-  it('sin ofertas expira de inmediato', () => {
-    expect(closeDecision(0, NOW, 600_000)).toEqual({ expireNow: true });
-  });
+describe('Cierre, tiempo mínimo de búsqueda y expiración (R4.5, ADR-0025)', () => {
+  const base = { now: NOW, offersGraceMs: 600_000, minSearchMs: 180_000 };
 
   it('con ofertas sin elegir da el plazo de gracia', () => {
-    expect(closeDecision(2, NOW, 600_000)).toEqual({ expireNow: false, expiresAt: NOW + 600_000 });
+    expect(closeDecision({ ...base, activeOffers: 2, publishedAt: NOW - 10_000 })).toEqual({
+      kind: 'grace',
+      expiresAt: NOW + 600_000,
+    });
+  });
+
+  it('sin ofertas y antes del mínimo de 3 minutos vuelve a buscar', () => {
+    expect(closeDecision({ ...base, activeOffers: 0, publishedAt: NOW - 10_000 })).toEqual({
+      kind: 'rescan',
+    });
+    expect(closeDecision({ ...base, activeOffers: 0, publishedAt: NOW - 179_999 })).toEqual({
+      kind: 'rescan',
+    });
+  });
+
+  it('sin ofertas y cumplido el mínimo expira (R4.5)', () => {
+    expect(closeDecision({ ...base, activeOffers: 0, publishedAt: NOW - 180_000 })).toEqual({
+      kind: 'expire',
+    });
+    // Con el mínimo en 0 se comporta como antes: expira de inmediato.
+    expect(closeDecision({ ...base, minSearchMs: 0, activeOffers: 0, publishedAt: NOW })).toEqual({
+      kind: 'expire',
+    });
+  });
+
+  it('el próximo intento es cada 45 s, sin pasar del mínimo ni cortar el plazo de un aviso', () => {
+    const r = { now: NOW, minSearchMs: 180_000, rescanMs: 45_000, ringWaitMs: 45_000 };
+    expect(rescanDelay({ ...r, publishedAt: NOW - 10_000, lastNotifiedAt: null })).toBe(45_000);
+    // Quedan 20 s del mínimo: el último intento es a los 20 s.
+    expect(rescanDelay({ ...r, publishedAt: NOW - 160_000, lastNotifiedAt: null })).toBe(20_000);
+    // Alguien fue avisado hace 10 s: se respeta su plazo de 45 s aunque el mínimo termine antes.
+    expect(rescanDelay({ ...r, publishedAt: NOW - 170_000, lastNotifiedAt: NOW - 10_000 })).toBe(
+      35_000,
+    );
   });
 });
 
 describe('Reconciliador: job esperado (ADR-0022)', () => {
   const ctxR = { totalRings: 3, ringWaitMs: 45_000, now: NOW };
-  const base = { id: 'r1', status: 'buscando' as const, ringStartedAt: null, expiresAt: null };
+  const base = {
+    id: 'r1',
+    status: 'buscando' as const,
+    ringStartedAt: null,
+    expiresAt: null,
+    closeSeq: 0,
+  };
 
   it('sin anillo: el anillo 1', () => {
     expect(expectedMatchingJob({ ...base, ring: null }, ctxR)).toMatchObject({
@@ -177,12 +214,18 @@ describe('Reconciliador: job esperado (ADR-0022)', () => {
   it('tras el último anillo: el cierre; con plazo de elección: la expiración', () => {
     expect(
       expectedMatchingJob({ ...base, ring: 3, ringStartedAt: new Date(NOW - 60_000) }, ctxR),
-    ).toMatchObject({ name: 'close', jobId: 'close_r1', delayMs: 0 });
+    ).toMatchObject({ name: 'close', jobId: 'close_r1_0', delayMs: 0 });
     expect(
       expectedMatchingJob(
-        { ...base, status: 'con_ofertas', ring: 3, expiresAt: new Date(NOW + 1_000) },
+        {
+          ...base,
+          status: 'con_ofertas',
+          ring: 3,
+          expiresAt: new Date(NOW + 1_000),
+          closeSeq: 2,
+        },
         ctxR,
       ),
-    ).toMatchObject({ name: 'expire', jobId: 'expire_r1', delayMs: 1_000 });
+    ).toMatchObject({ name: 'expire', jobId: 'expire_r1_2', delayMs: 1_000, data: { seq: 2 } });
   });
 });

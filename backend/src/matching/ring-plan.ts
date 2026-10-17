@@ -36,16 +36,45 @@ export function shouldExpand(ring: number, activeOffers: number, enoughOffers: n
   return ring === 1 || activeOffers < enoughOffers;
 }
 
+export type CloseDecision =
+  { kind: 'grace'; expiresAt: number } | { kind: 'rescan' } | { kind: 'expire' };
+
 /**
- * Al cerrar la búsqueda (R4.5): sin ofertas, expira ya. Con ofertas, el empleador tiene
- * `offersGraceMs` para elegir; si no elige, expira y se cierran las ofertas (propuesta en
- * docs/pendientes.md).
+ * Al cerrar la búsqueda (R4.5, ADR-0025):
+ * - con ofertas, el empleador tiene `offersGraceMs` para elegir; si no elige, expira;
+ * - sin ofertas y antes del tiempo mínimo de búsqueda (`minSearchMs` desde que se
+ *   publicó), se vuelve a buscar en el último anillo (propuesta en docs/pendientes.md);
+ * - sin ofertas y cumplido el mínimo, expira.
  */
-export function closeDecision(
-  activeOffers: number,
-  now: number,
-  offersGraceMs: number,
-): { expireNow: true } | { expireNow: false; expiresAt: number } {
-  if (activeOffers === 0) return { expireNow: true };
-  return { expireNow: false, expiresAt: now + offersGraceMs };
+export function closeDecision(input: {
+  activeOffers: number;
+  now: number;
+  publishedAt: number;
+  offersGraceMs: number;
+  minSearchMs: number;
+}): CloseDecision {
+  if (input.activeOffers > 0) {
+    return { kind: 'grace', expiresAt: input.now + input.offersGraceMs };
+  }
+  if (input.now < input.publishedAt + input.minSearchMs) return { kind: 'rescan' };
+  return { kind: 'expire' };
+}
+
+/**
+ * Espera hasta el próximo cierre tras volver a buscar: `rescanMs`, sin pasar del mínimo,
+ * pero nunca antes de que venza el plazo del último aviso.
+ */
+export function rescanDelay(input: {
+  now: number;
+  publishedAt: number;
+  minSearchMs: number;
+  rescanMs: number;
+  lastNotifiedAt: number | null;
+  ringWaitMs: number;
+}): number {
+  const untilMin = Math.max(input.publishedAt + input.minSearchMs - input.now, 0);
+  return Math.max(
+    Math.min(input.rescanMs, untilMin),
+    closeDelay(input.now, input.lastNotifiedAt, input.ringWaitMs),
+  );
 }

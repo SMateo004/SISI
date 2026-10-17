@@ -7,6 +7,7 @@ export interface OpenRequestState {
   ring: number | null;
   ringStartedAt: Date | null;
   expiresAt: Date | null;
+  closeSeq: number;
 }
 
 /**
@@ -19,12 +20,13 @@ export function expectedMatchingJob(
   ctx: { totalRings: number; ringWaitMs: number; now: number },
 ): JobRoute {
   const data = { requestId: request.id };
+  const seq = request.closeSeq;
   if (request.expiresAt) {
     return {
       queue: QUEUES.matching,
       name: MATCHING_JOBS.expire,
-      jobId: jobIds.expire(request.id),
-      data,
+      jobId: jobIds.expire(request.id, seq),
+      data: { ...data, seq },
       delayMs: Math.max(request.expiresAt.getTime() - ctx.now, 0),
     };
   }
@@ -52,8 +54,8 @@ export function expectedMatchingJob(
   return {
     queue: QUEUES.matching,
     name: MATCHING_JOBS.close,
-    jobId: jobIds.close(request.id),
-    data,
+    jobId: jobIds.close(request.id, seq),
+    data: { ...data, seq },
     delayMs: remaining,
   };
 }

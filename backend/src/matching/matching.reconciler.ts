@@ -25,7 +25,14 @@ export class MatchingReconciler {
   async runOnce(): Promise<number> {
     const open = await this.prisma.serviceRequest.findMany({
       where: { status: { in: ['buscando', 'con_ofertas'] } },
-      select: { id: true, status: true, ring: true, ringStartedAt: true, expiresAt: true },
+      select: {
+        id: true,
+        status: true,
+        ring: true,
+        ringStartedAt: true,
+        expiresAt: true,
+        closeSeq: true,
+      },
       take: 1000,
       orderBy: { publishedAt: 'asc' },
     });

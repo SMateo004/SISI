@@ -15,5 +15,7 @@ export const matchingConfigProvider: Provider = {
     enoughOffers: config.get('MATCHING_ENOUGH_OFFERS', { infer: true }),
     offersGraceMs: config.get('MATCHING_OFFERS_GRACE_MS', { infer: true }),
     staleLocationMs: config.get('WORKER_LOCATION_STALE_MS', { infer: true }),
+    minSearchMs: config.get('MATCHING_MIN_SEARCH_MS', { infer: true }),
+    rescanMs: config.get('MATCHING_RESCAN_MS', { infer: true }),
   }),
 };

@@ -16,6 +16,8 @@ import { MatchingService } from './matching.service';
 interface MatchingJobData {
   requestId?: string;
   ring?: number;
+  /** Número de cierre/expiración (ADR-0025). */
+  seq?: number;
 }
 
 /** Cola de matching (ADR-0022, ADR-0025): anillos, cierre, expiración y mantenimiento. */
@@ -56,17 +58,17 @@ export class MatchingProcessor
   }
 
   async process(job: Job<MatchingJobData>): Promise<unknown> {
-    const { requestId, ring } = job.data;
+    const { requestId, ring, seq = 0 } = job.data;
     switch (job.name) {
       case MATCHING_JOBS.ring:
         if (!requestId || !ring) break;
         return (await this.matching.runRing(requestId, ring)).kind;
       case MATCHING_JOBS.close:
         if (!requestId) break;
-        return this.matching.close(requestId);
+        return (await this.matching.close(requestId, seq)).kind;
       case MATCHING_JOBS.expire:
         if (!requestId) break;
-        return this.matching.expire(requestId);
+        return this.matching.expire(requestId, seq);
       case MATCHING_JOBS.reconcile:
         return this.reconciler.runOnce();
       case MATCHING_JOBS.sweepLocations:

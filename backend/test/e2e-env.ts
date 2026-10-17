@@ -24,6 +24,9 @@ export function applyE2eEnv(): void {
   // dentro de un anillo (ofertar, cancelar) aunque la máquina esté cargada.
   process.env.MATCHING_RING_WAIT_MS = '3000';
   process.env.MATCHING_OFFERS_GRACE_MS = '3000';
+  // Tiempo mínimo de búsqueda corto: sin candidatos, reintenta cada 1 s durante 4 s.
+  process.env.MATCHING_MIN_SEARCH_MS = '4000';
+  process.env.MATCHING_RESCAN_MS = '1000';
 
   process.env.STORAGE_ENDPOINT = process.env.E2E_STORAGE_ENDPOINT ?? 'http://localhost:19000';
   process.env.STORAGE_REGION = 'us-east-1';

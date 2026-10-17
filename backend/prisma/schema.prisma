@@ -359,6 +359,8 @@ model ServiceRequest {
   ringStartedAt     DateTime?                            @map("ring_started_at") @db.Timestamptz(3)
   /// Con ofertas sin elegir tras el último anillo: expira a esta hora (ADR-0025).
   expiresAt         DateTime?                            @map("expires_at") @db.Timestamptz(3)
+  /// Cierres de la búsqueda programados (cada reintento del tiempo mínimo usa un job nuevo).
+  closeSeq          Int                                  @default(0) @map("close_seq") @db.SmallInt
   /// Términos que coincidieron en moderación (solo para revisión del admin, R3.3).
   moderationMatches Json?                                @map("moderation_matches")
   reviewedById      String?                              @map("reviewed_by") @db.Uuid

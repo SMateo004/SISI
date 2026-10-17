@@ -125,6 +125,9 @@ export const envSchema = z
     MATCHING_RING_WAIT_MS: positiveInt(45_000),
     MATCHING_ENOUGH_OFFERS: positiveInt(3),
     MATCHING_OFFERS_GRACE_MS: positiveInt(600_000),
+    /** Tiempo mínimo de búsqueda aunque no haya candidatos (propuesta: 3 min). */
+    MATCHING_MIN_SEARCH_MS: z.coerce.number().int().min(0).default(180_000),
+    MATCHING_RESCAN_MS: positiveInt(45_000),
 
     // Ofertas (R5, ADR-0026). Propuestas en docs/pendientes.md.
     /** Velocidad media por medio de transporte, para el tiempo estimado de llegada. */

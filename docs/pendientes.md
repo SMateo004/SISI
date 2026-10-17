@@ -27,7 +27,8 @@ Implementadas como propuesta; cambiarlas es configuración (variables de entorno
 - [ ] **Candidatos por anillo:** anillo 1 = 5 más cercanos a ≤ 2 km (R4.2); **anillos 2 y 3 = hasta 10** a ≤ 5 y ≤ 10 km (`MATCHING_RINGS=2:5,5:10,10:10`).
 - [ ] **Ofertas suficientes:** con **3** ofertas activas no se amplía al anillo siguiente (`MATCHING_ENOUGH_OFFERS`).
 - [ ] **Espera por anillo:** 45 s (R4.3, `MATCHING_RING_WAIT_MS`).
-- [ ] **Anillo vacío:** si un anillo no encuentra candidatos nuevos se pasa **de inmediato** al siguiente (decidido en el plan de la Fase 3). Consecuencia: sin trabajadores cerca, la solicitud expira en segundos. ¿Hace falta un tiempo mínimo de búsqueda (p. ej. reintentar 2 minutos por si alguien se conecta)?
+- [ ] **Anillo vacío:** si un anillo no encuentra candidatos nuevos se pasa **de inmediato** al siguiente (decidido en el plan de la Fase 3).
+- [ ] **Tiempo mínimo de búsqueda** (Fase 4): sin ofertas, la solicitud sigue buscando **3 minutos** desde que se publica y reintenta el último anillo **cada 45 s** por si aparece alguien; recién entonces expira (R4.5). Valores en propuesta (`MATCHING_MIN_SEARCH_MS`, `MATCHING_RESCAN_MS`).
 - [ ] **Expiración con ofertas sin elegir:** la solicitud expira **10 minutos** después del último anillo y se cierran las ofertas (`MATCHING_OFFERS_GRACE_MS`). Pasar a R4.5 del doc 01 si se aprueba.
 - [ ] **Tope de la contraoferta:** **3 ×** el máximo de referencia de la categoría en la ciudad (`OFFER_COUNTER_MAX_FACTOR`). Mínimo: > 0.
 - [ ] **Velocidades del ETA:** a pie 4,5 km/h, bicicleta 12, moto 25, auto 20, transporte público 15; distancia en línea recta × **1,3** (`ETA_SPEEDS_KMH`, `ETA_ROUTE_FACTOR`). Ajustar con datos reales de Santa Cruz.

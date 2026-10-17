@@ -134,15 +134,18 @@ describe('Matching por anillos (e2e, ADR-0025)', () => {
     expect((await notifiedIds(id)).filter((w) => w === near.id)).toHaveLength(1);
   });
 
-  it('sin trabajadores cerca expira y avisa al empleador (R4.5)', async () => {
+  it('sin trabajadores cerca busca el tiempo mínimo y después expira con aviso (R4.5)', async () => {
     const category = await freshCategory();
     const employer = await login(t);
     const live = await socketOf(employer);
+    const startedAt = Date.now();
     const id = await publishRequest(t, employer.accessToken, { categoryId: category.id });
 
-    expect(await live.next('request:expired', (p) => p.requestId === id)).toEqual({
+    expect(await live.next('request:expired', (p) => p.requestId === id, 15000)).toEqual({
       requestId: id,
     });
+    // No expira antes del mínimo de búsqueda (4 s en e2e).
+    expect(Date.now() - startedAt).toBeGreaterThanOrEqual(3500);
     const detail = await getRequest(employer.accessToken, id);
     expect(detail).toMatchObject({
       status: 'expirada',
@@ -161,6 +164,22 @@ describe('Matching por anillos (e2e, ADR-0025)', () => {
       { what: 'el aviso de expiración' },
     );
     expect(inbox.title).toBe('Tu solicitud expiró');
+  });
+
+  it('durante el tiempo mínimo avisa a un trabajador que se conecta tarde', async () => {
+    const category = await freshCategory();
+    const employer = await login(t);
+    const id = await publishRequest(t, employer.accessToken, { categoryId: category.id });
+
+    // Todos los anillos están vacíos; el trabajador aparece 1,5 s después.
+    await new Promise((r) => setTimeout(r, 1500));
+    expect((await getRequest(employer.accessToken, id)).status).toBe('buscando');
+    const late = await workerAt(category.slug, 7000);
+    const live = await socketOf(late);
+
+    const event = await live.next('request:new', (p) => p.requestId === id, 10000);
+    expect(event.ring).toBe(3);
+    expect(await notifiedIds(id)).toEqual([late.id]);
   });
 
   it('cancelar borra los anillos pendientes y avisa a los notificados con offer:closed', async () => {

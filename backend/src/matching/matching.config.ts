@@ -15,6 +15,10 @@ export interface MatchingConfig {
   offersGraceMs: number;
   /** Sin ubicación en este tiempo, el trabajador no cuenta como disponible (ADR-0024). */
   staleLocationMs: number;
+  /** Tiempo mínimo de búsqueda desde que se publica, aunque los anillos estén vacíos. */
+  minSearchMs: number;
+  /** Mientras dura el mínimo, cada cuánto se vuelve a buscar en el último anillo. */
+  rescanMs: number;
 }
 
 /**

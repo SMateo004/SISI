@@ -10,6 +10,8 @@ export interface LockedRequest {
   proposedPriceBs: string;
   ringStartedAt: Date | null;
   expiresAt: Date | null;
+  publishedAt: Date | null;
+  closeSeq: number;
 }
 
 /**
@@ -24,7 +26,8 @@ export async function lockRequest(
   const [row] = await tx.$queryRaw<LockedRequest[]>`
     SELECT id, status::text AS status, ring, city_id AS "cityId", category_id AS "categoryId",
            employer_id AS "employerId", proposed_price_bs::text AS "proposedPriceBs",
-           ring_started_at AS "ringStartedAt", expires_at AS "expiresAt"
+           ring_started_at AS "ringStartedAt", expires_at AS "expiresAt",
+           published_at AS "publishedAt", close_seq AS "closeSeq"
     FROM service_requests WHERE id = ${requestId}::uuid FOR UPDATE`;
   return row ?? null;
 }

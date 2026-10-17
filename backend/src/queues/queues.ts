@@ -26,8 +26,8 @@ export const MATCHING_JOBS = {
 
 export const jobIds = {
   ring: (requestId: string, ring: number): string => `ring_${requestId}_${ring}`,
-  close: (requestId: string): string => `close_${requestId}`,
-  expire: (requestId: string): string => `expire_${requestId}`,
+  close: (requestId: string, seq: number): string => `close_${requestId}_${seq}`,
+  expire: (requestId: string, seq: number): string => `expire_${requestId}_${seq}`,
   event: (outboxId: bigint): string => `evt_${outboxId}`,
 };
 

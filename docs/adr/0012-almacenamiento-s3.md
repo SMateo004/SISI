@@ -9,7 +9,7 @@ Hay que guardar el carnet (ambos lados), la selfie y la foto de perfil. R9.5: lo
 
 ## Decisión
 - Interfaz `StorageService` (presignUpload, presignDownload, head, delete) con una sola implementación, `S3StorageService` (AWS SDK v3), que sirve para R2, RustFS y AWS. Valida su configuración al arrancar la API; worker y cron no la cargan.
-- **Local y CI: RustFS 1.0.1** (Apache 2.0, reemplazo de MinIO), en `${SISI_S3_PORT:-59000}` y la consola en `${SISI_S3_CONSOLE_PORT:-59001}`. Un contenedor `storage-init` (aws-cli 2.37.8) crea `sisi-local` y `sisi-test` con CORS para localhost:8080/8081. Antes de adoptarlo verifiqué:
+- **Local y CI: RustFS 1.0.1** (Apache 2.0, reemplazo de MinIO), en `${SISI_S3_PORT:-19000}` y la consola en `${SISI_S3_CONSOLE_PORT:-19001}`. Un contenedor `storage-init` (aws-cli 2.37.8) crea `sisi-local` y `sisi-test` con CORS para localhost:8080/8081. Antes de adoptarlo verifiqué:
   - el PUT prefirmado con tipo y tamaño correctos responde 200;
   - un tamaño o un tipo distinto responde 403;
   - CORS solo para los orígenes permitidos;

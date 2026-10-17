@@ -7,8 +7,8 @@ export function applyE2eEnv(): void {
   process.env.NODE_ENV = 'test';
   process.env.APP_ENV = 'test';
   process.env.DATABASE_URL =
-    process.env.E2E_DATABASE_URL ?? 'postgresql://sisi:sisi@localhost:55432/sisi_test';
-  process.env.REDIS_URL = process.env.E2E_REDIS_URL ?? 'redis://localhost:56379/1';
+    process.env.E2E_DATABASE_URL ?? 'postgresql://sisi:sisi@localhost:15432/sisi_test';
+  process.env.REDIS_URL = process.env.E2E_REDIS_URL ?? 'redis://localhost:16379/1';
   process.env.JWT_SECRET ??= 'e2e-solo-pruebas-secreto-jwt-000000';
   process.env.JWT_REFRESH_SECRET ??= 'e2e-solo-pruebas-secreto-refresh-00';
   process.env.CORS_ORIGINS ??= 'http://localhost:8080';
@@ -25,7 +25,7 @@ export function applyE2eEnv(): void {
   process.env.MATCHING_RING_WAIT_MS = '3000';
   process.env.MATCHING_OFFERS_GRACE_MS = '3000';
 
-  process.env.STORAGE_ENDPOINT = process.env.E2E_STORAGE_ENDPOINT ?? 'http://localhost:59000';
+  process.env.STORAGE_ENDPOINT = process.env.E2E_STORAGE_ENDPOINT ?? 'http://localhost:19000';
   process.env.STORAGE_REGION = 'us-east-1';
   process.env.STORAGE_FORCE_PATH_STYLE = 'true';
   process.env.STORAGE_BUCKET = process.env.E2E_STORAGE_BUCKET ?? 'sisi-test';

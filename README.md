@@ -38,10 +38,10 @@ Crea:
 
 | Servicio | Puerto del host | Variable para cambiarlo |
 | --- | --- | --- |
-| Postgres | 55432 | `SISI_DB_PORT` |
-| Redis | 56379 | `SISI_REDIS_PORT` |
-| RustFS (API S3) | 59000 | `SISI_S3_PORT` |
-| RustFS (consola web) | 59001 | `SISI_S3_CONSOLE_PORT` |
+| Postgres | 15432 | `SISI_DB_PORT` |
+| Redis | 16379 | `SISI_REDIS_PORT` |
+| RustFS (API S3) | 19000 | `SISI_S3_PORT` |
+| RustFS (consola web) | 19001 | `SISI_S3_CONSOLE_PORT` |
 
 Los puertos son poco comunes a propósito, para no chocar con instalaciones nativas. Credenciales locales de RustFS: `sisi-local` / `sisi-local-secret`.
 
@@ -176,7 +176,7 @@ Render despliega cuando pasa `backend-ci` (`autoDeployTrigger: checksPass`) y co
 
 ## Problemas comunes
 
-- **`P1000: Authentication failed`**: hay otro Postgres escuchando en el puerto de `DATABASE_URL`. Usa el puerto de Docker (55432 por defecto).
+- **`P1000: Authentication failed`**: hay otro Postgres escuchando en el puerto de `DATABASE_URL`. Usa el puerto de Docker (15432 por defecto).
 - **Jest: `Must use import to load ES Module`**: estás con Node < 24.9. NestJS 12 es ESM y Jest necesita `require(esm)` (ver ADR-0008).
 - **npm avisa de `install-scripts`**: npm 11 bloquea scripts de instalación; los necesarios ya están aprobados en `backend/package.json#allowScripts`.
 - **`dev-tools` guarda nombres con `^`**: en Windows `npm run` escapa paréntesis y otros caracteres especiales. Usa `node dist/scripts/dev-tools.js …` directamente.

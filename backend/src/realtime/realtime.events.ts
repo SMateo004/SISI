@@ -12,6 +12,7 @@ export const RealtimeEvents = {
   offerNew: 'offer:new',
   offerClosed: 'offer:closed',
   jobStatus: 'job:status',
+  jobLocation: 'job:location',
 } as const;
 
 export type RealtimeEventName = (typeof RealtimeEvents)[keyof typeof RealtimeEvents];
@@ -57,6 +58,8 @@ export interface RealtimePayloads {
    * DISPUTE no cambian el estado). Detalle por GET /jobs/:id.
    */
   'job:status': { jobId: string; requestId: string; status: string; action: string };
+  /** Al empleador, mientras el trabajador va en camino (con throttling). */
+  'job:location': { jobId: string; latitude: number; longitude: number; at: string };
 }
 
 export const rooms = {

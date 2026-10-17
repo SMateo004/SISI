@@ -18,7 +18,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { OffersModule } from './offers/offers.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { RealtimeModule } from './realtime/realtime.module';
+import { RealtimeEmitterModule, RealtimeModule } from './realtime/realtime.module';
 import { RedisModule } from './redis/redis.module';
 import { RequestsModule } from './requests/requests.module';
 import { StorageModule } from './storage/storage.module';
@@ -47,6 +47,7 @@ import { WorkersModule } from './workers/workers.module';
     OffersModule,
     JobsModule,
     RealtimeModule,
+    RealtimeEmitterModule,
   ],
   providers: [
     // Orden: límites por IP antes que la autenticación (frena fuerza bruta sin tocar la BD).

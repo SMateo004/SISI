@@ -6,6 +6,7 @@ import { RateLimitStore } from '../common/rate-limit/rate-limit.store';
 import { RateLimitedException } from '../common/rate-limit/rate-limited.exception';
 import type { AppConfigService } from '../config/app-config';
 import { PrismaService } from '../prisma/prisma.service';
+import { JobTrackingService } from '../jobs/job-tracking.service';
 import { REDIS_CLIENT } from '../redis/redis.constants';
 import { assertValidCoordinates, type LatLng } from '../requests/location';
 import type {
@@ -32,6 +33,7 @@ export class WorkerLocationsService {
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     private readonly availability: WorkerAvailabilityService,
     private readonly rateLimits: RateLimitStore,
+    private readonly tracking: JobTrackingService,
     @Inject(ConfigService) private readonly config: AppConfigService,
   ) {
     this.persistMs = config.get('WORKER_LOCATION_PERSIST_MS', { infer: true });
@@ -103,10 +105,13 @@ export class WorkerLocationsService {
 
     const point = { lat: dto.latitude, lng: dto.longitude };
     assertValidCoordinates(point);
+    // En camino a un trabajo, la ubicación le llega al empleador aunque no esté "Disponible".
+    const tracked = await this.tracking.relay(userId, point);
     const row = await this.prisma.workerLocation.findUnique({
       where: { workerId: userId },
       select: { available: true, cityId: true },
     });
+    if (!row?.available && tracked) return { persisted: false };
     if (!row?.available) {
       throw new ApiError(
         HttpStatus.CONFLICT,

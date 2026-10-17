@@ -185,3 +185,19 @@ export class AdminDisputedJobDto {
   @ApiProperty({ type: String, format: 'date-time' }) disputedAt!: string;
   @ApiProperty({ type: String, nullable: true }) disputeNote!: string | null;
 }
+
+export class TrackedPointDto {
+  @ApiProperty({ example: -17.7834 }) latitude!: number;
+  @ApiProperty({ example: -63.1821 }) longitude!: number;
+  @ApiProperty({ type: String, format: 'date-time' }) at!: string;
+}
+
+export class JobLocationDto {
+  @ApiProperty({ format: 'uuid' }) jobId!: string;
+  @ApiProperty({
+    type: TrackedPointDto,
+    nullable: true,
+    description: 'null si todavía no envió su ubicación',
+  })
+  location!: TrackedPointDto | null;
+}

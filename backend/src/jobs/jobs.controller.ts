@@ -12,6 +12,8 @@ import {
 import { type AuthenticatedUser, CurrentUser } from '../auth/decorators/auth.decorators';
 import { ApiErrorBody } from '../common/errors/api-error';
 import { CancelJobDto, DisputeJobDto, JobDto, JobPageDto, ListJobsQuery } from './dto/job.dto';
+import { JobLocationDto } from './dto/job.dto';
+import { JobTrackingService } from './job-tracking.service';
 import { JobsService } from './jobs.service';
 
 /** Ciclo del trabajo (R6, ADR-0029). Los errores de estado son 409; los de rol, 403. */
@@ -26,7 +28,10 @@ import { JobsService } from './jobs.service';
 @ApiConflictResponse({ type: ApiErrorBody, description: 'JOB_TRANSITION_NOT_ALLOWED' })
 @Controller('jobs')
 export class JobsController {
-  constructor(private readonly jobs: JobsService) {}
+  constructor(
+    private readonly jobs: JobsService,
+    private readonly tracking: JobTrackingService,
+  ) {}
 
   @Get()
   @ApiOperation({
@@ -134,5 +139,19 @@ export class JobsController {
     @Body() dto: CancelJobDto,
   ): Promise<JobDto> {
     return this.jobs.cancel(current.id, id, dto.reason, dto.note);
+  }
+
+  @Get(':id/location')
+  @ApiOperation({
+    summary: 'Ubicación del trabajador en camino (empleador)',
+    description:
+      'Para resincronizar el mapa; en vivo llega por job:location. Solo mientras va en camino (409 JOB_LOCATION_UNAVAILABLE).',
+  })
+  @ApiOkResponse({ type: JobLocationDto })
+  async location(
+    @CurrentUser() current: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<JobLocationDto> {
+    return { jobId: id, location: await this.tracking.current(current.id, id) };
   }
 }

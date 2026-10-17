@@ -112,6 +112,8 @@ export const envSchema = z
     OUTBOX_RETENTION_DAYS: positiveInt(7),
     /** Plazo para que el empleador confirme después del "Terminé" (ADR-0029). */
     JOB_AUTOCONFIRM_MS: positiveInt(86_400_000),
+    /** job:location al empleador como máximo cada N ms (ADR-0029). */
+    JOB_LOCATION_EMIT_MS: positiveInt(5000),
     OUTBOX_CLEANUP_MS: positiveInt(86_400_000),
 
     // Matching por anillos (R4, ADR-0025). Valores en propuesta: docs/pendientes.md.

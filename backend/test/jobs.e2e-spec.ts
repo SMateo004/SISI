@@ -274,6 +274,59 @@ describe('Ciclo del trabajo (e2e, ADR-0029)', () => {
     }).expect(409);
   });
 
+  it('ubicación en camino: solo al empleador, con throttling, y se corta al empezar', async () => {
+    const { jobId, worker, employer } = await assignJob(t);
+    const employerLive = await connectSocket(t, employer.accessToken);
+    const strangerSession = await login(t);
+    const strangerLive = await connectSocket(t, strangerSession.accessToken);
+    sockets.push(employerLive, strangerLive);
+    const send = (meters: number) =>
+      request(server())
+        .post('/worker/location')
+        .set(...bearer(worker.accessToken))
+        .send(eastOf(CENTRO, meters))
+        .expect(200);
+    const locationOf = (token: string) =>
+      request(server())
+        .get(`/jobs/${jobId}/location`)
+        .set(...bearer(token));
+
+    // Asignado todavía no comparte la ubicación.
+    expect((await locationOf(employer.accessToken).expect(409)).body).toMatchObject({
+      code: 'JOB_LOCATION_UNAVAILABLE',
+    });
+    await post(worker.accessToken, `/jobs/${jobId}/on-the-way`).expect(200);
+    expect((await locationOf(employer.accessToken).expect(200)).body).toEqual({
+      jobId,
+      location: null,
+    });
+
+    await send(250);
+    const live = await employerLive.next('job:location', (p) => p.jobId === jobId);
+    expect(live.longitude).toBeCloseTo(eastOf(CENTRO, 250).longitude, 6);
+    // Throttling: el segundo envío inmediato no se emite, pero sí actualiza el último punto.
+    await send(200);
+    const latest = (await locationOf(employer.accessToken).expect(200)).body as {
+      location: { longitude: number };
+    };
+    expect(latest.location.longitude).toBeCloseTo(eastOf(CENTRO, 200).longitude, 6);
+    await new Promise((r) => setTimeout(r, 300));
+    // `next` ya consumió el primero: el segundo no llegó.
+    expect(employerLive.received.filter((e) => e.event === 'job:location')).toHaveLength(0);
+    // El trabajador y los terceros no lo ven.
+    await locationOf(worker.accessToken).expect(409);
+    await locationOf(strangerSession.accessToken).expect(404);
+
+    await post(worker.accessToken, `/jobs/${jobId}/start`).expect(200);
+    await locationOf(employer.accessToken).expect(409);
+    await new Promise((r) => setTimeout(r, 1100));
+    const before = employerLive.received.filter((e) => e.event === 'job:location').length;
+    await send(100);
+    await new Promise((r) => setTimeout(r, 300));
+    expect(employerLive.received.filter((e) => e.event === 'job:location')).toHaveLength(before);
+    expect(strangerLive.received.filter((e) => e.event === 'job:location')).toHaveLength(0);
+  });
+
   describe('cancelación', () => {
     it('en camino la cancela el trabajador: motivo, nota retenida, solicitud cancelada y conteo', async () => {
       const { jobId, requestId, worker, employer } = await assignJob(t);

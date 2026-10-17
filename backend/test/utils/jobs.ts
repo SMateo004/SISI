@@ -2,7 +2,7 @@ import request from 'supertest';
 import type { LoginResponseDto } from '../../src/auth/dto/auth.dto';
 import type { AcceptOfferResultDto, MyOfferDto } from '../../src/offers/dto/offer.dto';
 import { CENTRO, eastOf, publishRequest } from './requests';
-import { bearer, createCategory, login, type TestApp, waitFor } from './test-app';
+import { bearer, createCategory, login, type TestApp, uniqueIp, waitFor } from './test-app';
 import { createApprovedWorker, makeAvailable, type TestWorker } from './workers';
 
 /** Espera a que el matching le avise a ese trabajador de la solicitud. */
@@ -23,12 +23,17 @@ export async function offerOn(
   body: Record<string, unknown> = { type: 'accept' },
 ): Promise<MyOfferDto> {
   return (
-    await request(t.app.getHttpServer())
-      .post(`/requests/${requestId}/offers`)
-      .set(...bearer(worker.accessToken))
-      .send(body)
-      .expect(200)
-  ).body as MyOfferDto;
+    (
+      await request(t.app.getHttpServer())
+        .post(`/requests/${requestId}/offers`)
+        // IP propia por oferta, como publishRequest: el límite por IP (60/min) es global a la
+        // corrida y las suites que crean muchos trabajos no deben agotarlo para las demás.
+        .set('X-Forwarded-For', uniqueIp())
+        .set(...bearer(worker.accessToken))
+        .send(body)
+        .expect(200)
+    ).body as MyOfferDto
+  );
 }
 
 export interface AssignedJob {

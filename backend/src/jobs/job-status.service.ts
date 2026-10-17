@@ -100,6 +100,8 @@ export class JobStatusService {
       case 'CANCEL':
       case 'RESOLVE_CANCEL':
         data.cancelledAt = now;
+        data.cancelledByRole = actor.role;
+        data.cancelledById = actor.id;
         break;
       case 'CONFIRM':
       case 'AUTO_CONFIRM':
@@ -124,6 +126,13 @@ export class JobStatusService {
 
     if (to === 'cancelado') {
       await this.requests.apply(job.requestId, 'JOB_CANCELLED', actor.id, { reason: action }, tx);
+    }
+    // Sin penalidad por ahora: solo se cuenta (Fase 4, docs/pendientes.md).
+    if (action === 'CANCEL' && actor.id) {
+      await tx.user.update({
+        where: { id: actor.id },
+        data: { cancellationsCount: { increment: 1 } },
+      });
     }
     await this.outbox.add(tx, 'job.status_changed', jobId, {
       jobId,

@@ -45,6 +45,11 @@ La Fase 3 deja el trabajo en `asignado`. R6.1 fija los estados (`asignado → en
   - el trabajo sigue en curso con `disputed_at` y la nota del empleador; no hay autoconfirmación ni `job.completed`;
   - lo resuelve un administrador (`GET /admin/jobs/disputed`, `POST /admin/jobs/:id/resolve` o `dev-tools resolve-dispute`): confirmar da terminado con comisión; cancelar da cancelado sin comisión;
   - la nota queda en `job_events`.
+- **Cancelación (propuesta):**
+  - cualquiera de las dos partes, en asignado o en camino; en curso ya no (409);
+  - motivo de una lista cerrada (`cambio_de_planes`, `no_llega_o_no_responde`, `desacuerdo_de_precio`, `emergencia`, `otro`) y nota opcional de hasta 300 caracteres, moderada con `ModerationService.check`: si coincide se guarda retenida y la contraparte ve solo el motivo;
+  - sin penalidad: se guarda quién canceló (`cancelled_by_role`, `cancelled_by_id`) y se suma `users.cancellations_count`;
+  - la solicitud queda cancelada; la contraparte recibe un aviso y el empleador puede volver a publicar (precarga de la Fase 3).
 - **Tiempo real y avisos:**
   - `job:status` va a las dos partes con `action` (FINISH y DISPUTE no cambian el estado);
   - la contraparte de quien actuó recibe un aviso con push: en camino, empezó, terminó, confirmado con el neto y la comisión, disputa, resolución.

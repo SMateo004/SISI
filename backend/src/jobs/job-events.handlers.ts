@@ -110,6 +110,23 @@ export class JobEventsHandlers implements OnModuleInit {
             dedupeKey: key(job.workerId),
           });
           break;
+        case 'CANCEL': {
+          const by = payload.actorRole === 'worker' ? 'worker' : 'employer';
+          const target = by === 'worker' ? toEmployer : toWorker;
+          await this.notifications.notify({
+            ...target,
+            type: 'job_cancelled',
+            data: {
+              jobId: job.id,
+              requestId: job.requestId,
+              by,
+              reason: job.cancelReason ?? 'otro',
+              toEmployer: by === 'worker',
+            },
+            dedupeKey: key(target.userId),
+          });
+          break;
+        }
         case 'RESOLVE_CONFIRM':
         case 'RESOLVE_CANCEL':
           for (const party of [toEmployer, toWorker]) {

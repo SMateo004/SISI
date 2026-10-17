@@ -274,6 +274,80 @@ describe('Ciclo del trabajo (e2e, ADR-0029)', () => {
     }).expect(409);
   });
 
+  describe('cancelación', () => {
+    it('en camino la cancela el trabajador: motivo, nota retenida, solicitud cancelada y conteo', async () => {
+      const { jobId, requestId, worker, employer } = await assignJob(t);
+      await post(worker.accessToken, `/jobs/${jobId}/on-the-way`).expect(200);
+      await post(worker.accessToken, `/jobs/${jobId}/cancel`, { reason: 'inventado' }).expect(400);
+
+      const mine = (
+        await post(worker.accessToken, `/jobs/${jobId}/cancel`, {
+          reason: 'emergencia',
+          note: 'Mejor te vendo c.o.c.a.i.n.a',
+        }).expect(200)
+      ).body as JobDto;
+      expect(mine).toMatchObject({
+        status: 'cancelado',
+        allowedActions: [],
+        cancellation: { by: 'worker', reason: 'emergencia', noteHeld: true },
+      });
+      // La contraparte ve el motivo, pero no la nota retenida.
+      const theirs = await getJob(employer.accessToken, jobId);
+      expect(theirs.cancellation).toEqual({
+        by: 'worker',
+        reason: 'emergencia',
+        note: null,
+        noteHeld: false,
+      });
+
+      const req = await t.prisma.serviceRequest.findUniqueOrThrow({ where: { id: requestId } });
+      expect(req.status).toBe('cancelada');
+      const user = await t.prisma.user.findUniqueOrThrow({ where: { id: worker.id } });
+      expect(user.cancellationsCount).toBe(1);
+      const notice = await waitFor(
+        async () =>
+          (await t.prisma.notification.findFirst({
+            where: { userId: employer.user.id, type: 'job_cancelled' },
+          })) ?? undefined,
+        { what: 'el aviso de cancelación' },
+      );
+      expect(notice.body).toBe('Motivo: Emergencia. Puedes volver a publicar tu solicitud.');
+      // Ya no está ocupado: vuelve a poder trabajar.
+      const active = await t.prisma.job.count({
+        where: { workerId: worker.id, status: { in: ['asignado', 'en_camino', 'en_curso'] } },
+      });
+      expect(active).toBe(0);
+      await post(worker.accessToken, `/jobs/${jobId}/cancel`, { reason: 'otro' }).expect(409);
+    });
+
+    it('asignado la cancela el empleador con una nota visible; en curso ya no se puede', async () => {
+      const first = await assignJob(t);
+      const done = (
+        await post(first.employer.accessToken, `/jobs/${first.jobId}/cancel`, {
+          reason: 'cambio_de_planes',
+          note: 'Ya lo arreglé yo.',
+        }).expect(200)
+      ).body as JobDto;
+      expect(done.cancellation).toMatchObject({ by: 'employer', note: 'Ya lo arreglé yo.' });
+      expect((await getJob(first.worker.accessToken, first.jobId)).cancellation?.note).toBe(
+        'Ya lo arreglé yo.',
+      );
+
+      const second = await assignJob(t);
+      await post(second.worker.accessToken, `/jobs/${second.jobId}/on-the-way`).expect(200);
+      await post(second.worker.accessToken, `/jobs/${second.jobId}/start`).expect(200);
+      for (const who of [second.worker, second.employer]) {
+        const res = await post(who.accessToken, `/jobs/${second.jobId}/cancel`, {
+          reason: 'otro',
+        }).expect(409);
+        expect(res.body).toMatchObject({
+          code: 'JOB_TRANSITION_NOT_ALLOWED',
+          message: 'Un trabajo en curso o terminado ya no se puede cancelar.',
+        });
+      }
+    });
+  });
+
   describe('doble asignación', () => {
     /** Un trabajador que ofertó en dos solicitudes de dos empleadores distintos. */
     const twoOffers = async () => {

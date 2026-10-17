@@ -93,6 +93,19 @@ describe('máquina de estados del trabajo (R6.1, ADR-0029)', () => {
     expect(() => nextJobStatus(finished, 'RESOLVE_CONFIRM', 'admin')).toThrow(JobTransitionError);
   });
 
+  it('cancelar: cualquiera de las dos partes en asignado o en camino; nunca en curso', () => {
+    for (const status of ['asignado', 'en_camino'] as const) {
+      expect(nextJobStatus(job({ status }), 'CANCEL', 'worker')).toBe('cancelado');
+      expect(nextJobStatus(job({ status }), 'CANCEL', 'employer')).toBe('cancelado');
+    }
+    for (const status of ['en_curso', 'terminado', 'cancelado'] as const) {
+      expect(() => nextJobStatus(job({ status }), 'CANCEL', 'worker')).toThrow(
+        'Un trabajo en curso o terminado ya no se puede cancelar.',
+      );
+    }
+    expect(() => nextJobStatus(job(), 'CANCEL', 'system')).toThrow(JobActionForbiddenError);
+  });
+
   it('acciones permitidas por rol (para los botones de la app)', () => {
     expect(allowedJobActions(job(), 'worker')).toEqual(['START_TRIP', 'CANCEL']);
     expect(allowedJobActions(job(), 'employer')).toEqual(['CANCEL']);

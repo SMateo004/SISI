@@ -1,11 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { AppConfigService } from '../config/app-config';
+import { ModerationService } from '../moderation/moderation.service';
 import type { Prisma } from '../generated/prisma/client';
 import { shortName } from '../offers/offer.rules';
 import { PrismaService } from '../prisma/prisma.service';
 import { netOf } from './commission';
-import type { AdminDisputedJobDto, JobDto, JobPageDto } from './dto/job.dto';
+import type { AdminDisputedJobDto, JobCancelReason, JobDto, JobPageDto } from './dto/job.dto';
 import { allowedJobActions, type JobAction, type JobActorRole } from './job-status.machine';
 import { jobNotFound, JobStatusService } from './job-status.service';
 
@@ -29,6 +30,7 @@ export class JobsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly status: JobStatusService,
+    private readonly moderation: ModerationService,
     @Inject(ConfigService) config: AppConfigService,
   ) {
     this.autoConfirmMs = config.get('JOB_AUTOCONFIRM_MS', { infer: true });
@@ -44,6 +46,26 @@ export class JobsService {
     const role = await this.roleOf(userId, jobId);
     await this.status.apply(jobId, action, { role, id: userId }, extra);
     return this.get(userId, jobId);
+  }
+
+  /**
+   * Cancelar antes de empezar (asignado o en camino), cualquiera de las dos partes. Motivo
+   * de una lista cerrada y nota opcional moderada: si coincide, se guarda retenida (no la
+   * ve la contraparte). La solicitud queda cancelada; el empleador puede volver a publicar.
+   */
+  async cancel(
+    userId: string,
+    jobId: string,
+    reason: JobCancelReason,
+    rawNote: string | undefined,
+  ): Promise<JobDto> {
+    const trimmed = rawNote?.trim();
+    const note = trimmed === '' ? undefined : trimmed;
+    const held = note ? (await this.moderation.check(note)).held : false;
+    return this.act(userId, jobId, 'CANCEL', {
+      data: { cancelReason: reason, cancelNote: note ?? null, cancelNoteHeld: held },
+      note: `${reason}${note && !held ? `: ${note}` : ''}`,
+    });
   }
 
   async get(userId: string, jobId: string): Promise<JobDto> {
@@ -131,6 +153,7 @@ export class JobsService {
         ? new Date(job.workerFinishedAt.getTime() + this.autoConfirmMs)
         : null;
     const showMoney = role === 'worker' && job.commissionBs !== null;
+    const mine = job.cancelledById !== null && job.cancelledByRole === role;
     return {
       id: job.id,
       requestId: job.requestId,
@@ -152,6 +175,15 @@ export class JobsService {
         completedAt: iso(job.completedAt),
         cancelledAt: iso(job.cancelledAt),
       },
+      cancellation: job.cancelledByRole
+        ? {
+            by: job.cancelledByRole as 'worker' | 'employer' | 'admin',
+            reason: job.cancelReason,
+            // La nota retenida solo la ve quien la escribió.
+            note: !job.cancelNoteHeld || mine ? job.cancelNote : null,
+            noteHeld: mine && job.cancelNoteHeld,
+          }
+        : null,
       autoConfirmed: job.autoConfirmed,
       autoConfirmAt: iso(pendingAutoConfirm),
       allowedActions: allowedJobActions(job, role),

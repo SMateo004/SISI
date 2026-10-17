@@ -40,6 +40,32 @@ export class JobTimelineDto {
   @ApiProperty({ type: String, format: 'date-time', nullable: true }) cancelledAt!: string | null;
 }
 
+export const JOB_CANCEL_REASONS = [
+  'cambio_de_planes',
+  'no_llega_o_no_responde',
+  'desacuerdo_de_precio',
+  'emergencia',
+  'otro',
+] as const;
+export type JobCancelReason = (typeof JOB_CANCEL_REASONS)[number];
+
+export class JobCancellationDto {
+  @ApiProperty({ enum: ['worker', 'employer', 'admin'], description: 'Quién canceló' })
+  by!: 'worker' | 'employer' | 'admin';
+  @ApiProperty({ enum: JOB_CANCEL_REASONS, nullable: true, type: String })
+  reason!: JobCancelReason | null;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'Nota de quien canceló. Si la moderación la retuvo, solo la ve quien la escribió.',
+  })
+  note!: string | null;
+  @ApiProperty({
+    description: 'La nota quedó retenida por moderación (solo para quien la escribió)',
+  })
+  noteHeld!: boolean;
+}
+
 export class JobDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty({ format: 'uuid' }) requestId!: string;
@@ -74,6 +100,8 @@ export class JobDto {
     description: 'Cuándo se confirmará solo, si el empleador no responde',
   })
   autoConfirmAt!: string | null;
+  @ApiProperty({ type: JobCancellationDto, nullable: true })
+  cancellation!: JobCancellationDto | null;
   @ApiProperty({
     enum: JOB_ACTIONS,
     isArray: true,
@@ -115,6 +143,18 @@ export class DisputeJobDto {
   @IsOptional()
   @IsString()
   @MaxLength(500, { message: 'El detalle no puede pasar de 500 caracteres.' })
+  note?: string;
+}
+
+export class CancelJobDto {
+  @ApiProperty({ enum: JOB_CANCEL_REASONS })
+  @IsIn(JOB_CANCEL_REASONS, { message: 'Elige un motivo de la lista.' })
+  reason!: JobCancelReason;
+
+  @ApiPropertyOptional({ example: 'Me surgió una emergencia familiar.', maxLength: 300 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300, { message: 'La nota no puede pasar de 300 caracteres.' })
   note?: string;
 }
 

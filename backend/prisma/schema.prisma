@@ -57,17 +57,19 @@ enum ActiveMode {
 
 /// Una cuenta por persona, identificada por su teléfono en E.164 (R1.1).
 model User {
-  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  phone           String     @unique
-  name            String?
+  id                 String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phone              String     @unique
+  name               String?
   /// Clave del objeto en el almacenamiento (avatars/...); la URL se firma al responder.
-  photoKey        String?    @map("photo_key")
-  role            UserRole   @default(user)
-  activeMode      ActiveMode @default(employer) @map("active_mode")
-  cityId          String     @map("city_id") @db.Uuid
-  phoneVerifiedAt DateTime?  @map("phone_verified_at") @db.Timestamptz(3)
-  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  photoKey           String?    @map("photo_key")
+  role               UserRole   @default(user)
+  activeMode         ActiveMode @default(employer) @map("active_mode")
+  cityId             String     @map("city_id") @db.Uuid
+  phoneVerifiedAt    DateTime?  @map("phone_verified_at") @db.Timestamptz(3)
+  /// Trabajos que canceló (sin penalidad por ahora, Fase 4).
+  cancellationsCount Int        @default(0) @map("cancellations_count")
+  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   city                   City                @relation(fields: [cityId], references: [id])
   refreshTokens          RefreshToken[]
@@ -575,6 +577,17 @@ model Offer {
 }
 
 /// Estados del trabajo (R6.1). En la Fase 3 solo se crea en `asignado`; el resto es de la Fase 4.
+/// Motivos de cancelación de un trabajo (lista cerrada, propuesta Fase 4).
+enum JobCancelReason {
+  cambio_de_planes
+  no_llega_o_no_responde
+  desacuerdo_de_precio
+  emergencia
+  otro
+
+  @@map("job_cancel_reason")
+}
+
 enum JobStatus {
   asignado
   en_camino
@@ -587,33 +600,40 @@ enum JobStatus {
 
 /// Trabajo asignado al aceptar una oferta (R5.4, ADR-0026).
 model Job {
-  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   /// Única: una solicitud tiene a lo sumo un trabajo (segunda barrera contra la doble asignación).
-  requestId        String    @unique @map("request_id") @db.Uuid
-  workerId         String    @map("worker_id") @db.Uuid
-  employerId       String    @map("employer_id") @db.Uuid
-  cityId           String    @map("city_id") @db.Uuid
-  offerId          String    @unique @map("offer_id") @db.Uuid
-  finalPriceBs     Decimal   @map("final_price_bs") @db.Decimal(10, 2)
+  requestId        String           @unique @map("request_id") @db.Uuid
+  workerId         String           @map("worker_id") @db.Uuid
+  employerId       String           @map("employer_id") @db.Uuid
+  cityId           String           @map("city_id") @db.Uuid
+  offerId          String           @unique @map("offer_id") @db.Uuid
+  finalPriceBs     Decimal          @map("final_price_bs") @db.Decimal(10, 2)
   /// Copia de la comisión efectiva de la categoría al asignar (CategoryResolver, ADR-0016).
-  commissionPct    Decimal   @map("commission_pct") @db.Decimal(5, 2)
+  commissionPct    Decimal          @map("commission_pct") @db.Decimal(5, 2)
   /// Se calcula al terminar: final × pct / 100, HALF_UP a 2 decimales (R6.3, ADR-0030).
-  commissionBs     Decimal?  @map("commission_bs") @db.Decimal(10, 2)
+  commissionBs     Decimal?         @map("commission_bs") @db.Decimal(10, 2)
   /// Solo lo cambia JobStatusService (ADR-0029).
-  status           JobStatus @default(asignado)
-  assignedAt       DateTime  @default(now()) @map("assigned_at") @db.Timestamptz(3)
-  onTheWayAt       DateTime? @map("on_the_way_at") @db.Timestamptz(3)
-  startedAt        DateTime? @map("started_at") @db.Timestamptz(3)
+  status           JobStatus        @default(asignado)
+  assignedAt       DateTime         @default(now()) @map("assigned_at") @db.Timestamptz(3)
+  onTheWayAt       DateTime?        @map("on_the_way_at") @db.Timestamptz(3)
+  startedAt        DateTime?        @map("started_at") @db.Timestamptz(3)
   /// El trabajador marcó "Terminé" (solo desde en_curso); arranca la autoconfirmación.
-  workerFinishedAt DateTime? @map("worker_finished_at") @db.Timestamptz(3)
+  workerFinishedAt DateTime?        @map("worker_finished_at") @db.Timestamptz(3)
   /// El empleador reportó un problema: sin autoconfirmación; lo resuelve el admin.
-  disputedAt       DateTime? @map("disputed_at") @db.Timestamptz(3)
-  disputeNote      String?   @map("dispute_note")
-  completedAt      DateTime? @map("completed_at") @db.Timestamptz(3)
-  autoConfirmed    Boolean   @default(false) @map("auto_confirmed")
-  cancelledAt      DateTime? @map("cancelled_at") @db.Timestamptz(3)
-  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  disputedAt       DateTime?        @map("disputed_at") @db.Timestamptz(3)
+  disputeNote      String?          @map("dispute_note")
+  completedAt      DateTime?        @map("completed_at") @db.Timestamptz(3)
+  autoConfirmed    Boolean          @default(false) @map("auto_confirmed")
+  cancelledAt      DateTime?        @map("cancelled_at") @db.Timestamptz(3)
+  /// worker | employer | admin (admin = disputa resuelta como cancelada).
+  cancelledByRole  String?          @map("cancelled_by_role")
+  cancelledById    String?          @map("cancelled_by_id") @db.Uuid
+  cancelReason     JobCancelReason? @map("cancel_reason")
+  /// Nota opcional, moderada (ADR-0018): si coincide queda retenida y solo la ve quien la escribió.
+  cancelNote       String?          @map("cancel_note")
+  cancelNoteHeld   Boolean          @default(false) @map("cancel_note_held")
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   request  ServiceRequest @relation(fields: [requestId], references: [id])
   worker   User           @relation("JobWorker", fields: [workerId], references: [id])

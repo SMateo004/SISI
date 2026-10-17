@@ -11,7 +11,7 @@ import {
 } from '@nestjs/swagger';
 import { type AuthenticatedUser, CurrentUser } from '../auth/decorators/auth.decorators';
 import { ApiErrorBody } from '../common/errors/api-error';
-import { DisputeJobDto, JobDto, JobPageDto, ListJobsQuery } from './dto/job.dto';
+import { CancelJobDto, DisputeJobDto, JobDto, JobPageDto, ListJobsQuery } from './dto/job.dto';
 import { JobsService } from './jobs.service';
 
 /** Ciclo del trabajo (R6, ADR-0029). Los errores de estado son 409; los de rol, 403. */
@@ -118,5 +118,21 @@ export class JobsController {
     const trimmed = dto.note?.trim();
     const note = trimmed === '' ? undefined : trimmed;
     return this.jobs.act(current.id, id, 'DISPUTE', { data: { disputeNote: note ?? null }, note });
+  }
+
+  @Post(':id/cancel')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Cancelar el trabajo (cualquiera de las dos partes)',
+    description:
+      'Solo asignado o en camino; en curso ya no. Motivo de la lista y nota opcional (moderada). Sin penalidad; la solicitud queda cancelada y el empleador puede volver a publicarla.',
+  })
+  @ApiOkResponse({ type: JobDto })
+  cancel(
+    @CurrentUser() current: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CancelJobDto,
+  ): Promise<JobDto> {
+    return this.jobs.cancel(current.id, id, dto.reason, dto.note);
   }
 }

@@ -20,7 +20,24 @@ export interface NotificationInputs {
   job_completed: { jobId: string; netBs: string; commissionBs: string; auto: boolean };
   job_disputed: { jobId: string };
   job_resolved: { jobId: string; status: string };
+  job_cancelled: {
+    jobId: string;
+    requestId: string;
+    by: 'worker' | 'employer';
+    reason: string;
+    /** El aviso es para el empleador (puede volver a publicar). */
+    toEmployer: boolean;
+  };
 }
+
+/** Motivos de cancelación de un trabajo, como los ve la contraparte. */
+export const CANCEL_REASON_LABELS: Record<string, string> = {
+  cambio_de_planes: 'Cambio de planes',
+  no_llega_o_no_responde: 'No llega o no responde',
+  desacuerdo_de_precio: 'Desacuerdo con el precio',
+  emergencia: 'Emergencia',
+  otro: 'Otro motivo',
+};
 
 export type NotificationType = keyof NotificationInputs;
 
@@ -100,6 +117,12 @@ const RENDER: { [T in NotificationType]: (d: NotificationInputs[T]) => RenderedN
     title: 'Se resolvió la revisión del trabajo',
     body:
       d.status === 'terminado' ? 'El trabajo quedó como terminado.' : 'El trabajo quedó cancelado.',
+    route: `/trabajos/${d.jobId}`,
+  }),
+  job_cancelled: (d) => ({
+    title:
+      d.by === 'worker' ? 'El trabajador canceló el trabajo' : 'El empleador canceló el trabajo',
+    body: `Motivo: ${CANCEL_REASON_LABELS[d.reason] ?? 'Otro motivo'}.${d.toEmployer ? ' Puedes volver a publicar tu solicitud.' : ''}`,
     route: `/trabajos/${d.jobId}`,
   }),
 };

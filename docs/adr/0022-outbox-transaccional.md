@@ -27,3 +27,11 @@ El ADR-0020 emitía los eventos de dominio en memoria (`@nestjs/event-emitter`) 
 - Garantía de **al menos una vez** de la base a la cola. Los consumidores deben ser idempotentes.
 - Latencia extra de hasta `OUTBOX_POLL_MS` (500 ms). Si hiciera falta menos, se puede agregar `LISTEN/NOTIFY` sin cambiar la garantía.
 - La tabla crece: la **limpieza** (Fase 4, `OutboxCleanupService`) es un job repetible del worker (`OUTBOX_CLEANUP_MS`, diario) que borra, por lotes de 5000, los eventos **publicados** hace más de `OUTBOX_RETENTION_DAYS` (7). Los pendientes nunca se borran. 7 días superan con holgura los 24 h que BullMQ guarda los jobs completados, así que la deduplicación por jobId no depende de esas filas. El ledger no se limpia nunca (append-only).
+
+## Actualización (Fase 5)
+Eventos de cobros, todos consumidos por el worker e idempotentes:
+- `job.completed` deja la comisión en el ledger (índice único por trabajo);
+- `billing.balance_changed` y `billing.payment_registered` reconcilian el bloqueo y el tope;
+- `billing.notice` es un aviso registrado una sola vez por periodo y tipo en `billing_notices`.
+
+El cron de cobros (ADR-0036) escribe en el outbox y no envía nada directamente.

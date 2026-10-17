@@ -136,3 +136,59 @@ El reconciliador (cada `MATCHING_RECONCILE_MS`) también:
 - publica las calificaciones ciegas cuyo plazo venció.
 
 Una vez por día (`OUTBOX_CLEANUP_MS`) se borran los eventos del outbox publicados hace más de `OUTBOX_RETENTION_DAYS` días.
+
+## Cobros (Fase 5)
+
+### Configurar el QR de cobro de la empresa
+Con un usuario admin (`$TOKEN`):
+```bash
+# 1. URL de subida (imagen JPEG, PNG o HEIC del QR de la cuenta de la empresa)
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"contentType":"image/png","sizeBytes":<bytes>}' "$API/admin/billing/qr/upload-url"
+# 2. PUT del archivo a uploadUrl con los headers que devuelve
+# 3. Guardarlo
+curl -X PUT -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"key":"company/qr-cobro-…png"}' "$API/admin/billing/qr"
+```
+Los trabajadores lo ven en "Pagar comisión" con una URL temporal.
+
+### Registrar un pago
+1. Comprobantes enviados por los trabajadores: `GET /admin/billing/submissions` (pendientes).
+2. Si hace falta subir el comprobante: `POST /admin/billing/receipts/upload-url` con `{workerId, contentType, sizeBytes}`, y después el PUT.
+3. Registrar el pago. **`Idempotency-Key` es obligatorio:** usa una clave nueva por pago y la misma si reintentas.
+   ```bash
+   curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+     -H "Idempotency-Key: pago-<worker>-<fecha>-1" \
+     -d '{"workerId":"<uuid>","amountBs":"29.90","method":"qr_transferencia","paidAt":"2026-10-21T15:00:00Z","reference":"SISI-2643-K7M2QX","receiptKey":"receipts/<uuid>/pago-….jpg","submissionId":"<uuid opcional>"}' \
+     "$API/admin/billing/payments"
+   ```
+- Se aplica a los periodos más antiguos primero; lo que sobra queda a favor.
+- Desbloquea solo si ya no queda ningún periodo vencido.
+- Un admin no puede registrar pagos ni ajustes sobre su propia cuenta (403).
+- Un comprobante ilegible se rechaza con `POST /admin/billing/submissions/<id>/reject {"note":"…"}`.
+
+### Ajustes
+Nunca se edita un movimiento. Se agrega un ajuste con signo (positivo aumenta la deuda), motivo obligatorio e `Idempotency-Key`:
+```bash
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -H "Idempotency-Key: ajuste-<worker>-1" \
+  -d '{"workerId":"<uuid>","amountBs":"-19.50","reason":"Comisión cobrada por error","correctsEntryId":"42"}' \
+  "$API/admin/billing/adjustments"
+```
+Saldo, periodos y movimientos de un trabajador: `GET /admin/billing/workers/<uuid>`.
+
+### Corte y vencimiento
+- `billing-cron` corre cada hora (`render.yaml`) y se pone al día solo. Si falla, la corrida siguiente recupera lo pendiente.
+- Para probar con reloj simulado (nunca en producción), con el worker corriendo para que salgan los avisos y bloqueos:
+  ```bash
+  cd backend && npm run build
+  node dist/scripts/dev-tools.js billing-run --at 2026-10-19T04:05:00Z   # lunes 00:05 en Bolivia: corte
+  node dist/scripts/dev-tools.js billing-run --at 2026-10-20T13:05:00Z   # martes 09:05: víspera
+  node dist/scripts/dev-tools.js billing-run --at 2026-10-22T04:05:00Z   # jueves 00:05: vencido → bloqueo
+  ```
+- El bloqueo por deuda lo decide billing: un `worker-event BLOCK_FOR_DEBT` manual sin periodos vencidos se revierte en el barrido del worker.
+
+### Staging
+- Variables: `BILLING_DUE_AFTER_DAYS`, `BILLING_REMINDER_HOUR`, `BILLING_DEBT_CAP_BS`, `BILLING_LOCK_TTL_MS` y `RECEIPT_URL_TTL_SEC`. Hay valores por defecto; ver `backend/.env.example`.
+- El servicio `billing-cron-staging` necesita `DATABASE_URL` y `REDIS_URL` (candado). Ya están en `render.yaml`.
+- Cargar el QR de prueba con el usuario admin de staging (sección de arriba).

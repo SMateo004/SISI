@@ -113,6 +113,13 @@ Trabajo, chat y calificaciones (Fase 4), con las dos sesiones del paso anterior:
 
 Disputas, reportes y mensajes retenidos se revisan por API o con `dev-tools` (ver `docs/runbook.md`).
 
+Cobros (Fase 5), con el trabajador de antes y un admin (ver `docs/runbook.md`, "Cobros"):
+
+1. Terminar dos trabajos (por ejemplo, 150 Bs y 80 Bs). En "Mis ganancias" el trabajador ve el bruto, la comisión (19,50 + 10,40) y el neto.
+2. Simular el corte con el worker corriendo: `node dist/scripts/dev-tools.js billing-run --at <lunes 00:05 local en UTC>`. Llega el aviso con la referencia y el monto.
+3. Simular el vencimiento (`--at <jueves 00:05 local>`): el modo trabajador queda bloqueado, el interruptor explica el motivo y lleva a "Pagar comisión", y el modo empleador sigue funcionando.
+4. El admin registra el pago con el comprobante (`POST /admin/billing/payments` con `Idempotency-Key`): se desbloquea solo y el historial de pagos muestra el comprobante.
+
 ### 3. App (empleador + trabajador)
 
 ```bash

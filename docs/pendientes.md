@@ -4,7 +4,7 @@
 
 ## Negocio (sección 10 del doc 00)
 - [ ] Nombre comercial y marca. (El texto del SMS dice "SISI" de forma provisional.)
-- [ ] Día de corte, plazo de pago y tope de deuda definitivos (hoy: domingo 23:59, miércoles 23:59, 150 Bs — en propuesta).
+- [ ] Día de corte, plazo de pago y tope de deuda definitivos (hoy: domingo 23:59, miércoles 23:59, 150 Bs — en propuesta; configurables con `BILLING_DUE_AFTER_DAYS` y `BILLING_DEBT_CAP_BS`, ver la Fase 5).
 - [ ] Zonas exactas del lanzamiento.
 - [ ] Categorías iniciales finales y rangos de precio de referencia (en Bs). Desde la Fase 2 el seed carga 6 categorías con rangos **provisionales** (ver la Fase 2).
 - [ ] Si habrá suscripción como alternativa a la comisión.
@@ -20,6 +20,19 @@ Aprobadas el 2026-10-14. Hay que reflejarlas en el documento 01 en la sección i
 | Suspensión y deuda | La suspensión tiene prioridad sobre la deuda (`bloqueado_deuda → suspendido_moderacion`). Al levantar una suspensión con deuda vencida el perfil pasa a `bloqueado_deuda`, no a `aprobado`. | R9.3 y R7.7 |
 | Bloqueo y modo | Si pasa a `bloqueado_deuda` o `suspendido_moderacion` estando en modo trabajador, la cuenta cambia sola a `employer` y se le notifica. Al desbloquearse no vuelve sola: usa el interruptor. | R1.6 |
 | Teléfonos | MVP: solo +591. Prefijos permitidos en configuración (`PHONE_ALLOWED_COUNTRY_CODES`). | R1.1 |
+
+## Propuestas de la Fase 5 por validar
+- [ ] **Corte, plazo y tope:** semana de cobro `[lunes 00:00, lunes siguiente 00:00)` en la hora local de la ciudad; vence 3 días después del corte, a las 00:00 del jueves ("miércoles 23:59"). Tope de deuda: **150 Bs**, saldo total incluido el periodo abierto (`BILLING_DUE_AFTER_DAYS`, `BILLING_DEBT_CAP_BS`, ADR-0035 y ADR-0038).
+- [ ] **El tope no bloquea la cuenta:** superarlo solo deja fuera de las solicitudes nuevas (sigue `aprobado` y termina lo que tiene). El bloqueo (`bloqueado_deuda`) es solo por un corte vencido (R7.7).
+- [ ] **Avisos (interpretación de R7.6):** al cerrar el corte, la **víspera (martes) a las 09:00** y el **día del vencimiento (miércoles) a las 09:00**, hora local (`BILLING_REMINDER_HOUR`). Con el vencimiento a medianoche, "24 h antes" caía de madrugada y casi junto con "el día".
+- [ ] **Formato de la referencia:** `SISI-<AASS>-<código>` (año y semana ISO del inicio del periodo y un código de 6 caracteres del trabajador, sin 0/O/1/I/L). Ej.: `SISI-2643-K7M2QX`. Se genera al crear el periodo, así sirve también para pagar antes del corte.
+- [ ] **Comisión que llega con su periodo ya cerrado** (p. ej. una autoconfirmación o una disputa resuelta después del corte): va al **periodo abierto actual**, sin tocar cortes cerrados. Una disputa resuelta como "terminado" cuenta en la semana de la resolución.
+- [ ] **Pagos:** se aplican a los periodos más antiguos primero. Un pago **parcial** reduce el saldo pero el periodo no pasa a pagado hasta cubrirse. Un pago **de más** queda como saldo a favor en el periodo actual, sin devolución automática; se descuenta en el próximo corte.
+- [ ] **Ajuste sobre un periodo pagado:** si un ajuste en contra vuelve a dejarlo con saldo, el periodo vuelve a "por pagar" (o a vencido si su fecha pasó) y puede volver a bloquear.
+- [ ] **Comprobante subido por el trabajador:** queda "enviado, pendiente de verificación" y no cambia la deuda hasta que un admin registra el pago (o lo rechaza con motivo). Solo fotos (JPEG, PNG o HEIC): definir si se aceptan PDF.
+- [ ] **Cron de cobros cada hora** (ADR-0036): puesta al día idempotente; a lo sumo 1 h entre el corte y el aviso.
+- [ ] **Facturación de la comisión:** no implementada. `payments.invoice_number` existe (opcional, sin uso) hasta la revisión legal y tributaria.
+- [ ] **QR de cobro:** uno global (`app_settings`). Definir si cada ciudad tendrá su propia cuenta.
 
 ## Propuestas de la Fase 4 por validar
 - [ ] **Autoconfirmación:** si el empleador no confirma ni reporta un problema **24 h** después del "Terminé" del trabajador, el trabajo se confirma solo y se cobra la comisión (`JOB_AUTOCONFIRM_MS`, ADR-0029).
@@ -99,8 +112,8 @@ Valores implementados como propuesta; cambiarlos es configuración o un ajuste m
 ## Detectadas en la Fase 1
 - [ ] **OTP por consola en staging** (ADR-0011): el código sale en los logs de Render. Aceptado **solo mientras staging no se publique a usuarios reales** (ver `docs/runbook.md`). Antes de abrir staging a terceros: configurar Bird en staging (`OTP_PROVIDER=bird`).
 - [ ] **Primer administrador en producción:** hoy el rol se asigna con `dev-tools make-admin`, que no corre en production. Definir el procedimiento (SQL controlado o comando con aprobación) antes de la Fase 6.
-- [ ] **Avisos al trabajador** (`WorkerNotifier`): hoy solo dejan constancia en el log. Conectar a push (FCM) y Socket.IO (`account:blocked`, `account:unblocked`) en la Fase 4.
-- [ ] **Deuda vencida** (`DebtStatusProvider`): hoy siempre "sin deuda". Implementarlo con billing en la Fase 5 (lo usa la regla de levantar suspensión).
+- [x] **Avisos al trabajador** (`WorkerNotifier`): `account:blocked` / `account:unblocked` y push (Fase 5, `RealtimeWorkerNotifier`).
+- [x] **Deuda vencida** (`DebtStatusProvider`): periodos `vencido` (Fase 5, `BillingDebtStatusProvider`).
 - [ ] **Bloqueo permanente** por moderación: no existe en R1.4. Definir si se agrega un estado o se maneja como suspensión indefinida.
 - [ ] **Tokens en la versión web** (ADR-0014): evaluar pasar el refresh a una cookie `httpOnly` (vía API) antes de abrir la web a usuarios reales; CSP estricta en Vercel.
 - [ ] **Adopción del cliente Dart generado** (`packages/api_contract/dart`, ADR-0015) en `apps/mobile` y `apps/admin`.

@@ -32,3 +32,8 @@ R1.4 define 6 estados cerrados. Varias fases los cambian: el upgrade (Fase 1), b
 
 ## Consecuencias
 Las fases 5 y 6 solo disparan eventos; no tocan el estado a mano. Cualquier regla nueva (p. ej. bloqueo permanente) empieza por la tabla y sus tests.
+
+## Actualización (Fase 5)
+- `DebtStatusProvider` real (`BillingDebtStatusProvider`): hay deuda vencida si algún periodo está `vencido`.
+- `WorkerNotifier` real (`RealtimeWorkerNotifier`): `statusChanged` avisa con `account:blocked` / `account:unblocked` y push, después de confirmar la transacción.
+- `BLOCK_FOR_DEBT` y `DEBT_PAID` los aplica `DebtStateService` según el ledger (ADR-0038). Un bloqueo manual sin periodos vencidos se revierte en el barrido.

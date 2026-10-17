@@ -50,3 +50,6 @@ R4 define candidatos (R4.1), anillos (R4.2), espera por anillo (R4.3), orden (R4
 - Sin trabajadores cerca, la solicitud sigue buscando el tiempo mínimo (3 min) y luego expira.
 - La consulta trae todos los disponibles de la categoría dentro del anillo. Si una ciudad crece mucho, se puede limitar en SQL o prefiltrar con Redis GEO sin cambiar la regla pura.
 - El tope de deuda se conecta en la Fase 5 implementando `DebtCapPolicy`.
+
+## Actualización (Fase 5)
+El hook `DebtCapPolicy` ya tiene implementación real: `DebtCapService` (ADR-0038). Excluye (`tope_de_deuda`) a quien tiene un saldo total mayor a `BILLING_DEBT_CAP_BS`, con una sola consulta por lote. Las ofertas usan la misma regla.

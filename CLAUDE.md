@@ -21,6 +21,8 @@ Lee docs/00-contexto-general-SISI.md, docs/01-reglas-de-negocio.md y docs/02-con
 - Precio y comisión de una categoría siempre vía CategoryResolver (ADR-0016); el estado de una solicitud solo con RequestStatusService (ADR-0019).
 - El estado de un trabajo solo con JobStatusService.apply (ADR-0029); la comisión solo con commissionOf (HALF_UP, ADR-0030). job_events es append-only (trigger).
 - Un trabajador con un trabajo activo queda ocupado: fuera del matching y sin poder ofertar (ADR-0029).
+- Cobros: el saldo es siempre la suma del ledger (monto con signo, ADR-0034); periodos y fechas por la zona horaria de la ciudad, nunca con offset fijo (ADR-0035); el bloqueo por deuda solo con DebtStateService (ADR-0038). Pagos y ajustes del admin exigen Idempotency-Key y nunca sobre su propia cuenta (ADR-0037).
+- Toda FK que se agregue a mano en una migración se declara también como relación en schema.prisma (si no, el siguiente `migrate diff` la borra). Revisa que el SQL generado no tenga DROP.
 - Texto de usuarios (solicitudes, chat, notas de cancelación, comentarios de calificaciones y reportes) se modera con ModerationService.check (ADR-0018).
 - Eventos de dominio por outbox: OutboxService.add dentro de la misma transacción del cambio; nada de eventos en memoria (ADR-0022). Los handlers del worker deben ser idempotentes.
 - Tiempos de matching, outbox y ubicación siempre por configuración (los e2e usan milisegundos). Tiempo real: solo los eventos de doc 02 §6 (docs/realtime-events.md).
@@ -29,7 +31,8 @@ Lee docs/00-contexto-general-SISI.md, docs/01-reglas-de-negocio.md y docs/02-con
 ## Comandos
 - Local: docker compose -f infra/docker-compose.yml up -d
 - Backend: cd backend && npm run start:dev / npm test / npm run test:e2e / npm run test:e2e:repeat -- 20 / npm run lint / npm run typecheck
-- Worker (outbox, matching, avisos): cd backend && npm run build && npm run start:worker
+- Worker (outbox, matching, avisos, cobros): cd backend && npm run build && npm run start:worker
+- Cron de cobros (cada hora en Render): cd backend && npm run start:billing-cron; con reloj simulado: npm run dev:tools -- billing-run --at <ISO>
 - Herramientas de desarrollo (nunca en producción): cd backend && npm run dev:tools -- <comando> (ver docs/runbook.md)
 - Contrato API: node packages/api_contract/generate.mjs (OpenAPI + cliente Dart)
 - App: cd apps/mobile && flutter run / flutter test

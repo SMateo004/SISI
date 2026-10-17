@@ -37,3 +37,7 @@ R5: el trabajador ve la solicitud antes de ofertar, acepta el precio o contraofe
 - Retirar una oferta no existe todavía (solo reemplazarla) (docs/pendientes.md).
 - El historial de cambios de una oferta se reduce a `revision`. Si hiciera falta auditar montos anteriores, se agrega una tabla de eventos de oferta.
 - El ETA es una estimación en línea recta: con un proveedor de rutas se puede reemplazar sin cambiar el contrato.
+
+## Actualización (Fase 4)
+- El contacto trae `telUri` (`tel:+591…`) y `whatsappUri` (`https://wa.me/591…`, sin "+") para los botones de la app, y `visibleUntil`. Se oculta `JOB_CONTACT_VISIBLE_AFTER_MS` (24 h) después de terminado o cancelado: 410 `CONTACT_EXPIRED`.
+- Aceptar a un trabajador ocupado responde 409 `WORKER_BUSY` y le retira la oferta (ADR-0029).

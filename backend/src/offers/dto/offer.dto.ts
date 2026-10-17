@@ -113,4 +113,18 @@ export class JobContactDto {
   })
   address!: string | null;
   @ApiProperty({ example: '180.00' }) finalPriceBs!: string;
+  @ApiProperty({ example: 'tel:+59171234567', description: 'Para el botón "Llamar"' })
+  telUri!: string;
+  @ApiProperty({
+    example: 'https://wa.me/59171234567',
+    description: 'Para el botón "WhatsApp" (sin "+", como pide wa.me)',
+  })
+  whatsappUri!: string;
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description: 'Hasta cuándo se ve el contacto (24 h después de terminado o cancelado)',
+  })
+  visibleUntil!: string | null;
 }

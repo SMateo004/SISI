@@ -216,6 +216,9 @@ describe('Ofertas, asignación y contacto (e2e, ADR-0026)', () => {
       phone: ana.user.phone,
       address: null,
       finalPriceBs: '180.00',
+      telUri: `tel:${ana.user.phone}`,
+      whatsappUri: `https://wa.me/${ana.user.phone.slice(1)}`,
+      visibleUntil: null,
     });
     const forWorker = (
       await request(server())

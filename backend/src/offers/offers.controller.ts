@@ -16,6 +16,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiGoneResponse,
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -150,9 +151,10 @@ export class OffersController {
   @ApiOperation({
     summary: 'Contacto de la contraparte (R5.4, R9.4)',
     description:
-      'Solo para el empleador y el trabajador del trabajo. Al trabajador también le da la dirección.',
+      'Solo para el empleador y el trabajador del trabajo. Al trabajador también le da la dirección. Se oculta 24 h después de terminado o cancelado.',
   })
   @ApiOkResponse({ type: JobContactDto })
+  @ApiGoneResponse({ type: ApiErrorBody, description: 'CONTACT_EXPIRED' })
   @ApiNotFoundResponse({ type: ApiErrorBody, description: 'JOB_NOT_FOUND' })
   contact(
     @CurrentUser() current: AuthenticatedUser,

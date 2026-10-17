@@ -28,6 +28,7 @@ Aprobadas el 2026-10-14. Hay que reflejarlas en el documento 01 en la sección i
 - [ ] **Cancelación de un trabajo:** cualquiera de las dos partes, solo en asignado o en camino (en curso no). Motivos: cambio de planes, no llega o no responde, desacuerdo con el precio, emergencia, otro; nota opcional moderada. **Sin penalidad**: solo se cuenta (`users.cancellations_count`). Definir si habrá límite o penalidad, y si el empleador puede cancelar cuando el trabajador "no llega" estando en curso.
 - [ ] **Ventana del chat:** abierto desde la asignación hasta **24 h** después de terminado o cancelado; luego, solo lectura (`JOB_CHAT_OPEN_AFTER_MS`). Límite de **30 mensajes por minuto** por usuario (`RATE_CHAT_PER_MIN`). Solo texto: decidir si habrá **imágenes** en el chat (con moderación de imágenes).
 - [ ] **Mensajes retenidos del chat:** no se entregan y el admin solo puede verlos (`GET /admin/chat/held`). Definir si el admin puede liberarlos y si cuentan para una suspensión.
+- [ ] **Contacto después del trabajo:** el teléfono se oculta **24 h** después de terminado o cancelado (`JOB_CONTACT_VISIBLE_AFTER_MS`, 410 `CONTACT_EXPIRED`); el chat queda en solo lectura.
 - [ ] **Trabajador ocupado:** con un trabajo asignado, en camino o en curso no recibe solicitudes ni puede ofertar. Al ser elegido, sus otras ofertas activas se retiran solas (el empleador recibe el aviso y, si era la única, su solicitud vuelve a buscar).
 
 ## Propuestas de la Fase 3 por validar
@@ -52,7 +53,7 @@ Implementadas como propuesta; cambiarlas es configuración (variables de entorno
 - [ ] **Firebase sin configurar:** staging corre con `PUSH_PROVIDER=fake` (solo log). Crear el proyecto y cargar las variables (README, "Firebase") antes de probar push en staging.
 - [x] **Limpieza del outbox:** job diario que borra los eventos publicados hace más de `OUTBOX_RETENTION_DAYS` (7) días (Fase 4, ADR-0022).
 - [ ] **Historial de ofertas:** reemplazar una oferta pisa el monto anterior (solo queda `revision`). Si hace falta auditar montos, agregar una tabla de eventos de oferta.
-- [ ] **Contacto:** hoy se muestra el teléfono con un botón para copiarlo. Agregar "Llamar" y "WhatsApp" (`url_launcher`) junto con el chat de la Fase 4.
+- [x] **Contacto:** la API da `telUri` y `whatsappUri` (Fase 4); la app agrega "Llamar" y "WhatsApp" con `url_launcher`.
 - [ ] **Bandeja de avisos en la app:** la API ya tiene `GET /me/notifications` y `POST /me/notifications/:id/read`; falta la pantalla.
 - [ ] **Varias instancias de la API:** el socket usa solo el transporte `websocket`, así no hacen falta sticky sessions. Si algún cliente necesitara `polling`, habría que activarlas en Render.
 - [ ] **Build de Android sin verificar en local:** las licencias del Android SDK no están aceptadas en esta máquina (`flutter doctor --android-licenses`). Lo valida el workflow mobile-release.

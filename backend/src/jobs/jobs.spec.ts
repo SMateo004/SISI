@@ -1,4 +1,5 @@
 import { Prisma } from '../generated/prisma/client';
+import { contactLinks, contactVisibleUntil } from '../offers/contact.rules';
 import { commissionOf, netOf } from './commission';
 import {
   allowedJobActions,
@@ -143,5 +144,25 @@ describe('comisión (R6.3, ADR-0030)', () => {
 
   it('no pierde centavos con number: 0,1 + 0,2', () => {
     expect(commission('0.30', '100.00')).toBe('0.30');
+  });
+});
+
+describe('contacto (Fase 4)', () => {
+  it('enlaces para llamar y WhatsApp', () => {
+    expect(contactLinks('+59171234567')).toEqual({
+      telUri: 'tel:+59171234567',
+      whatsappUri: 'https://wa.me/59171234567',
+    });
+  });
+
+  it('visible hasta 24 h después del fin; sin fecha mientras sigue activo', () => {
+    const day = 24 * 3600_000;
+    expect(contactVisibleUntil({ completedAt: null, cancelledAt: null }, day)).toBeNull();
+    expect(contactVisibleUntil({ completedAt: at, cancelledAt: null }, day)).toEqual(
+      new Date(at.getTime() + day),
+    );
+    expect(contactVisibleUntil({ completedAt: null, cancelledAt: at }, day)).toEqual(
+      new Date(at.getTime() + day),
+    );
   });
 });

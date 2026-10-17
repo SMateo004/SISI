@@ -34,6 +34,7 @@ import {
 } from './offer.rules';
 import { withdrawLockedOffer } from './offer-withdrawal';
 import { OffersRepository } from './offers.repository';
+import { contactLinks, contactVisibleUntil } from './contact.rules';
 
 const OPEN = new Set(['buscando', 'con_ofertas']);
 
@@ -392,7 +393,11 @@ export class OffersService {
 
   // ---- Contacto ----
 
-  /** Teléfono de la contraparte, solo para las dos partes del trabajo (R5.4, R9.4). */
+  /**
+   * Teléfono de la contraparte, solo para las dos partes del trabajo (R5.4, R9.4), con
+   * enlaces para llamar y para WhatsApp. Se oculta JOB_CONTACT_VISIBLE_AFTER_MS después de
+   * terminado o cancelado (410 CONTACT_EXPIRED).
+   */
   async contact(userId: string, jobId: string): Promise<JobContactDto> {
     const job = await this.prisma.job.findUnique({
       where: { id: jobId },
@@ -405,6 +410,17 @@ export class OffersService {
     if (!job || (job.employerId !== userId && job.workerId !== userId)) {
       throw new ApiError(HttpStatus.NOT_FOUND, 'JOB_NOT_FOUND', 'El trabajo no existe.');
     }
+    const visibleUntil = contactVisibleUntil(
+      job,
+      this.config.get('JOB_CONTACT_VISIBLE_AFTER_MS', { infer: true }),
+    );
+    if (visibleUntil && visibleUntil.getTime() <= Date.now()) {
+      throw new ApiError(
+        HttpStatus.GONE,
+        'CONTACT_EXPIRED',
+        'El contacto ya no está disponible. Puedes leer el chat del trabajo.',
+      );
+    }
     const iAmEmployer = job.employerId === userId;
     const other = iAmEmployer ? job.worker : job.employer;
     return {
@@ -414,6 +430,8 @@ export class OffersService {
       phone: other.phone,
       address: iAmEmployer ? null : job.request.address,
       finalPriceBs: toBs(job.finalPriceBs),
+      ...contactLinks(other.phone),
+      visibleUntil: visibleUntil?.toISOString() ?? null,
     };
   }
 }

@@ -327,6 +327,25 @@ describe('Ciclo del trabajo (e2e, ADR-0029)', () => {
     expect(strangerLive.received.filter((e) => e.event === 'job:location')).toHaveLength(0);
   });
 
+  it('el contacto se oculta pasado el plazo desde que terminó (410)', async () => {
+    const { jobId, worker, employer } = await assignJob(t);
+    await post(employer.accessToken, `/jobs/${jobId}/cancel`, {
+      reason: 'cambio_de_planes',
+    }).expect(200);
+    const contact = await request(server())
+      .get(`/jobs/${jobId}/contact`)
+      .set(...bearer(worker.accessToken))
+      .expect(200);
+    expect((contact.body as { visibleUntil: string | null }).visibleUntil).not.toBeNull();
+    // En e2e el plazo es de 2 s (JOB_CONTACT_VISIBLE_AFTER_MS).
+    await new Promise((r) => setTimeout(r, 2100));
+    const gone = await request(server())
+      .get(`/jobs/${jobId}/contact`)
+      .set(...bearer(worker.accessToken))
+      .expect(410);
+    expect(gone.body).toMatchObject({ code: 'CONTACT_EXPIRED' });
+  });
+
   describe('cancelación', () => {
     it('en camino la cancela el trabajador: motivo, nota retenida, solicitud cancelada y conteo', async () => {
       const { jobId, requestId, worker, employer } = await assignJob(t);

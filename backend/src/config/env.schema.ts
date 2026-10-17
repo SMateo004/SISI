@@ -116,6 +116,8 @@ export const envSchema = z
     JOB_LOCATION_EMIT_MS: positiveInt(5000),
     /** El chat sigue abierto N ms después de terminado o cancelado; luego, solo lectura. */
     JOB_CHAT_OPEN_AFTER_MS: positiveInt(86_400_000),
+    /** El contacto se oculta N ms después de terminado o cancelado. */
+    JOB_CONTACT_VISIBLE_AFTER_MS: positiveInt(86_400_000),
     /** Presencia de un socket en Redis (se renueva con un latido; ADR-0031). */
     PRESENCE_TTL_MS: positiveInt(60_000),
     OUTBOX_CLEANUP_MS: positiveInt(86_400_000),

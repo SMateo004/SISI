@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
 /**
- * Tope de deuda (R7.5): quien supera el tope antes del corte no recibe solicitudes. Lo
- * implementa billing en la Fase 5; hasta entonces no hay comisiones, así que todos son
- * elegibles. Recibe un lote para no consultar trabajador por trabajador.
+ * Tope de deuda (R7.5): quien supera el tope no recibe solicitudes. Lo implementa billing
+ * (DebtCapService, ADR-0038). Recibe un lote para no consultar trabajador por trabajador.
+ * NoDebtCapYetPolicy queda para pruebas aisladas.
  */
 export interface DebtCapPolicy {
   ineligible(workerIds: string[]): Promise<Set<string>>;

@@ -29,6 +29,7 @@ export interface NotificationInputs {
     dueLabel: string;
     today: boolean;
   };
+  billing_cap_reached: { balanceBs: string; capBs: string };
   account_blocked: { reason: 'deuda' | 'moderacion' };
   account_unblocked: { status: string };
   review_request: { jobId: string; counterpartShortName: string; toWorker: boolean };
@@ -139,6 +140,11 @@ const RENDER: { [T in NotificationType]: (d: NotificationInputs[T]) => RenderedN
   billing_reminder: (d) => ({
     title: d.today ? 'Hoy vence tu comisión' : 'Mañana vence tu comisión',
     body: `Paga ${bs(d.amountBs)} hasta el ${d.dueLabel} para seguir recibiendo trabajos. Referencia: ${d.reference}.`,
+    route: '/ganancias/pagar',
+  }),
+  billing_cap_reached: (d) => ({
+    title: 'Paga para seguir recibiendo solicitudes',
+    body: `Tu comisión pendiente (${bs(d.balanceBs)}) superó el tope de ${bs(d.capBs)}. Puedes pagar antes del corte.`,
     route: '/ganancias/pagar',
   }),
   account_blocked: (d) => ({

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CategoriesModule } from '../categories/categories.module';
-import { DEBT_CAP_POLICY, NoDebtCapYetPolicy } from '../matching/debt-cap.policy';
+import { BillingCapModule } from '../billing/billing-cap.module';
 import { matchingConfigProvider } from '../matching/matching-config.provider';
 import { RequestStatusModule } from '../requests/request-status.module';
 import { OffersController } from './offers.controller';
@@ -9,13 +9,8 @@ import { OffersService } from './offers.service';
 
 /** Ofertas, aceptación y contacto (R5, ADR-0026). */
 @Module({
-  imports: [CategoriesModule, RequestStatusModule],
+  imports: [CategoriesModule, RequestStatusModule, BillingCapModule],
   controllers: [OffersController],
-  providers: [
-    OffersService,
-    OffersRepository,
-    matchingConfigProvider,
-    { provide: DEBT_CAP_POLICY, useClass: NoDebtCapYetPolicy },
-  ],
+  providers: [OffersService, OffersRepository, matchingConfigProvider],
 })
 export class OffersModule {}

@@ -1,11 +1,21 @@
 import { randomUUID } from 'node:crypto';
 import { BillingCatchUpService } from '../src/billing/billing-catchup.service';
 import { BillingLedgerService } from '../src/billing/billing-ledger.service';
+import { DebtCapService } from '../src/billing/debt-cap.service';
 import { connectSocket } from './utils/socket';
 import { EventHandlersRegistry } from '../src/outbox/event-handlers.registry';
 import { ledgerBalance, ledgerMismatches } from './utils/billing';
-import { assignJob, completeJob } from './utils/jobs';
-import { bearer, createTestApp, login, type TestApp, waitFor } from './utils/test-app';
+import { assignJob, completeJob, waitNotified } from './utils/jobs';
+import { CENTRO, eastOf, publishRequest } from './utils/requests';
+import { createApprovedWorker, makeAvailable } from './utils/workers';
+import {
+  bearer,
+  createTestApp,
+  login,
+  loginAsAdmin,
+  type TestApp,
+  waitFor,
+} from './utils/test-app';
 import request from 'supertest';
 
 describe('Cobros (e2e, ADR-0034)', () => {
@@ -435,6 +445,84 @@ describe('Cobros (e2e, ADR-0034)', () => {
       } finally {
         live.close();
       }
+    });
+  });
+
+  /**
+   * Deuda previa en el periodo abierto con un ajuste (atajo de prueba: el endpoint de ajustes
+   * llega con los pagos). No cambia la consistencia, que solo mira comisiones.
+   */
+  const addDebt = async (workerId: string, amountBs: string) => {
+    const admin = await loginAsAdmin(t);
+    const ledger = t.app.get(BillingLedgerService);
+    await t.prisma.$transaction(async (tx) => {
+      const period = await ledger.lockPeriodAt(tx, workerId, new Date());
+      await tx.ledgerEntry.create({
+        data: {
+          workerId,
+          cityId: period.cityId,
+          periodId: period.id,
+          type: 'ajuste',
+          amountBs,
+          reason: 'Deuda de prueba',
+          createdById: admin.user.id,
+        },
+      });
+    });
+  };
+
+  describe('tope de deuda (R7.5, ADR-0038)', () => {
+    it('sobre 150 Bs: un solo aviso y queda fuera de las solicitudes nuevas', async () => {
+      const job = await assignJob(t);
+      const capped = job.worker;
+      await addDebt(capped.id, '140.00');
+      await completeJob(t, job);
+      await waitCommission(capped.id);
+      expect(await ledgerBalance(t, capped.id)).toBe('159.50');
+
+      const notice = await waitFor(
+        async () =>
+          (await t.prisma.notification.findFirst({
+            where: { userId: capped.id, type: 'billing_cap_reached' },
+          })) ?? undefined,
+        { what: 'el aviso del tope' },
+      );
+      expect(notice.title).toBe('Paga para seguir recibiendo solicitudes');
+      // Otro cambio de saldo con el tope ya alcanzado no repite el aviso.
+      await t.app.get(EventHandlersRegistry).dispatch('billing.balance_changed', {
+        outboxId: '0',
+        aggregateId: capped.id,
+        payload: { workerId: capped.id, cause: 'ajuste' },
+      });
+      expect(
+        await t.prisma.notification.count({
+          where: { userId: capped.id, type: 'billing_cap_reached' },
+        }),
+      ).toBe(1);
+      // Sigue aprobado: el tope no bloquea la cuenta.
+      expect(
+        (await t.prisma.workerProfile.findUniqueOrThrow({ where: { userId: capped.id } })).status,
+      ).toBe('aprobado');
+
+      // Otro trabajador igual de cerca recibe la solicitud; el del tope no.
+      const category = await t.prisma.category.findUniqueOrThrow({
+        where: { id: job.categoryId },
+      });
+      const other = await createApprovedWorker(t, { categorySlugs: [category.slug] });
+      await makeAvailable(t, other, eastOf(CENTRO, 300));
+      const employer = await login(t);
+      const requestId = await publishRequest(t, employer.accessToken, {
+        categoryId: job.categoryId,
+      });
+      await waitNotified(t, requestId, other.id);
+      expect(
+        await t.prisma.requestNotification.findUnique({
+          where: { requestId_workerId: { requestId, workerId: capped.id } },
+        }),
+      ).toBeNull();
+      expect(await t.app.get(DebtCapService).ineligible([capped.id, other.id])).toEqual(
+        new Set([capped.id]),
+      );
     });
   });
 });

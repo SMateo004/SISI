@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { BillingCoreModule } from '../billing/billing-core.module';
+import { BillingCapModule } from '../billing/billing-cap.module';
 import { BillingDebtModule } from '../billing/billing-debt.module';
 import { BillingEventsHandlers } from '../billing/billing-events.handlers';
 import { ChatEventsHandlers } from '../chat/chat-events.handlers';
@@ -40,6 +41,7 @@ import { RequestStatusModule } from '../requests/request-status.module';
     JobStatusModule,
     BillingCoreModule,
     BillingDebtModule,
+    BillingCapModule,
   ],
   providers: [
     RequestEventsHandlers,

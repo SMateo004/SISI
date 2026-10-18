@@ -8,7 +8,7 @@ Revisión del 2026-10-18 (ADR-0047). CI la repite en cada cambio y cada lunes:
 
 | Paquete | Severidad | Dónde | Riesgo real | Plan |
 | --- | --- | --- | --- | --- |
-| `prisma` 7.10.0 (vía `@prisma/config` → `deepmerge-ts`, y `mysql2`) | Alta (4 avisos) | CLI de Prisma: build y `preDeploy` | Bajo. El CLI solo lee archivos propios (`prisma.config.ts`, migraciones) y nunca se conecta a MySQL. En ejecución, la API usa `@prisma/client` con el adaptador de Postgres. | Subir a 7.10.1, que arregla los cuatro. **Pendiente de tu aprobación:** 7.10.1 trae scripts de instalación nuevos (`prisma` preinstall y `@prisma/engines` postinstall) que hay que agregar a `allowScripts`. Revisar antes del 2026-11-30. |
+| ~~`prisma` 7.10.0 (vía `@prisma/config` → `deepmerge-ts`, y `mysql2`)~~ | Alta (4 avisos) | CLI de Prisma | — | **Resuelto el 2026-10-18:** `prisma`, `@prisma/client` y `@prisma/adapter-pg` 7.10.1, con los scripts de instalación aprobados en `allowScripts` (`prisma@7.10.1` preinstall, `@prisma/engines@7.10.1` postinstall). `npm audit` de producción: 0 vulnerabilidades; sin excepciones. |
 | `jest`, `ts-jest`, `babel-*`, `js-yaml`, `sprintf-js` | Moderada | Solo desarrollo (tests) | Ninguno en producción: no se instalan en el build de Render (`--omit=dev` no aplica al build, pero no se ejecutan en runtime). | Se actualizan cuando salga la versión de Jest que los resuelva. |
 
 `@sentry/node` 11.4.0 es la única dependencia nueva de la Fase 7. Tiene 24 paquetes y ninguno con scripts de instalación.

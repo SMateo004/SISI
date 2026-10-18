@@ -237,6 +237,8 @@ model WorkerProfile {
   offers               Offer[]
 
   @@index([status])
+  // Cola de verificaciones por antigüedad (Fase 6).
+  @@index([status, submittedAt])
   @@map("worker_profiles")
 }
 
@@ -402,6 +404,8 @@ model ServiceRequest {
   @@index([employerId, createdAt])
   @@index([status, cityId])
   @@index([geog], type: Gist)
+  // Dashboard del panel: creadas por ciudad y rango (Fase 6).
+  @@index([cityId, createdAt])
   @@map("service_requests")
 }
 
@@ -478,6 +482,8 @@ model WorkerLocation {
 
   @@index([geog], type: Gist)
   @@index([cityId, available])
+  // Disponibles ahora (dashboard): disponibles con ubicación reciente.
+  @@index([available, locatedAt])
   @@map("worker_locations")
 }
 
@@ -694,6 +700,10 @@ model Job {
   /// Además: índice único parcial jobs_one_active_per_worker (migración 20261017020000).
   @@index([workerId, createdAt])
   @@index([employerId, createdAt])
+  // Dashboard y colas del panel (Fase 6).
+  @@index([cityId, completedAt])
+  @@index([cityId, cancelledAt])
+  @@index([status, disputedAt])
   @@map("jobs")
 }
 

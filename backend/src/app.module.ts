@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AdminUsersModule } from './admin-users/admin-users.module';
 import { AuditModule } from './audit/audit.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { SettingsAdminModule } from './settings/settings-admin.module';
 import { SettingsModule } from './settings/settings.module';
 import { ModerationAdminModule } from './moderation/moderation-admin.module';
@@ -69,6 +70,7 @@ import { WorkersModule } from './workers/workers.module';
     BillingModule,
     AdminUsersModule,
     VerificationsModule,
+    DashboardModule,
     RealtimeModule,
     RealtimeEmitterModule,
   ],

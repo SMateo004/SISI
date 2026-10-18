@@ -67,7 +67,7 @@ describe('permisos del panel', () => {
       expect(hasPermission('admin', p)).toBe(true);
       expect(hasPermission('user', p)).toBe(false);
     }
-    expect(PERMISSIONS_BY_ROLE.admin).toHaveLength(7);
+    expect(PERMISSIONS_BY_ROLE.admin).toHaveLength(8);
   });
 
   it('tipo de límite: GET lee, el resto escribe, y la exportación tiene el suyo', () => {

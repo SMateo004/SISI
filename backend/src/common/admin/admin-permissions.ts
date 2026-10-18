@@ -9,6 +9,7 @@ import { ApiErrorBody } from '../errors/api-error';
  * moderador o de finanzas solo agrega una fila en PERMISSIONS_BY_ROLE (y su valor en el enum).
  */
 export const ADMIN_PERMISSIONS = [
+  'dashboard',
   'verificaciones',
   'moderacion',
   'cobros',

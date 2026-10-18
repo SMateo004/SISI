@@ -2,6 +2,7 @@
 // API por su propio origen para que la cookie httpOnly del refresh sea de primera parte.
 //   API_URL=https://<api>.onrender.com node tool/vercel-json.mjs
 import { writeFileSync } from 'node:fs';
+import { securityHeaders } from '../../../tools/web-security-headers.mjs';
 
 const api = (process.env.API_URL ?? '').replace(/\/+$/, '');
 if (!/^https:\/\/[^/]+$/.test(api)) {
@@ -16,16 +17,15 @@ const config = {
     { source: '/api/:path*', destination: `${api}/:path*` },
     { source: '/(.*)', destination: '/index.html' },
   ],
-  headers: [
-    {
-      source: '/(.*)',
-      headers: [
-        { key: 'X-Frame-Options', value: 'DENY' },
-        { key: 'Referrer-Policy', value: 'no-referrer' },
-        { key: 'X-Content-Type-Options', value: 'nosniff' },
-      ],
-    },
-  ],
+  // HSTS, nosniff, sin iframes, sin cámara ni ubicación y CSP (ADR-0047). El panel llama a la
+  // API por /api (mismo origen) y al socket directo.
+  headers: securityHeaders({
+    apiUrl: api,
+    socketUrl: process.env.SOCKET_URL,
+    camera: false,
+    location: false,
+    maps: false,
+  }),
 };
 
 writeFileSync(new URL('../vercel.json', import.meta.url), `${JSON.stringify(config, null, 2)}\n`);

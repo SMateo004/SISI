@@ -127,10 +127,11 @@ jobs:
 
       # El admin llama a la API por su propio origen (/api/* → API_URL) para que la cookie
       # httpOnly del refresh sea de primera parte (ADR-0040). El socket va directo a SOCKET_URL.
-      - name: Proxy /api del admin
-        if: matrix.project == 'admin'
+      - name: vercel.json (headers de seguridad; en el admin, también el proxy /api)
         env:
           API_URL: ${{ vars.API_URL }}
+          SOCKET_URL: ${{ vars.SOCKET_URL }}
+          CSP_ENFORCE: ${{ vars.CSP_ENFORCE }}
         run: node tool/vercel-json.mjs
 
       - uses: actions/setup-node@v4

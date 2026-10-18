@@ -1,4 +1,6 @@
 import { AuditModule } from '../audit/audit.module';
+import { ObservabilityModule } from '../observability/observability.module';
+import { type DrillKind, OpsDrill } from '../observability/ops-drill';
 import { SettingsModule } from '../settings/settings.module';
 import { parseArgs } from 'node:util';
 import { Logger, Module } from '@nestjs/common';
@@ -40,6 +42,7 @@ import { type WorkerEventInput, WorkerStatusService } from '../workers/worker-st
  *   npm run dev:tools -- resolve-dispute --job <uuid> --decision confirm --reason "Se verificó con ambas partes"
  *   npm run dev:tools -- billing-run --at 2026-10-19T04:05:00Z   (cron de cobros con reloj simulado)
  *   npm run dev:tools -- resolve-report --report <uuid> --approve --reason "Se verificó"   (o --reject "motivo")
+ *   npm run dev:tools -- ops-drill outbox|otp|push|clear   (simulacro de alertas en staging, ADR-0048)
  */
 @Module({
   // WorkerStatusService apaga la disponibilidad al bloquear o suspender (Redis, ADR-0024).
@@ -54,8 +57,10 @@ import { type WorkerEventInput, WorkerStatusService } from '../workers/worker-st
     // ReportsService audita cuando lo llama el panel; aquí el actor es null (sin filas).
     AuditModule,
     SettingsModule,
+    ObservabilityModule,
   ],
   providers: [
+    OpsDrill,
     WorkerStatusService,
     ModerationService,
     ReportsService,
@@ -71,6 +76,7 @@ async function main(): Promise<void> {
   const [command, ...rest] = process.argv.slice(2);
   const { values } = parseArgs({
     args: rest,
+    allowPositionals: true,
     options: {
       phone: { type: 'string' },
       approve: { type: 'boolean' },
@@ -222,6 +228,14 @@ async function main(): Promise<void> {
           throw new Error('Usa --at con una fecha ISO, p. ej. 2026-10-19T04:05:00Z');
         const result = await app.get(BillingCatchUpService).run(at);
         logger.log(`Cobros al ${at.toISOString()}: ${JSON.stringify(result)}`);
+        break;
+      }
+      case 'ops-drill': {
+        const kind = rest[0] as DrillKind | undefined;
+        if (!kind || !['outbox', 'otp', 'push', 'clear'].includes(kind)) {
+          throw new Error('Usa ops-drill outbox|otp|push|clear');
+        }
+        logger.log(await app.get(OpsDrill).run(kind));
         break;
       }
       case 'resolve-report': {

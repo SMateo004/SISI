@@ -1,4 +1,6 @@
 import { AuditModule } from '../audit/audit.module';
+import { ObservabilityModule } from '../observability/observability.module';
+import { OpsMonitor } from '../observability/ops-monitor';
 import { AdminCountersPublisher } from '../dashboard/admin-counters.publisher';
 import { DashboardModule } from '../dashboard/dashboard.module';
 import { SettingsModule } from '../settings/settings.module';
@@ -51,6 +53,7 @@ import { RequestStatusModule } from '../requests/request-status.module';
     BillingCoreModule,
     BillingDebtModule,
     BillingCapModule,
+    ObservabilityModule,
   ],
   providers: [
     RequestEventsHandlers,
@@ -61,6 +64,8 @@ import { RequestStatusModule } from '../requests/request-status.module';
     BillingEventsHandlers,
     AccountNotificationsHandlers,
     AdminCountersPublisher,
+    // Alertas de outbox, colas, OTP y push, y latido del worker (ADR-0048).
+    OpsMonitor,
   ],
 })
 export class WorkerModule {}

@@ -1,4 +1,5 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { OpsMetrics } from '../observability/ops-metrics';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   type NotificationInputs,
@@ -28,6 +29,7 @@ export class NotificationsService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(PUSH_PROVIDER) private readonly push: PushProvider,
+    @Optional() private readonly metrics?: OpsMetrics,
   ) {}
 
   async notify<T extends NotificationType>(input: NotifyInput<T>): Promise<void> {
@@ -64,6 +66,12 @@ export class NotificationsService {
           body: text.body,
           data: toStringMap({ ...payload, notificationId: notification.id }),
         },
+      );
+      // Para la alerta de push (ADR-0048): un token vencido no es un fallo del servicio.
+      await this.metrics?.count('push_sent', results.length);
+      await this.metrics?.count(
+        'push_fail',
+        results.filter((r) => !r.ok && !r.invalidToken).length,
       );
       const invalid = results.filter((r) => r.invalidToken).map((r) => r.token);
       if (invalid.length > 0) {

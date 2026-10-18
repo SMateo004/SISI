@@ -5,6 +5,7 @@ import { ConsoleOtpProvider } from './console-otp.provider';
 import { OtpHasher } from './otp-hasher';
 import { createOtpProvider } from './otp-provider.factory';
 import type { OtpProvider } from './otp-provider';
+import type { OpsMetrics } from '../../observability/ops-metrics';
 import { OtpService } from './otp.service';
 import type { OtpCheck, OtpStore } from './otp.store';
 
@@ -141,15 +142,19 @@ describe('OtpService', () => {
 
   it('no deja un código usable si el envío falla', async () => {
     const { service, store } = setup();
+    const metrics = { count: jest.fn().mockResolvedValue(undefined) };
     const failing = new OtpService(
       { get: (key: string) => ENV[key] } as unknown as AppConfigService,
       store,
       { name: 'bird', send: () => Promise.reject(new Error('caído')) },
       () => '123456',
       { consume: () => Promise.resolve({ allowed: true }) } as unknown as RateLimitStore,
+      metrics as unknown as OpsMetrics,
     );
     await expect(failing.request('70012345')).rejects.toThrow('caído');
     expect(store.entries.size).toBe(0);
+    // Cuenta para la alerta de OTP (ADR-0048).
+    expect(metrics.count).toHaveBeenCalledWith('otp_fail');
     await expect(service.verify('70012345', '123456')).rejects.toMatchObject({
       code: 'OTP_INVALID',
     });

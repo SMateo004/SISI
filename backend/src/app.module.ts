@@ -17,6 +17,7 @@ import { RateLimitGuard, UserRateLimitGuard } from './common/rate-limit/rate-lim
 import { RateLimitModule } from './common/rate-limit/rate-limit.module';
 import { RateLimitedFilter } from './common/rate-limit/rate-limited.filter';
 import { SisiThrottlerGuard } from './common/rate-limit/sisi-throttler.guard';
+import { ObservabilityModule } from './observability/observability.module';
 import { SentryExceptionFilter } from './observability/sentry-exception.filter';
 import { AppConfigModule } from './config/config.module';
 import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
@@ -74,6 +75,7 @@ import { WorkersModule } from './workers/workers.module';
     DashboardModule,
     RealtimeModule,
     RealtimeEmitterModule,
+    ObservabilityModule,
   ],
   providers: [
     // Orden: límites por IP antes que la autenticación (frena fuerza bruta sin tocar la BD).

@@ -97,10 +97,11 @@ export function checkIn(
   checkInId?: string,
 ): string | undefined {
   if (!enabled) return undefined;
-  const payload =
-    status === 'in_progress'
-      ? { monitorSlug, status }
-      : { monitorSlug, status, checkInId: checkInId ?? '' };
+  // Sin id es un latido (heartbeat): un ok suelto basta para el monitor del worker.
+  let payload: Parameters<typeof Sentry.captureCheckIn>[0];
+  if (status === 'in_progress') payload = { monitorSlug, status };
+  else if (checkInId === undefined) payload = { monitorSlug, status };
+  else payload = { monitorSlug, status, checkInId };
   return Sentry.captureCheckIn(payload, {
     schedule: { type: 'crontab', value: schedule.crontab },
     checkinMargin: schedule.checkinMargin,

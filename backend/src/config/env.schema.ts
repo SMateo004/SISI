@@ -247,6 +247,17 @@ export const envSchema = z
     MAPS_API_KEY: optionalString,
     RATE_GEOCODE_IP_PER_MIN: positiveInt(60),
     SENTRY_DSN: z.preprocess(emptyAsUndefined, z.url().optional()),
+    // Alertas operativas del worker (OpsMonitor, ADR-0048). Los e2e usan milisegundos.
+    OPS_MONITOR_MS: positiveInt(60_000),
+    /** Ventana de los contadores de fallos (OTP y push). */
+    OPS_WINDOW_MS: positiveInt(600_000),
+    OPS_OUTBOX_MAX_AGE_MS: positiveInt(300_000),
+    OPS_QUEUE_MAX_WAIT_MS: positiveInt(300_000),
+    /** Jobs fallidos nuevos entre dos vueltas del monitor que disparan la alerta. */
+    OPS_QUEUE_FAILED_DELTA: positiveInt(10),
+    OPS_OTP_FAIL_THRESHOLD: positiveInt(5),
+    OPS_PUSH_FAIL_THRESHOLD: positiveInt(20),
+    OPS_PUSH_FAIL_RATIO: z.coerce.number().min(0).max(1).default(0.2),
     /** Commit desplegado; Render lo define solo (RENDER_GIT_COMMIT). Se ve en GET /version. */
     RENDER_GIT_COMMIT: optionalString,
 

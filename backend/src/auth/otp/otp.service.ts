@@ -1,7 +1,8 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiError } from '../../common/errors/api-error';
 import { normalizePhone, PhoneValidationError } from '../../common/phone/phone';
+import { OpsMetrics } from '../../observability/ops-metrics';
 import { RateLimitStore } from '../../common/rate-limit/rate-limit.store';
 import { RateLimitedException } from '../../common/rate-limit/rate-limited.exception';
 import type { AppConfigService } from '../../config/app-config';
@@ -33,6 +34,8 @@ export class OtpService {
     @Inject(OTP_PROVIDER) private readonly provider: OtpProvider,
     @Inject(OTP_CODE_GENERATOR) private readonly generateCode: OtpCodeGenerator,
     private readonly rateLimits: RateLimitStore,
+    // Contador de fallos para la alerta de OTP (ADR-0048); opcional en los tests unitarios.
+    @Optional() private readonly metrics?: OpsMetrics,
   ) {
     this.hasher = new OtpHasher(config.get('JWT_SECRET', { infer: true }));
   }
@@ -78,6 +81,7 @@ export class OtpService {
       await this.provider.send(phone, code);
     } catch (error) {
       await this.store.delete(phoneKey);
+      await this.metrics?.count('otp_fail');
       throw error;
     }
     return { expiresInSec: ttl, resendInSec: cooldown };

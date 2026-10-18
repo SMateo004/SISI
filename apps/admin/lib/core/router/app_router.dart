@@ -5,9 +5,13 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/login_screen.dart';
 import '../../features/billing/billing_screen.dart';
 import '../../features/billing/worker_billing_screen.dart';
+import '../../features/catalog/catalog_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/moderation/dispute_screen.dart';
 import '../../features/moderation/moderation_screen.dart';
+import '../../features/settings/settings_screen.dart';
+import '../../features/users/user_profile_screen.dart';
+import '../../features/users/users_screen.dart';
 import '../../features/verifications/verification_detail_screen.dart';
 import '../../features/verifications/verifications_screen.dart';
 import '../auth/session.dart';
@@ -92,6 +96,33 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/cobros/:tab',
             builder: (_, s) => BillingScreen(tab: s.pathParameters['tab']!),
+          ),
+          GoRoute(
+            path: '/usuarios',
+            builder: (_, _) => const UsersScreen(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                builder: (_, s) =>
+                    UserProfileScreen(userId: s.pathParameters['id']!),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/catalogo',
+            redirect: (_, _) => '/catalogo/categorias',
+          ),
+          GoRoute(
+            path: '/catalogo/:tab',
+            builder: (_, s) => CatalogScreen(tab: s.pathParameters['tab']!),
+          ),
+          GoRoute(
+            path: '/configuracion',
+            redirect: (_, _) => '/configuracion/parametros',
+          ),
+          GoRoute(
+            path: '/configuracion/:tab',
+            builder: (_, s) => SettingsScreen(tab: s.pathParameters['tab']!),
           ),
         ],
       ),

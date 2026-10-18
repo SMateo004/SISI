@@ -42,6 +42,15 @@ dependencies:
     sdk: flutter
   flutter_web_plugins:
     sdk: flutter
+  # Cliente generado del contrato (ADR-0045); el código generado está en el repo.
+  sisi_api:
+    path: ../../packages/api_contract/dart
+  # Colas del panel en vivo (admin:counters, ADR-0044).
+  socket_io_client: ^3.1.6
+  # Descarga del CSV en el navegador.
+  web: ^1.1.0
+  # Subir la imagen del QR de cobro.
+  image_picker: ^1.2.4
 
 dev_dependencies:
   flutter_test:

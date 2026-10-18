@@ -6,6 +6,7 @@ name: deploy-web
 # Los dos ambientes despliegan con --prod a su propio proyecto: así cada uno tiene una URL
 # .vercel.app fija (las previews cambian de URL en cada deploy y CORS_ORIGINS necesita orígenes fijos).
 # Requiere GitHub Environments "staging" y "production" con:
+#   (el admin compila con API_URL=/api: el proxy de Vercel lleva /api/* a la API, ADR-0040)
 #   vars:    API_URL, SOCKET_URL, MAPS_API_KEY_WEB (llave de Maps de la app web, restringida por dominio),
 #            FIREBASE_API_KEY_WEB, FIREBASE_APP_ID_WEB, FIREBASE_SENDER_ID, FIREBASE_PROJECT_ID,
 #            FIREBASE_VAPID_KEY (configuración pública de Firebase para el push web, ADR-0027)
@@ -71,7 +72,7 @@ jobs:
       - name: Build web
         run: >-
           flutter build web --release
-          --dart-define=API_URL=${{ vars.API_URL }}
+          --dart-define=API_URL=${{ matrix.project == 'admin' && '/api' || vars.API_URL }}
           --dart-define=SOCKET_URL=${{ vars.SOCKET_URL }}
           --dart-define=APP_ENV=${{ env.APP_ENV }}
           --dart-define=MAPS_API_KEY=${{ vars.MAPS_API_KEY_WEB }}

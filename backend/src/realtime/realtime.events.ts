@@ -107,6 +107,13 @@ export interface RealtimePayloads {
   };
 }
 
+/**
+ * Canal de Socket.IO en Redis (adapter de la API y emitter del worker). El pub/sub de Redis
+ * no distingue bases: sin un canal por ambiente, los e2e (base 1) le hablarían a la API de
+ * desarrollo (base 0). Se deriva de QUEUE_PREFIX, que ya separa las colas por ambiente.
+ */
+export const socketIoKey = (queuePrefix: string): string => `socket.io-${queuePrefix}`;
+
 export const rooms = {
   user: (userId: string): string => `user:${userId}`,
   request: (requestId: string): string => `request:${requestId}`,

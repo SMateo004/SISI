@@ -5,6 +5,7 @@ import { createAdapter } from '@socket.io/redis-adapter';
 import { Redis } from 'ioredis';
 import type { Server, ServerOptions } from 'socket.io';
 import type { AppConfigService } from '../config/app-config';
+import { socketIoKey } from './realtime.events';
 
 /**
  * Adapter de Socket.IO para la API (ADR-0023): mismo CORS que HTTP y
@@ -15,11 +16,13 @@ export class RedisIoAdapter extends IoAdapter {
   private readonly pub: Redis;
   private readonly sub: Redis;
   private readonly origins: string[];
+  private readonly key: string;
 
   constructor(app: INestApplicationContext) {
     super(app);
     const config = app.get<AppConfigService>(ConfigService);
     this.origins = config.get('CORS_ORIGINS', { infer: true });
+    this.key = socketIoKey(config.get('QUEUE_PREFIX', { infer: true }));
     this.pub = new Redis(config.get('REDIS_URL', { infer: true }), { maxRetriesPerRequest: 3 });
     this.sub = this.pub.duplicate();
   }
@@ -32,7 +35,7 @@ export class RedisIoAdapter extends IoAdapter {
       transports: ['websocket'],
       cors: { origin: this.origins.length > 0 ? this.origins : false, credentials: true },
     } as ServerOptions);
-    server.adapter(createAdapter(this.pub, this.sub));
+    server.adapter(createAdapter(this.pub, this.sub, { key: this.key }));
     return server;
   }
 

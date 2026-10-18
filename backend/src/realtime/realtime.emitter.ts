@@ -3,7 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { Emitter } from '@socket.io/redis-emitter';
 import { Redis } from 'ioredis';
 import type { AppConfigService } from '../config/app-config';
-import { type RealtimeEventName, type RealtimePayloads, rooms } from './realtime.events';
+import {
+  type RealtimeEventName,
+  type RealtimePayloads,
+  rooms,
+  socketIoKey,
+} from './realtime.events';
 
 /**
  * Emite eventos de tiempo real desde cualquier proceso (ADR-0023). Usa
@@ -17,7 +22,9 @@ export class RealtimeEmitter implements OnApplicationShutdown {
 
   constructor(@Inject(ConfigService) config: AppConfigService) {
     this.redis = new Redis(config.get('REDIS_URL', { infer: true }), { maxRetriesPerRequest: 3 });
-    this.emitter = new Emitter(this.redis);
+    this.emitter = new Emitter(this.redis, {
+      key: socketIoKey(config.get('QUEUE_PREFIX', { infer: true })),
+    });
   }
 
   toUser<E extends RealtimeEventName>(

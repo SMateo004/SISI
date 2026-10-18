@@ -1,4 +1,4 @@
-import { HttpStatus, Inject, Injectable, type OnModuleInit } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { timingSafeEqual } from 'node:crypto';
 import type { Redis } from 'ioredis';
@@ -6,6 +6,7 @@ import { ApiError } from '../common/errors/api-error';
 import { RateLimitedException } from '../common/rate-limit/rate-limited.exception';
 import { RateLimitStore } from '../common/rate-limit/rate-limit.store';
 import type { AppConfigService } from '../config/app-config';
+import { reportAlert } from '../observability/sentry';
 import { PrismaService } from '../prisma/prisma.service';
 import { REDIS_CLIENT } from '../redis/redis.constants';
 import { base32Decode, matchTotp, TOTP_STEP_SEC } from './admin-totp';
@@ -17,6 +18,10 @@ import type { TokenSubject } from './tokens/token.service';
  */
 export const ADMIN_ACCOUNT_PHONE = 'panel:admin';
 const ADMIN_ACCOUNT_NAME = 'Administrador';
+
+const FAILURES_KEY = 'admin:login:failures';
+/** Avisar al quinto fallo en 15 min: un error de tipeo no alcanza, un ataque sí. */
+export const FAILURE_ALERT_AT = 5;
 
 const invalid = (): ApiError =>
   new ApiError(HttpStatus.UNAUTHORIZED, 'ADMIN_LOGIN_INVALID', 'Usuario o código incorrecto.');
@@ -30,10 +35,13 @@ const sameText = (a: string, b: string): boolean => {
 /**
  * Ingreso al panel con usuario fijo y código de una app autenticadora (TOTP).
  * - Un código sirve una sola vez (Redis), aunque siga vigente en la app.
- * - Además del límite por IP, un tope de intentos sumando todas las IP: hay una sola cuenta.
+ * - Además del límite por IP, topes de intentos sumando todas las IP (15 min y día): hay una
+ *   sola cuenta y un solo factor. Los fallos repetidos y el bloqueo avisan por Sentry.
  */
 @Injectable()
 export class AdminLoginService implements OnModuleInit {
+  private readonly logger = new Logger(AdminLoginService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
@@ -65,12 +73,27 @@ export class AdminLoginService implements OnModuleInit {
         limit: this.config.get('RATE_ADMIN_LOGIN_PER_15MIN', { infer: true }),
         windowSec: 900,
       },
+      {
+        key: 'adminLogin:day',
+        limit: this.config.get('RATE_ADMIN_LOGIN_PER_DAY', { infer: true }),
+        windowSec: 86_400,
+      },
     ]);
-    if (!decision.allowed) throw new RateLimitedException(decision.retryAfterSec);
+    if (!decision.allowed) {
+      this.logger.warn('Ingreso al panel bloqueado por exceso de intentos');
+      reportAlert('admin-login-blocked', 'Ingreso al panel bloqueado por exceso de intentos', {
+        rule: decision.rule.key,
+        retryAfterSec: decision.retryAfterSec,
+      });
+      throw new RateLimitedException(decision.retryAfterSec);
+    }
 
     const userOk = sameText(username.trim().toLowerCase(), this.username());
     const step = matchTotp(base32Decode(secret), code.trim(), now);
-    if (!userOk || step === null) throw invalid();
+    if (!userOk || step === null) {
+      await this.recordFailure();
+      throw invalid();
+    }
 
     // Un código, una vez: guardado hasta que deja de ser válido (paso + margen de un paso).
     const fresh = await this.redis.set(
@@ -88,6 +111,16 @@ export class AdminLoginService implements OnModuleInit {
       );
     }
     return this.account();
+  }
+
+  /** Fallos seguidos en 15 min: al llegar a FAILURE_ALERT_AT avisa una vez (ADR-0048). */
+  private async recordFailure(): Promise<void> {
+    const failures = await this.redis.incr(FAILURES_KEY);
+    if (failures === 1) await this.redis.expire(FAILURES_KEY, 900);
+    if (failures === FAILURE_ALERT_AT) {
+      this.logger.warn(`Intentos fallidos de ingreso al panel: ${String(failures)} en 15 min`);
+      reportAlert('admin-login-failures', 'Intentos fallidos de ingreso al panel', { failures });
+    }
   }
 
   private username(): string {

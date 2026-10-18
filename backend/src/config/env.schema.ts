@@ -107,6 +107,11 @@ export const envSchema = z
     ),
     /** Intentos de ingreso al panel en 15 min, sumando todas las IP (una sola cuenta). */
     RATE_ADMIN_LOGIN_PER_15MIN: positiveInt(20),
+    /**
+     * Tope diario (todas las IP). Con un solo factor de 6 dígitos, el de 15 min solo deja
+     * ~16 % de probabilidad de adivinar en un mes; con 30 por día, ~3 % en un año.
+     */
+    RATE_ADMIN_LOGIN_PER_DAY: positiveInt(30),
 
     // OTP (ADR-0009, ADR-0011)
     OTP_PROVIDER: z.enum(['console', 'bird']).default('console'),

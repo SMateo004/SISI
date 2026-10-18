@@ -23,7 +23,14 @@ Hasta ahora se entraba al panel con el teléfono de una persona y el código por
   - **Usuario o código incorrecto:** 401 `ADMIN_LOGIN_INVALID`, el mismo mensaje en los dos casos.
   - **Límites:**
     - el de siempre por IP (`otpVerifyIp`);
-    - un tope global, sumando todas las IP, de `RATE_ADMIN_LOGIN_PER_15MIN` = 20 intentos cada 15 min (`RateLimitStore`, ADR-0010), porque hay una sola cuenta.
+    - topes globales, sumando todas las IP, porque hay una sola cuenta y un solo factor (`RateLimitStore`, ADR-0010):
+      - `RATE_ADMIN_LOGIN_PER_15MIN` = 20 intentos cada 15 min;
+      - `RATE_ADMIN_LOGIN_PER_DAY` = 30 intentos por día.
+    - **Por qué el tope diario:** cada intento al azar acierta con probabilidad de 3 en un millón (tres pasos válidos). Con solo el tope de 15 min, quien intente sin parar tiene ~16 % de entrar en un mes. Con el diario, ~0,3 % en un mes y ~3 % en un año.
+  - **Alertas (ADR-0048, por email vía Sentry):**
+    - `admin-login-failures`: al quinto fallo en 15 min;
+    - `admin-login-blocked`: cuando se agota un tope.
+    - Ante cualquiera de las dos sin explicación, se rota la clave.
   - **Sin clave configurada:** 503 `ADMIN_LOGIN_NOT_CONFIGURED`.
 - **La sesión no cambia** (ADR-0040): acceso de 10 min en memoria, refresh en cookie httpOnly, 8 h como máximo, `aud=admin`, CSRF y permisos por área.
 - **Se elimina el ingreso por teléfono** (`POST /auth/admin/otp/verify`). `dev-tools make-admin` se reemplaza por `dev-tools admin-totp`, que genera una clave nueva y el enlace `otpauth://` para la app.
@@ -34,6 +41,7 @@ Hasta ahora se entraba al panel con el teléfono de una persona y el código por
 - **La auditoría registra "Administrador", no qué persona actuó.** Es aceptado para un equipo chico. Si se necesita, más adelante: una cuenta por persona.
 - **Compartir el acceso** es compartir la clave para la app autenticadora.
 - **Quitarle el acceso a alguien** exige una clave nueva (`dev-tools admin-totp`), cambiarla en Render y volver a cargarla en la app de quienes siguen.
-- **Bloqueo por abuso:** 20 intentos fallidos en 15 min bloquean el ingreso para todos durante ese rato. Se prefiere eso a dejar adivinar códigos.
+- **Bloqueo por abuso:** agotar un tope (20 en 15 min o 30 en el día) bloquea el ingreso para todos hasta que vence. Se prefiere eso a dejar adivinar códigos.
+- **Un solo factor:** la opción "contraseña + app autenticadora" se ofreció y se descartó (2026-10-18). Si el riesgo cambia, se agrega sin tocar la sesión.
 - **`assertNotSelf` sigue protegiendo** que el actor no se revise a sí mismo. Con la cuenta del panel nunca coincide con un usuario de la app.
 - **Las pruebas e2e** usan una clave fija de prueba (`test/e2e-env.ts`) y calculan el código.

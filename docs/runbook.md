@@ -361,7 +361,7 @@ Una sola cuenta: usuario `admin` y el código de 6 dígitos de una app autentica
 3. **Cargarla en la app autenticadora** de cada persona del equipo: "Agregar código" → "Ingresar clave de configuración", cuenta "SISI admin", la clave y "Basada en el tiempo".
 4. **Ingresar al panel** con el usuario `admin` y el código que muestra la app (cambia cada 30 s; cada código sirve una vez).
 5. **Quitar el acceso a alguien:** generar una clave nueva, cambiarla en Render y volver a cargarla en la app de quienes siguen. La anterior deja de servir.
-6. **"Demasiados intentos":** 20 intentos fallidos en 15 minutos bloquean el ingreso para todos durante ese rato.
+6. **"Demasiados intentos":** 20 intentos en 15 minutos o 30 en el día bloquean el ingreso para todos hasta que vence el tope. Llegan alertas por email: `admin-login-failures` (5 fallos en 15 min) y `admin-login-blocked`. Si nadie del equipo estaba intentando entrar, **rota la clave** (pasos 1 a 3). En local se destraba borrando `rl:adminLogin:*` en Redis.
 7. **"El ingreso al panel no está configurado":** falta `ADMIN_TOTP_SECRET` en la API.
 
 ### Alertas (ADR-0048)

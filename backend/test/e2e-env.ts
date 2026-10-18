@@ -27,6 +27,7 @@ export function applyE2eEnv(): void {
   process.env.ADMIN_USERNAME = 'admin';
   process.env.ADMIN_TOTP_SECRET = E2E_ADMIN_TOTP_SECRET;
   process.env.RATE_ADMIN_LOGIN_PER_15MIN = '20';
+  process.env.RATE_ADMIN_LOGIN_PER_DAY = '30';
   // El reconciliador se dispara a mano en los tests (runOnce).
   process.env.MATCHING_RECONCILE_MS = '3600000';
   process.env.LOCATION_SWEEP_MS = '3600000';

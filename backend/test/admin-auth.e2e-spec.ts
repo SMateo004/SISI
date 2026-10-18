@@ -34,7 +34,7 @@ describe('Sesión del panel admin (e2e)', () => {
   async function resetAdminLogin(): Promise<void> {
     const used = await redis.keys('admin:totp:used:*');
     if (used.length > 0) await redis.del(...used);
-    await redis.del('rl:adminLogin:all');
+    await redis.del('rl:adminLogin:all', 'rl:adminLogin:day', 'admin:login:failures');
   }
 
   function panelLogin(status: number, body: { username?: string; code?: string } = {}) {
@@ -122,6 +122,15 @@ describe('Sesión del panel admin (e2e)', () => {
     const blocked = await panelLogin(429);
     expect(blocked.body).toMatchObject({ code: 'RATE_LIMITED' });
     expect(blocked.headers['retry-after']).toBeDefined();
+  });
+
+  it('tope diario: agotado, ni un código válido entra; los fallos se cuentan para alertar', async () => {
+    for (let i = 0; i < 5; i++) await panelLogin(401, { code: currentCode(-5) });
+    expect(await redis.get('admin:login:failures')).toBe('5');
+
+    await redis.set('rl:adminLogin:day', '30', 'EX', 86_400);
+    const blocked = await panelLogin(429);
+    expect(blocked.body).toMatchObject({ code: 'RATE_LIMITED' });
   });
 
   it('ya no se entra al panel con el teléfono', async () => {

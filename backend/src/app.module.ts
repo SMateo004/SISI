@@ -17,6 +17,7 @@ import { RateLimitGuard, UserRateLimitGuard } from './common/rate-limit/rate-lim
 import { RateLimitModule } from './common/rate-limit/rate-limit.module';
 import { RateLimitedFilter } from './common/rate-limit/rate-limited.filter';
 import { SisiThrottlerGuard } from './common/rate-limit/sisi-throttler.guard';
+import { SentryExceptionFilter } from './observability/sentry-exception.filter';
 import { AppConfigModule } from './config/config.module';
 import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
 import { HealthModule } from './health/health.module';
@@ -84,6 +85,9 @@ import { WorkersModule } from './workers/workers.module';
     { provide: APP_GUARD, useExisting: UserRateLimitGuard },
     // Permiso del área y límites por admin en las rutas del panel (ADR-0040).
     { provide: APP_GUARD, useClass: AdminGuard },
+    // Orden: Nest prueba los filtros globales del último al primero; el de Sentry (todo) va
+    // antes para que RateLimitedFilter conserve su 429 con Retry-After (ADR-0048).
+    { provide: APP_FILTER, useClass: SentryExceptionFilter },
     { provide: APP_FILTER, useClass: RateLimitedFilter },
   ],
 })

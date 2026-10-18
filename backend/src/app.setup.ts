@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import { securityHeaders } from './common/http/security-headers';
+import { requestIdMiddleware } from './observability/request-context';
 import type { AppConfigService } from './config/app-config';
 import { RedisIoAdapter } from './realtime/redis-io.adapter';
 
@@ -47,6 +48,8 @@ export function setupApp(app: INestApplication): void {
 
   const express = app as NestExpressApplication;
   express.disable('x-powered-by');
+  // Id de correlación primero: todo lo que sigue (logs, Sentry, outbox) lo ve (ADR-0048).
+  express.use(requestIdMiddleware);
   express.use(securityHeaders({ https: appEnv === 'staging' || appEnv === 'production' }));
   // Render (y cualquier proxy delante) envía la IP real en X-Forwarded-For: necesaria para los límites por IP.
   express.set('trust proxy', 1);

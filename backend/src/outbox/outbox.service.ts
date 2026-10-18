@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '../generated/prisma/client';
+import { currentRequestId } from '../observability/request-context';
 import type { OutboxEventType, OutboxPayloads } from './outbox.events';
 
 /**
@@ -15,7 +16,7 @@ export class OutboxService {
     payload: OutboxPayloads[T],
   ): Promise<void> {
     await tx.outboxEvent.create({
-      data: { type, aggregateId, payload },
+      data: { type, aggregateId, payload, requestId: currentRequestId() ?? null },
     });
   }
 }

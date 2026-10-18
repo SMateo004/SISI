@@ -89,4 +89,6 @@ export interface OutboxRecord {
   aggregateId: string;
   payload: unknown;
   attempts: number;
+  /** Id de correlación de la petición de origen (ADR-0048); null si vino del worker o del cron. */
+  requestId?: string | null;
 }

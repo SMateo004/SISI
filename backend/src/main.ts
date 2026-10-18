@@ -4,9 +4,12 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { setupApp, setupSwagger } from './app.setup';
 import type { AppConfigService } from './config/app-config';
+import { createLogger } from './observability/logger.factory';
+import { initSentry } from './observability/sentry';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  initSentry('api');
+  const app = await NestFactory.create(AppModule, { logger: createLogger('api') });
   setupApp(app);
   const config = app.get<AppConfigService>(ConfigService);
   // Swagger no se publica en producción (ADR-0047); el contrato sale de packages/api_contract.

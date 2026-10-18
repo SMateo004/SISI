@@ -18,7 +18,7 @@ export class PrismaOutboxStore implements OutboxStore {
     return this.prisma.$transaction(
       async (tx) => {
         const events = await tx.$queryRaw<OutboxRecord[]>`
-          SELECT id, type, aggregate_id AS "aggregateId", payload, attempts
+          SELECT id, type, aggregate_id AS "aggregateId", payload, attempts, request_id AS "requestId"
           FROM outbox_events
           WHERE published_at IS NULL AND available_at <= now()
           ORDER BY id

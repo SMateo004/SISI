@@ -6,6 +6,8 @@ export interface DomainEvent<T extends OutboxEventType> {
   outboxId: string;
   aggregateId: string;
   payload: OutboxPayloads[T];
+  /** Id de correlación de la petición de origen, si la hubo (ADR-0048). */
+  requestId?: string;
 }
 
 type Handler<T extends OutboxEventType> = (event: DomainEvent<T>) => Promise<void>;

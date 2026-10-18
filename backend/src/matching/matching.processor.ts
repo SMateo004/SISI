@@ -1,4 +1,4 @@
-import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
+import { InjectQueue, OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import {
   type BeforeApplicationShutdown,
   Inject,
@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import type { Job, Queue } from 'bullmq';
 import type { AppConfigService } from '../config/app-config';
 import { WorkerAvailabilityService } from '../locations/worker-availability.service';
+import { reportError } from '../observability/sentry';
 import { MATCHING_JOBS, QUEUES } from '../queues/queues';
 import { DebtStateService } from '../billing/debt-state.service';
 import { JobAutoConfirmService } from '../jobs/job-autoconfirm.service';
@@ -98,5 +99,12 @@ export class MatchingProcessor
     }
     this.logger.warn(`Job de matching inválido: ${job.name} ${JSON.stringify(job.data)}`);
     return undefined;
+  }
+
+  /** Solo el último intento fallido va a Sentry (ADR-0048). */
+  @OnWorkerEvent('failed')
+  onFailed(job: Job<MatchingJobData> | undefined, error: Error): void {
+    if (!job || job.attemptsMade < (job.opts.attempts ?? 1)) return;
+    reportError(error, { queue: QUEUES.matching, job: job.name });
   }
 }

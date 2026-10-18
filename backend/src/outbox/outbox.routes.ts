@@ -24,6 +24,7 @@ export function routeEvent(event: OutboxRecord): JobRoute {
       outboxId: event.id.toString(),
       aggregateId: event.aggregateId,
       payload: event.payload,
+      ...(event.requestId ? { requestId: event.requestId } : {}),
     },
   };
 }

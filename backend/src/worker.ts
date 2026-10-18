@@ -1,5 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { createLogger } from './observability/logger.factory';
+import { initSentry } from './observability/sentry';
 import { WorkerModule } from './worker/worker.module';
 
 /**
@@ -7,7 +9,10 @@ import { WorkerModule } from './worker/worker.module';
  * (ADR-0022). Cierra limpio con SIGTERM (termina el lote y los jobs en curso).
  */
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.createApplicationContext(WorkerModule);
+  initSentry('worker');
+  const app = await NestFactory.createApplicationContext(WorkerModule, {
+    logger: createLogger('worker'),
+  });
   app.enableShutdownHooks();
   Logger.log('Worker iniciado: relay del outbox y colas de BullMQ.', 'Worker');
 }

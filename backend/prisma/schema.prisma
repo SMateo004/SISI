@@ -458,6 +458,8 @@ model OutboxEvent {
   publishedAt DateTime? @map("published_at") @db.Timestamptz(3)
   attempts    Int       @default(0)
   lastError   String?   @map("last_error")
+  /// Id de correlación de la petición que lo generó (ADR-0048).
+  requestId   String?   @map("request_id")
 
   @@index([publishedAt, availableAt, id])
   @@index([aggregateId])

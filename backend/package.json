@@ -1,6 +1,6 @@
 {
   "name": "sisi-backend",
-  "version": "0.1.0",
+  "version": "0.9.0",
   "description": "API de SISI: servicios inmediatos (Bolivia)",
   "private": true,
   "license": "UNLICENSED",
@@ -27,7 +27,8 @@
     "prisma:seed": "prisma db seed",
     "openapi:export": "npm run build && node dist/scripts/export-openapi.js",
     "postinstall": "prisma generate",
-    "dev:tools": "npm run build && node dist/scripts/dev-tools.js"
+    "dev:tools": "npm run build && node dist/scripts/dev-tools.js",
+    "check:migrations": "tsx src/scripts/check-migrations.ts"
   },
   "jest": {
     "moduleFileExtensions": [

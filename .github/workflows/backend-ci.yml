@@ -83,6 +83,10 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Expandir y luego contraer (ADR-0046): ninguna migración nueva rompe el código anterior.
+      - name: Migraciones compatibles hacia atrás
+        run: npm run check:migrations
+
       - name: Typecheck
         run: npm run typecheck
 

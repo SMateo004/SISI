@@ -4,7 +4,7 @@ import { parseArgs } from 'node:util';
 import { Logger, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import { normalizePhone } from '../common/phone/phone';
+import { maskPhone, normalizePhone } from '../common/phone/phone';
 import type { AppConfigService } from '../config/app-config';
 import { BillingCatchUpService } from '../billing/billing-catchup.service';
 import { BillingCoreModule } from '../billing/billing-core.module';
@@ -120,7 +120,7 @@ async function main(): Promise<void> {
                 throw new Error('Usa --approve o --reject "motivo"');
               })();
         const { profile } = await status.apply(userId, event, null);
-        logger.log(`Perfil de ${values.phone ?? ''} ahora en estado ${profile.status}`);
+        logger.log(`Perfil de ${maskPhone(values.phone ?? '')} ahora en estado ${profile.status}`);
         break;
       }
       case 'worker-event': {
@@ -164,7 +164,9 @@ async function main(): Promise<void> {
       case 'make-admin': {
         const userId = await userIdFor(values.phone);
         await prisma.user.update({ where: { id: userId }, data: { role: 'admin' } });
-        logger.log(`La cuenta ${values.phone ?? ''} ahora es admin (vuelve a iniciar sesión)`);
+        logger.log(
+          `La cuenta ${maskPhone(values.phone ?? '')} ahora es admin (vuelve a iniciar sesión)`,
+        );
         break;
       }
       case 'quick-worker': {

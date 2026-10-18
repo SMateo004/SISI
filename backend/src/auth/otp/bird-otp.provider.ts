@@ -1,5 +1,6 @@
 import { HttpStatus, Logger } from '@nestjs/common';
 import { ApiError } from '../../common/errors/api-error';
+import { redactText } from '../../common/logging/redact';
 import { maskPhone } from '../../common/phone/phone';
 import { type OtpProvider, otpMessage } from './otp-provider';
 
@@ -53,13 +54,16 @@ export class BirdOtpProvider implements OtpProvider {
         signal: AbortSignal.timeout(10_000),
       });
     } catch (error) {
-      this.logger.error(`Bird no respondió para ${maskPhone(phoneE164)}: ${String(error)}`);
+      this.logger.error(
+        `Bird no respondió para ${maskPhone(phoneE164)}: ${redactText(String(error), { codes: true })}`,
+      );
       throw unavailable();
     }
     if (!response.ok) {
       const detail = await response.text().catch(() => '');
       this.logger.error(
-        `Bird rechazó el SMS a ${maskPhone(phoneE164)}: ${response.status} ${detail.slice(0, 300)}`,
+        // La respuesta puede repetir el número y el texto (con el código): se redacta (ADR-0047).
+        `Bird rechazó el SMS a ${maskPhone(phoneE164)}: ${String(response.status)} ${redactText(detail.slice(0, 300), { codes: true })}`,
       );
       throw unavailable();
     }

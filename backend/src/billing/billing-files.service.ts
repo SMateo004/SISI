@@ -1,5 +1,6 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { assertNotSelf } from '../common/admin/self-review';
 import { ApiError } from '../common/errors/api-error';
 import type { AppConfigService } from '../config/app-config';
 import { Prisma } from '../generated/prisma/client';
@@ -111,13 +112,11 @@ export class BillingFilesService {
     const row = await this.prisma.paymentSubmission.findUnique({ where: { id } });
     if (!row)
       throw new ApiError(HttpStatus.NOT_FOUND, 'SUBMISSION_NOT_FOUND', 'El comprobante no existe.');
-    if (row.workerId === adminId) {
-      throw new ApiError(
-        HttpStatus.FORBIDDEN,
-        'SELF_REVIEW_FORBIDDEN',
-        'No puedes revisar comprobantes de tu propia cuenta de trabajador.',
-      );
-    }
+    assertNotSelf(
+      adminId,
+      [row.workerId],
+      'No puedes revisar comprobantes de tu propia cuenta de trabajador.',
+    );
     const { count } = await this.prisma.paymentSubmission.updateMany({
       where: { id, status: 'pendiente' },
       data: {

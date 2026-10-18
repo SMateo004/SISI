@@ -1,3 +1,4 @@
+import { assertNotSelf } from '../common/admin/self-review';
 import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiError } from '../common/errors/api-error';
@@ -106,6 +107,18 @@ export class ReportsService {
     valid: boolean,
     resolution: string,
   ): Promise<ResolveReportResultDto> {
+    const current = await this.prisma.report.findUnique({
+      where: { id: reportId },
+      select: { reporterId: true, reportedUserId: true },
+    });
+    if (!current) {
+      throw new ApiError(HttpStatus.NOT_FOUND, 'REPORT_NOT_FOUND', 'El reporte no existe.');
+    }
+    assertNotSelf(
+      adminId,
+      [current.reporterId, current.reportedUserId],
+      'No puedes resolver un reporte en el que eres parte.',
+    );
     const { count } = await this.prisma.report.updateMany({
       where: { id: reportId, status: 'pendiente' },
       data: {

@@ -1,5 +1,6 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { assertNotSelf } from '../common/admin/self-review';
 import { ApiError } from '../common/errors/api-error';
 import { withIdempotency } from '../common/idempotency/idempotency';
 import type { AppConfigService } from '../config/app-config';
@@ -25,12 +26,7 @@ import type {
   RegisterPaymentDto,
 } from './dto/billing-admin.dto';
 
-const selfReview = (): ApiError =>
-  new ApiError(
-    HttpStatus.FORBIDDEN,
-    'SELF_REVIEW_FORBIDDEN',
-    'No puedes registrar pagos ni ajustes sobre tu propia cuenta de trabajador.',
-  );
+const SELF_PAYMENT = 'No puedes registrar pagos ni ajustes sobre tu propia cuenta de trabajador.';
 
 const workerNotFound = (): ApiError =>
   new ApiError(HttpStatus.NOT_FOUND, 'WORKER_NOT_FOUND', 'El trabajador no existe.');
@@ -56,7 +52,7 @@ export class BillingAdminService {
     contentType: string,
     sizeBytes: number,
   ): Promise<PresignedUploadDto> {
-    if (adminId === workerId) throw selfReview();
+    assertNotSelf(adminId, [workerId], SELF_PAYMENT);
     await this.requireWorker(workerId);
     assertUploadAllowed(
       contentType,
@@ -83,7 +79,7 @@ export class BillingAdminService {
     dto: RegisterPaymentDto,
     now: Date = new Date(),
   ): Promise<PaymentResultDto> {
-    if (adminId === dto.workerId) throw selfReview();
+    assertNotSelf(adminId, [dto.workerId], SELF_PAYMENT);
     const amount = new Prisma.Decimal(dto.amountBs);
     if (amount.lte(0)) {
       throw new ApiError(HttpStatus.BAD_REQUEST, 'AMOUNT_INVALID', 'El monto debe ser mayor a 0.');
@@ -216,7 +212,7 @@ export class BillingAdminService {
     dto: RegisterAdjustmentDto,
     now: Date = new Date(),
   ): Promise<AdjustmentResultDto> {
-    if (adminId === dto.workerId) throw selfReview();
+    assertNotSelf(adminId, [dto.workerId], SELF_PAYMENT);
     const amount = new Prisma.Decimal(dto.amountBs);
     if (amount.isZero()) {
       throw new ApiError(HttpStatus.BAD_REQUEST, 'AMOUNT_INVALID', 'El ajuste no puede ser 0.');

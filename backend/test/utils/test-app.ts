@@ -139,6 +139,15 @@ export async function loginAsAdmin(t: TestApp): Promise<AdminSession> {
   });
 }
 
+/**
+ * Hace admin a una cuenta existente (p. ej. el empleador o el trabajador de un trabajo) y
+ * devuelve un token del panel para ella: sirve para probar la autorrevisión.
+ */
+export async function promoteToAdmin(t: TestApp, userId: string): Promise<string> {
+  await t.prisma.user.update({ where: { id: userId }, data: { role: 'admin' } });
+  return (await t.app.get(TokenService).issue({ id: userId, role: 'admin' }, 'admin')).accessToken;
+}
+
 export const bearer = (token: string): [string, string] => ['Authorization', `Bearer ${token}`];
 
 /** Espera hasta que `check` devuelva un valor distinto de undefined (o falla al vencer). */

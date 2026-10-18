@@ -37,6 +37,10 @@ export class AdminCountersPublisher implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleInit(): void {
+    // El último valor emitido vive en Redis y sobrevive a un reinicio (o a otra corrida): sin
+    // borrarlo, un estado igual al guardado no se emitiría y el panel quedaría sin la primera
+    // actualización en vivo.
+    void this.redis.del(LAST_KEY).catch(() => undefined);
     this.timer = setInterval(() => {
       void this.tick().catch((error: unknown) => {
         this.logger.warn(`No se pudieron publicar las colas del panel: ${String(error)}`);

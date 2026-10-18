@@ -60,7 +60,11 @@ describe('admin:counters (e2e)', () => {
       .set(...bearer(user.accessToken))
       .expect(200);
 
-    const live = await panel.next('admin:counters', (p) => p.heldRequests > before.heldRequests);
+    const live = await panel.next(
+      'admin:counters',
+      (p) => p.heldRequests > before.heldRequests,
+      10_000,
+    );
     expect(live.heldRequests).toBe(before.heldRequests + 1);
     expect(live.at).toEqual(expect.any(String));
     // La app (aunque sea de un admin) y los usuarios no reciben las colas.

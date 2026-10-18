@@ -1,13 +1,16 @@
 name: deploy-web
 
-# Flutter web → Vercel (ADR-0006).
-#   develop → staging (deployment preview)
-#   main    → production (--prod)
+# Flutter web → Vercel (ADR-0006, ADR-0039).
+#   develop → proyectos de staging (app-web-staging, admin-staging)
+#   main    → proyectos de producción
+# Los dos ambientes despliegan con --prod a su propio proyecto: así cada uno tiene una URL
+# .vercel.app fija (las previews cambian de URL en cada deploy y CORS_ORIGINS necesita orígenes fijos).
 # Requiere GitHub Environments "staging" y "production" con:
 #   vars:    API_URL, SOCKET_URL, MAPS_API_KEY_WEB (llave de Maps de la app web, restringida por dominio),
 #            FIREBASE_API_KEY_WEB, FIREBASE_APP_ID_WEB, FIREBASE_SENDER_ID, FIREBASE_PROJECT_ID,
 #            FIREBASE_VAPID_KEY (configuración pública de Firebase para el push web, ADR-0027)
 #   secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID_APP_WEB, VERCEL_PROJECT_ID_ADMIN
+#            (en cada Environment, los ids de SUS proyectos: staging ≠ production)
 
 on:
   push:
@@ -46,8 +49,6 @@ jobs:
         working-directory: ${{ matrix.path }}
     env:
       APP_ENV: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
-      VERCEL_ENV: ${{ github.ref_name == 'main' && 'production' || 'preview' }}
-      VERCEL_PROD_FLAG: ${{ github.ref_name == 'main' && '--prod' || '' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -93,6 +94,14 @@ jobs:
           'self.FIREBASE_CONFIG='+JSON.stringify({apiKey:e.FIREBASE_API_KEY,appId:e.FIREBASE_APP_ID,
           messagingSenderId:e.FIREBASE_SENDER_ID,projectId:e.FIREBASE_PROJECT_ID})+';')"
 
+      # El admin llama a la API por su propio origen (/api/* → API_URL) para que la cookie
+      # httpOnly del refresh sea de primera parte (ADR-0040). El socket va directo a SOCKET_URL.
+      - name: Proxy /api del admin
+        if: matrix.project == 'admin'
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: node tool/vercel-json.mjs
+
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
@@ -107,9 +116,10 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
         run: |
-          vercel pull --yes --environment="$VERCEL_ENV" --token="$VERCEL_TOKEN"
-          # Empaqueta build/web aplicando vercel.json (rewrites a index.html).
-          vercel build $VERCEL_PROD_FLAG --token="$VERCEL_TOKEN"
-          url=$(vercel deploy --prebuilt $VERCEL_PROD_FLAG --token="$VERCEL_TOKEN")
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          # Empaqueta build/web aplicando vercel.json (rewrites a index.html y, en el admin, /api).
+          vercel build --prod --token="$VERCEL_TOKEN"
+          url=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          # La URL fija es la del proyecto (<proyecto>.vercel.app); $url es la del deployment.
           echo "Desplegado en: $url"
-          echo "### ${{ matrix.project }} → $url" >> "$GITHUB_STEP_SUMMARY"
+          echo "### ${{ matrix.project }} ($APP_ENV) → $url" >> "$GITHUB_STEP_SUMMARY"

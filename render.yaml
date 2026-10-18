@@ -61,6 +61,8 @@ projects:
                   type: keyvalue
                   name: cache-staging
                   property: connectionString
+              # URLs fijas de los proyectos de Vercel de staging (ADR-0039), p. ej.:
+              # https://app-web-staging.vercel.app,https://admin-staging.vercel.app
               - key: CORS_ORIGINS
                 sync: false
               - key: OTP_PROVIDER_KEY

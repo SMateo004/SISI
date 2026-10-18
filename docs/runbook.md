@@ -13,6 +13,34 @@ Mientras esto siga así:
 
 Producción no arranca con el OTP por consola: la API se niega a iniciar.
 
+## Desplegar, revertir y ver logs (ADR-0039)
+
+### URLs de staging
+| Pieza | URL | Origen |
+|---|---|---|
+| API y socket | `https://<api-staging>.onrender.com` | Render, servicio `api-staging` |
+| App web | `https://app-web-staging.vercel.app` | Vercel, proyecto `app-web-staging` |
+| Admin | `https://admin-staging.vercel.app` (la API va por `/api/*`) | Vercel, proyecto `admin-staging` |
+
+`CORS_ORIGINS` de `api-staging` = las dos URLs de Vercel separadas por coma.
+
+### Desplegar
+- **Staging:** push o merge a `develop`.
+  - Backend: Render despliega `api-staging`, `worker-staging` y `billing-cron-staging` solo si pasa backend-ci (`autoDeployTrigger: checksPass`). La API corre `prisma migrate deploy` y el seed antes de arrancar.
+  - Web: `deploy-web` publica app-web y admin con `--prod` en sus proyectos de staging.
+- **Producción:** merge a `main`, igual que staging, pero con los servicios sin sufijo y el Environment `production` de GitHub.
+- **Verificar:** `curl https://<api-staging>.onrender.com/health`, y el resumen del run de `deploy-web` (Actions), que muestra las URLs.
+
+### Revertir
+- **Backend:** Render → servicio → Events → deploy anterior → "Rollback". Una migración no se revierte sola: si el deploy malo incluía una, se escribe una migración correctiva (nunca editar una aplicada).
+- **Web:** `vercel rollback <url-del-deployment-anterior> --token=…`, o Vercel → proyecto → Deployments → "Promote to Production" sobre el anterior.
+- **Código:** `git revert <sha>` en `develop` o `main` y push. Vuelve a desplegar todo por el camino normal.
+
+### Logs
+- **API, worker y cron:** Render → servicio → Logs. El OTP de staging sale aquí.
+- **Web:** Vercel → proyecto → Deployments → Logs (solo build; la app corre en el navegador).
+- **CI y deploys:** GitHub → Actions (`backend-ci`, `deploy-web`).
+
 ## Probar un login en staging
 
 1. Pedir el código desde la app.

@@ -134,5 +134,5 @@ Valores implementados como propuesta; cambiarlos es configuración o un ajuste m
 - [ ] **Código Flutter compartido:** hoy `core/` está duplicado en mobile y admin. Evaluar un paquete Dart en `packages/` cuando crezca (ver ADR-0005).
 - [x] ~~**Cliente Dart desde OpenAPI**~~ — openapi-generator `dart-dio` vía Docker, 2026-10-14 (ADR-0015). Adopción en las apps: pendiente arriba.
 - [ ] **Sentry:** confirmar cuenta y si se activa desde Fase 1.
-- [ ] **URL fija de staging en Vercel:** los deployments preview cambian de URL en cada deploy, y `CORS_ORIGINS` de `api-staging` necesita orígenes fijos. Opciones: dominio de staging (ej. `staging-app.` y `staging-admin.`) asignado con `vercel alias` en `deploy-web.yml`, o un Custom Environment de Vercel. Decidir junto con el dominio.
-- [ ] **Protección de previews en Vercel:** por defecto las previews piden login de Vercel; decidir si staging queda privado o público para pruebas con usuarios.
+- [x] ~~**URL fija de staging en Vercel**~~ — Fase 6, 2026-10-17: proyectos de Vercel separados (`app-web-staging`, `admin-staging`) desplegados con `--prod`, y la URL `.onrender.com` de `api-staging` (ADR-0039). Al tener dominio, ver la migración en el ADR.
+- [ ] **Protección de staging en Vercel:** con `--prod` las URLs `.vercel.app` de los proyectos de staging son públicas salvo que se active Deployment Protection. Decidir si staging queda privado o público para pruebas con usuarios (el OTP por consola exige que no se abra a terceros).

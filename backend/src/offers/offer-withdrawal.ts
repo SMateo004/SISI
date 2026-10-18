@@ -1,3 +1,4 @@
+import { recordOfferEvent } from './offer-events';
 import type { Prisma } from '../generated/prisma/client';
 import type { OutboxService } from '../outbox/outbox.service';
 import type { LockedRequest } from '../requests/request-lock';
@@ -22,7 +23,8 @@ export async function withdrawLockedOffer(
   offerId: string,
   actorId: string | null,
 ): Promise<WithdrawnOffer> {
-  await tx.offer.update({ where: { id: offerId }, data: { status: 'retirada' } });
+  const withdrawn = await tx.offer.update({ where: { id: offerId }, data: { status: 'retirada' } });
+  await recordOfferEvent(tx, withdrawn, 'retirada');
   const remaining = await tx.offer.count({
     where: { requestId: request.id, status: 'activa' },
   });

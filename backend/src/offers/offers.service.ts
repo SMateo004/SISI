@@ -1,3 +1,4 @@
+import { closeActiveOffers, recordOfferEvent } from './offer-events';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CategoryResolver } from '../categories/category-resolver';
@@ -159,6 +160,7 @@ export class OffersService {
             },
           });
 
+      await recordOfferEvent(tx, saved, existing ? 'reemplazada' : 'creada');
       if (request.status === 'buscando') {
         await this.status.apply(requestId, 'RECEIVE_OFFER', workerId, {}, tx);
       }
@@ -378,11 +380,12 @@ export class OffersService {
         },
       });
       await this.status.apply(requestId, 'ASSIGN', employerId, { data: { expiresAt: null } }, tx);
-      await tx.offer.update({ where: { id: offer.id }, data: { status: 'aceptada' } });
-      await tx.offer.updateMany({
-        where: { requestId, status: 'activa' },
-        data: { status: 'cerrada' },
+      const accepted = await tx.offer.update({
+        where: { id: offer.id },
+        data: { status: 'aceptada' },
       });
+      await recordOfferEvent(tx, accepted, 'aceptada');
+      await closeActiveOffers(tx, requestId);
       await this.outbox.add(tx, 'request.assigned', requestId, { requestId, jobId: job.id });
       return { busy: false as const, jobId: job.id, requestId };
     });

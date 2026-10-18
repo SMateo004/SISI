@@ -41,3 +41,6 @@ R5: el trabajador ve la solicitud antes de ofertar, acepta el precio o contraofe
 ## Actualización (Fase 4)
 - El contacto trae `telUri` (`tel:+591…`) y `whatsappUri` (`https://wa.me/591…`, sin "+") para los botones de la app, y `visibleUntil`. Se oculta `JOB_CONTACT_VISIBLE_AFTER_MS` (24 h) después de terminado o cancelado: 410 `CONTACT_EXPIRED`.
 - Aceptar a un trabajador ocupado responde 409 `WORKER_BUSY` y le retira la oferta (ADR-0029).
+
+## Actualización (Fase 6)
+Cada cambio de una oferta (crear, reemplazar, retirar, aceptar y cerrar) queda además en `offer_events`, append-only y con el monto de ese momento (ADR-0042). La fila de `offers` sigue siendo el estado actual.

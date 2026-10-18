@@ -1,3 +1,4 @@
+import { closeActiveOffers } from '../offers/offer-events';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CategoryResolver } from '../categories/category-resolver';
@@ -279,10 +280,7 @@ export class RequestsService {
         tx,
       );
       // Las ofertas se cierran con la solicitud; el worker avisa con offer:closed.
-      await tx.offer.updateMany({
-        where: { requestId, status: 'activa' },
-        data: { status: 'cerrada' },
-      });
+      await closeActiveOffers(tx, requestId);
       await this.outbox.add(tx, 'request.cancelled', requestId, { requestId });
     });
     return this.getOwn(userId, requestId);

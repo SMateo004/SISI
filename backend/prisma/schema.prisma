@@ -585,6 +585,7 @@ model Offer {
 
   request ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
   worker  WorkerProfile  @relation(fields: [workerId], references: [userId], onDelete: Cascade)
+  events  OfferEvent[]
 
   @@unique([requestId, workerId])
   @@index([requestId, status])
@@ -611,6 +612,39 @@ enum JobStatus {
   cancelado
 
   @@map("job_status")
+}
+
+enum OfferEventKind {
+  creada
+  /// El trabajador cambió su oferta (o volvió a enviar una retirada): nuevo monto.
+  reemplazada
+  retirada
+  aceptada
+  cerrada
+
+  @@map("offer_event_kind")
+}
+
+/// Historial de cada oferta (ADR-0042), append-only (trigger): guarda cada monto ofertado
+/// para revisar disputas. Se escribe en la misma transacción que el cambio de la oferta.
+model OfferEvent {
+  id        BigInt         @id @default(autoincrement())
+  offerId   String         @map("offer_id") @db.Uuid
+  requestId String         @map("request_id") @db.Uuid
+  workerId  String         @map("worker_id") @db.Uuid
+  cityId    String         @map("city_id") @db.Uuid
+  kind      OfferEventKind
+  revision  Int
+  type      OfferType
+  amountBs  Decimal        @map("amount_bs") @db.Decimal(10, 2)
+  etaMin    Int            @map("eta_min")
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  offer Offer @relation(fields: [offerId], references: [id], onDelete: Restrict)
+
+  @@index([offerId, id])
+  @@index([requestId, createdAt])
+  @@map("offer_events")
 }
 
 /// Trabajo asignado al aceptar una oferta (R5.4, ADR-0026).

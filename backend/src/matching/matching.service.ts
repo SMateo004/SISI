@@ -1,3 +1,4 @@
+import { closeActiveOffers } from '../offers/offer-events';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { FeatureFlagsService } from '../feature-flags/feature-flags.service';
 import type { Prisma } from '../generated/prisma/client';
@@ -305,10 +306,7 @@ export class MatchingService {
 
   private async expireIn(tx: Prisma.TransactionClient, requestId: string): Promise<void> {
     await this.status.apply(requestId, 'EXPIRE', null, { reason: 'Sin asignar a tiempo' }, tx);
-    await tx.offer.updateMany({
-      where: { requestId, status: 'activa' },
-      data: { status: 'cerrada' },
-    });
+    await closeActiveOffers(tx, requestId);
     await this.outbox.add(tx, 'request.expired', requestId, { requestId });
   }
 

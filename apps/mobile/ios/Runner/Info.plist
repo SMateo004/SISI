@@ -7,9 +7,9 @@
 	<key>GMSApiKey</key>
 	<string>$(MAPS_API_KEY)</string>
 	<key>NSCameraUsageDescription</key>
-	<string>SISI usa la cámara para tomar la foto de tu carnet, tu selfie y tu foto de perfil.</string>
+	<string>Usamos la cámara solo para las fotos que tomas tú: tu carnet y tu selfie para verificarte, tu foto de perfil, las fotos de una solicitud y el comprobante de pago.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>SISI necesita acceso a tus fotos para que elijas la foto de tu carnet o de tu perfil.</string>
+	<string>Para que elijas una foto de tu galería: tu carnet, tu foto de perfil, las fotos de una solicitud o el comprobante de pago.</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>es</string>
@@ -18,6 +18,11 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>es</string>
+	<!-- Avisos push con APNs (ADR-0027, ADR-0054): activo cuando haya cuenta de Apple. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>CFBundleDisplayName</key>
 	<string>SISI</string>
 	<key>CFBundleExecutable</key>

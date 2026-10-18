@@ -1,11 +1,15 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 
 import 'app.dart';
+import 'core/observability/sentry_setup.dart';
 
-void main() {
+Future<void> main() async {
   // URLs limpias en web (/ruta en vez de /#/ruta); vercel.json reescribe a index.html.
   usePathUrlStrategy();
-  runApp(const ProviderScope(child: SisiAdminApp()));
+  // Errores a Sentry en staging y producción, sin datos personales (ADR-0048).
+  await runWithSentry(
+    const ProviderScope(child: SisiAdminApp()),
+    appName: 'sisi-admin',
+  );
 }

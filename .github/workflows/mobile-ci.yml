@@ -1,0 +1,50 @@
+name: mobile-ci
+
+# Compila Android en debug en cada cambio de la app (ADR-0054): valida Gradle, el manifiesto y
+# la configuración de firma sin secretos (sin upload key cae en la firma de debug). Los tests
+# y el análisis también corren en deploy-web; aquí se agrega el build nativo.
+
+on:
+  push:
+    branches: [develop, "feature/**"]
+    paths: ["apps/mobile/**", ".github/workflows/mobile-ci.yml"]
+  pull_request:
+    paths: ["apps/mobile/**", ".github/workflows/mobile-ci.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: "3.44.9"
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - name: Build APK (debug)
+        run: flutter build apk --debug

@@ -7,7 +7,7 @@
     <!-- Android 13+: avisos push. Se pide después de explicarlos en la app (ADR-0051). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
-        android:label="SISI"
+        android:label="${appName}"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <!-- Push (ADR-0027): canal por defecto de FCM (lo crea MainActivity). -->

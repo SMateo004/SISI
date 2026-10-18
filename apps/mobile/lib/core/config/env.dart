@@ -43,6 +43,9 @@ abstract final class Env {
     'FIREBASE_VAPID_KEY',
   );
 
+  /// Push en iOS: solo con la llave APNs cargada en Firebase (ADR-0054).
+  static const bool iosPushEnabled = bool.fromEnvironment('IOS_PUSH');
+
   static bool get pushConfigured =>
       firebaseApiKey.isNotEmpty &&
       firebaseAppId.isNotEmpty &&

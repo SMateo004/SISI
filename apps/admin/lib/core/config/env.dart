@@ -27,6 +27,11 @@ abstract final class Env {
 
   static bool get isProduction => appEnv == 'production';
 
+  /// Versión del panel (la pone deploy-web) y DSN de Sentry (ADR-0048). Vacíos en local.
+  static const String appVersion = String.fromEnvironment('APP_VERSION');
+  static const String appBuild = String.fromEnvironment('APP_BUILD');
+  static const String sentryDsn = String.fromEnvironment('SENTRY_DSN');
+
   /// [apiUrl] absoluta: una ruta relativa se resuelve contra el origen del panel.
   static String resolvedApiUrl([Uri? base]) {
     if (!apiUrl.startsWith('/')) return apiUrl;

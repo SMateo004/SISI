@@ -21,7 +21,11 @@ class PushMessage {
 String? pushPlatform() {
   if (kIsWeb) return 'web';
   if (defaultTargetPlatform == TargetPlatform.android) return 'android';
-  // iOS queda pendiente hasta tener la cuenta de Apple (APNs).
+  // iOS: listo en el proyecto (entitlements y modo remoto); se enciende con
+  // --dart-define=IOS_PUSH=true cuando la llave APNs esté en Firebase (cuenta de Apple).
+  if (defaultTargetPlatform == TargetPlatform.iOS && Env.iosPushEnabled) {
+    return 'ios';
+  }
   return null;
 }
 

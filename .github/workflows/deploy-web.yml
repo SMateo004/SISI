@@ -70,6 +70,13 @@ jobs:
       - name: Dependencias
         run: flutter pub get
 
+      - name: Versión del pubspec
+        id: version
+        run: |
+          v=$(grep -E '^version:' pubspec.yaml | sed -E 's/version:[[:space:]]*//')
+          echo "name=${v%%+*}" >> "$GITHUB_OUTPUT"
+          echo "build=${v##*+}" >> "$GITHUB_OUTPUT"
+
       - name: Analyze
         run: flutter analyze
 
@@ -82,6 +89,9 @@ jobs:
           --dart-define=API_URL=${{ matrix.project == 'admin' && '/api' || vars.API_URL }}
           --dart-define=SOCKET_URL=${{ vars.SOCKET_URL }}
           --dart-define=APP_ENV=${{ env.APP_ENV }}
+          --dart-define=APP_VERSION=${{ steps.version.outputs.name }}
+          --dart-define=APP_BUILD=${{ steps.version.outputs.build }}
+          --dart-define=SENTRY_DSN=${{ matrix.project == 'admin' && vars.SENTRY_DSN_ADMIN || vars.SENTRY_DSN_WEB }}
           --dart-define=MAPS_API_KEY=${{ vars.MAPS_API_KEY_WEB }}
           --dart-define=FIREBASE_API_KEY=${{ vars.FIREBASE_API_KEY_WEB }}
           --dart-define=FIREBASE_APP_ID=${{ vars.FIREBASE_APP_ID_WEB }}

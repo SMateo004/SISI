@@ -1,8 +1,26 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+/**
+ * Firma de release (ADR-0054): upload key fuera del repositorio. En CI llega por variables de
+ * entorno (ANDROID_KEYSTORE_PATH, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS,
+ * ANDROID_KEY_PASSWORD); en una máquina, por android/key.properties (ignorado por git).
+ * Google Play App Signing firma lo que se publica; esta llave solo autentica la subida.
+ */
+val keyProperties = Properties().apply {
+    val file = rootProject.file("key.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+fun signingValue(env: String, prop: String): String? =
+    System.getenv(env)?.takeIf { it.isNotBlank() } ?: keyProperties.getProperty(prop)
+
+val releaseStoreFile = signingValue("ANDROID_KEYSTORE_PATH", "storeFile")
+val requireReleaseSigning = System.getenv("SISI_REQUIRE_RELEASE_SIGNING") == "true"
 
 android {
     namespace = "bo.sisi.sisi_mobile"
@@ -15,10 +33,11 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "bo.sisi.sisi_mobile"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        // Identificador en Play: no se puede cambiar después de publicar. Provisional hasta tener
+        // el nombre comercial (docs/pendientes.md); el release lo fija con -PAPP_ID=...
+        applicationId = (project.findProperty("APP_ID") as String?) ?: "bo.sisi.sisi_mobile"
+        // Nombre visible bajo el ícono (-PAPP_NAME=...; provisional "SISI").
+        manifestPlaceholders["appName"] = (project.findProperty("APP_NAME") as String?) ?: "SISI"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -29,11 +48,28 @@ android {
             (project.findProperty("MAPS_API_KEY") as String?) ?: System.getenv("MAPS_API_KEY") ?: ""
     }
 
+    signingConfigs {
+        if (releaseStoreFile != null) {
+            create("release") {
+                storeFile = file(releaseStoreFile)
+                storePassword = signingValue("ANDROID_KEYSTORE_PASSWORD", "storePassword")
+                keyAlias = signingValue("ANDROID_KEY_ALIAS", "keyAlias")
+                keyPassword = signingValue("ANDROID_KEY_PASSWORD", "keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = when {
+                releaseStoreFile != null -> signingConfigs.getByName("release")
+                // mobile-release exige la upload key: nunca se publica un build firmado con debug.
+                requireReleaseSigning -> throw GradleException(
+                    "Falta la upload key (ANDROID_KEYSTORE_PATH y demás). Ver docs/runbook.md, Android."
+                )
+                // En una máquina sin llave, "flutter run --release" sigue funcionando.
+                else -> signingConfigs.getByName("debug")
+            }
         }
     }
 }

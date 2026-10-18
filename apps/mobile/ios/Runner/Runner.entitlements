@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!-- Push con APNs (ADR-0054). Al tener la cuenta de Apple: Xcode → Runner → Signing &amp;
+     Capabilities → + Push Notifications (enlaza este archivo); en release pasa a production. -->
+<dict>
+	<key>aps-environment</key>
+	<string>development</string>
+</dict>
+</plist>

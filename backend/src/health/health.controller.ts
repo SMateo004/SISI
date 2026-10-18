@@ -9,11 +9,13 @@ import { SkipThrottle } from '@nestjs/throttler';
 import { Public } from '../auth/decorators/auth.decorators';
 import { HealthResponseDto } from './dto/health-response.dto';
 import { HealthService } from './health.service';
+import { SkipAppVersion } from '../client-app/app-version.guard';
 
 @ApiTags('health')
 @Public()
 // Render consulta /health desde IPs fijas: no debe consumir el límite global.
 @SkipThrottle({ global: true })
+@SkipAppVersion()
 @Controller('health')
 export class HealthController {
   constructor(private readonly health: HealthService) {}

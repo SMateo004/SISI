@@ -5,6 +5,7 @@ import { SkipThrottle } from '@nestjs/throttler';
 import { Public } from '../auth/decorators/auth.decorators';
 import { releaseInfo } from '../common/release/release';
 import type { AppConfigService } from '../config/app-config';
+import { SkipAppVersion } from '../client-app/app-version.guard';
 
 export class VersionDto {
   @ApiProperty({ example: '0.9.0' }) version!: string;
@@ -16,6 +17,7 @@ export class VersionDto {
 @ApiTags('health')
 @Public()
 @SkipThrottle({ global: true })
+@SkipAppVersion()
 @Controller('version')
 export class VersionController {
   constructor(@Inject(ConfigService) private readonly config: AppConfigService) {}

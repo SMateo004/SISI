@@ -17,6 +17,10 @@ import { RateLimitGuard, UserRateLimitGuard } from './common/rate-limit/rate-lim
 import { RateLimitModule } from './common/rate-limit/rate-limit.module';
 import { RateLimitedFilter } from './common/rate-limit/rate-limited.filter';
 import { SisiThrottlerGuard } from './common/rate-limit/sisi-throttler.guard';
+import { AppVersionGuard } from './client-app/app-version.guard';
+import { ClientAppModule } from './client-app/client-app.module';
+import { LegalGuard } from './legal/legal.guard';
+import { LegalModule } from './legal/legal.module';
 import { ObservabilityModule } from './observability/observability.module';
 import { SentryExceptionFilter } from './observability/sentry-exception.filter';
 import { AppConfigModule } from './config/config.module';
@@ -76,8 +80,12 @@ import { WorkersModule } from './workers/workers.module';
     RealtimeModule,
     RealtimeEmitterModule,
     ObservabilityModule,
+    LegalModule,
+    ClientAppModule,
   ],
   providers: [
+    // Versión mínima de la app primero: una app vieja recibe 426 sin gastar nada más (ADR-0054).
+    { provide: APP_GUARD, useExisting: AppVersionGuard },
     // Orden: límites por IP antes que la autenticación (frena fuerza bruta sin tocar la BD).
     { provide: APP_GUARD, useClass: SisiThrottlerGuard },
     { provide: APP_GUARD, useExisting: RateLimitGuard },
@@ -85,6 +93,8 @@ import { WorkersModule } from './workers/workers.module';
     { provide: APP_GUARD, useExisting: RolesGuard },
     // Límites por usuario (@RateLimit con per: 'user'), ya con la sesión resuelta (ADR-0047).
     { provide: APP_GUARD, useExisting: UserRateLimitGuard },
+    // Textos legales vigentes aceptados antes de usar la app (ADR-0051).
+    { provide: APP_GUARD, useExisting: LegalGuard },
     // Permiso del área y límites por admin en las rutas del panel (ADR-0040).
     { provide: APP_GUARD, useClass: AdminGuard },
     // Orden: Nest prueba los filtros globales del último al primero; el de Sentry (todo) va

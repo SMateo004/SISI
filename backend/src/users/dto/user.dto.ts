@@ -32,6 +32,12 @@ export class UserDto {
   createdAt!: string;
 }
 
+/** GET /me: la cuenta y lo que falta aceptar (ADR-0051). */
+export class MeDto extends UserDto {
+  @ApiProperty({ enum: ['terms', 'privacy'], isArray: true, example: [] })
+  legalPending!: ('terms' | 'privacy')[];
+}
+
 export function toUserDto(user: User, photoUrl: string | null = null): UserDto {
   return {
     id: user.id,

@@ -23,7 +23,9 @@ import {
   type AllowedImageType,
 } from '../storage/upload-policy';
 import { UpdateMeDto } from './dto/update-me.dto';
-import { UserDto } from './dto/user.dto';
+import { MeDto, UserDto } from './dto/user.dto';
+import { SkipLegal } from '../legal/legal.guard';
+import { LegalService } from '../legal/legal.service';
 import { UserPresenter } from './user.presenter';
 import { UsersService } from './users.service';
 import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
@@ -37,14 +39,23 @@ export class MeController {
     private readonly users: UsersService,
     private readonly presenter: UserPresenter,
     private readonly storage: StorageService,
+    private readonly legal: LegalService,
     @Inject(ConfigService) private readonly config: AppConfigService,
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'Mi cuenta' })
-  @ApiOkResponse({ type: UserDto })
-  async me(@CurrentUser() current: AuthenticatedUser): Promise<UserDto> {
-    return this.presenter.present(await this.users.getById(current.id));
+  @SkipLegal()
+  @ApiOperation({
+    summary: 'Mi cuenta',
+    description:
+      'legalPending: textos vigentes que falta aceptar (la app muestra la pantalla de aceptación).',
+  })
+  @ApiOkResponse({ type: MeDto })
+  async me(@CurrentUser() current: AuthenticatedUser): Promise<MeDto> {
+    const user = await this.presenter.present(await this.users.getById(current.id));
+    return Object.assign(new MeDto(), user, {
+      legalPending: await this.legal.pendingFor(current.id),
+    });
   }
 
   @Patch()

@@ -7,10 +7,12 @@ const def = (key: string) => {
 };
 
 describe('catálogo de parámetros (ADR-0043)', () => {
-  it('cada parámetro tiene rango o es de anillos, y las claves no se repiten', () => {
+  it('cada parámetro tiene rango (o formato, si es texto) y las claves no se repiten', () => {
     expect(new Set(SETTINGS.map((s) => s.key)).size).toBe(SETTINGS.length);
     for (const s of SETTINGS) {
-      if (s.kind !== 'rings') {
+      if (s.kind === 'text') {
+        expect(s.pattern).toBeDefined();
+      } else if (s.kind !== 'rings') {
         expect(s.min).toBeDefined();
         expect(s.max).toBeDefined();
       }
@@ -47,5 +49,17 @@ describe('catálogo de parámetros (ADR-0043)', () => {
     const hour = def('BILLING_REMINDER_HOUR');
     expect(validateSetting(hour, 9)).toMatchObject({ ok: true });
     expect(validateSetting(hour, 3)).toMatchObject({ ok: false });
+  });
+
+  it('texto: WhatsApp de Bolivia (o vacío), versiones X.Y.Z y fecha del piloto', () => {
+    const support = def('SUPPORT_WHATSAPP');
+    expect(validateSetting(support, '+59170000001')).toEqual({ ok: true, value: '+59170000001' });
+    expect(validateSetting(support, '')).toEqual({ ok: true, value: '' });
+    expect(validateSetting(support, '70000001')).toMatchObject({ ok: false });
+    const min = def('APP_MIN_VERSION_ANDROID');
+    expect(validateSetting(min, ' 0.9.1 ')).toEqual({ ok: true, value: '0.9.1' });
+    expect(validateSetting(min, '')).toMatchObject({ ok: false });
+    expect(validateSetting(min, '1.0')).toMatchObject({ ok: false });
+    expect(validateSetting(def('PILOT_STARTED_AT'), '2026-11-02')).toMatchObject({ ok: true });
   });
 });

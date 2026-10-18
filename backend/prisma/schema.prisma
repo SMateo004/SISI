@@ -89,6 +89,7 @@ model User {
   jobsAsEmployer         Job[]               @relation("JobEmployer")
   jobsAsWorker           Job[]               @relation("JobWorker")
   adminAuditEntries      AdminAuditLog[]     @relation("AdminAuditLogAdmin")
+  legalAcceptances       LegalAcceptance[]
 
   @@index([cityId])
   // Búsqueda del panel por nombre o teléfono con ILIKE (pg_trgm, Fase 6) y listado por alta.
@@ -1074,4 +1075,44 @@ model AdminAuditLog {
   @@index([targetType, targetId])
   @@index([action, createdAt])
   @@map("admin_audit_log")
+}
+
+/// Textos legales con versión (ADR-0051). Una versión publicada no se edita: se agrega otra.
+/// Mientras el texto lleve el marcador de borrador, el seed puede reemplazarlo.
+model LegalDocument {
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type        LegalDocumentType
+  version     Int
+  title       String
+  contentMd   String            @map("content_md")
+  publishedAt DateTime          @default(now()) @map("published_at") @db.Timestamptz(3)
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([type, version])
+  @@map("legal_documents")
+}
+
+/// Aceptación de un texto legal (append-only con trigger, ADR-0051): quién, qué versión y cuándo.
+model LegalAcceptance {
+  id            BigInt            @id @default(autoincrement())
+  userId        String            @map("user_id") @db.Uuid
+  type          LegalDocumentType
+  version       Int
+  /// Declaró ser mayor de 18 años al aceptar (registro).
+  adultDeclared Boolean           @default(false) @map("adult_declared")
+  appVersion    String?           @map("app_version")
+  platform      String?
+  acceptedAt    DateTime          @default(now()) @map("accepted_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, type, version])
+  @@map("legal_acceptances")
+}
+
+enum LegalDocumentType {
+  terms
+  privacy
+
+  @@map("legal_document_type")
 }

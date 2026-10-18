@@ -6,20 +6,24 @@ import { parseRings } from '../matching/matching.config';
  * valor por defecto (y la que usan los e2e, en milisegundos); el panel guarda un valor
  * propio en app_settings. Los rangos son de producción: el panel no acepta valores de prueba.
  */
-export type SettingKind = 'int' | 'decimal' | 'rings';
+export type SettingKind = 'int' | 'decimal' | 'rings' | 'text';
 
 export interface SettingDef {
   key: keyof Env;
-  group: 'matching' | 'ofertas' | 'trabajos' | 'cobros';
+  group: 'matching' | 'ofertas' | 'trabajos' | 'cobros' | 'app';
   label: string;
   help: string;
   kind: SettingKind;
   /** Unidad del valor guardado; el panel la muestra (y convierte ms a minutos u horas). */
-  unit: 'ms' | 'días' | 'hora' | 'Bs' | 'ofertas' | 'veces' | 'anillos';
+  unit: 'ms' | 'días' | 'hora' | 'Bs' | 'ofertas' | 'veces' | 'anillos' | 'texto';
   min?: number;
   max?: number;
   /** El entorno lo guarda como texto (montos en Bs con 2 decimales). */
   money?: boolean;
+  /** kind 'text': formato aceptado (vacío siempre se acepta si `optional`). */
+  pattern?: RegExp;
+  optional?: boolean;
+  example?: string;
 }
 
 const MIN = 60_000;
@@ -79,7 +83,7 @@ export const SETTINGS: readonly SettingDef[] = [
     key: 'OFFER_COUNTER_MAX_FACTOR',
     group: 'ofertas',
     label: 'Contraoferta máxima',
-    help: 'Una contraoferta puede ser a lo sumo estas veces el precio propuesto.',
+    help: 'Una contraoferta puede ser a lo sumo estas veces el máximo de referencia de la categoría en la ciudad (R5.2).',
     kind: 'decimal',
     unit: 'veces',
     min: 1,
@@ -156,6 +160,58 @@ export const SETTINGS: readonly SettingDef[] = [
     min: 6,
     max: 21,
   },
+  {
+    key: 'SUPPORT_WHATSAPP',
+    group: 'app',
+    label: 'WhatsApp de soporte',
+    help: 'Número de WhatsApp Business para el botón "Ayuda" de la app (+591…). Vacío: sin botón.',
+    kind: 'text',
+    unit: 'texto',
+    pattern: /^\+591[67]\d{7}$/,
+    optional: true,
+    example: '+59170000000',
+  },
+  {
+    key: 'APP_MIN_VERSION_ANDROID',
+    group: 'app',
+    label: 'Versión mínima (Android)',
+    help: 'Una app Android más vieja ve "Actualiza la app" y la API no le responde (426).',
+    kind: 'text',
+    unit: 'texto',
+    pattern: /^\d+\.\d+\.\d+$/,
+    example: '0.9.0',
+  },
+  {
+    key: 'APP_MIN_VERSION_IOS',
+    group: 'app',
+    label: 'Versión mínima (iOS)',
+    help: 'Igual que en Android, para iPhone.',
+    kind: 'text',
+    unit: 'texto',
+    pattern: /^\d+\.\d+\.\d+$/,
+    example: '0.9.0',
+  },
+  {
+    key: 'APP_MIN_VERSION_WEB',
+    group: 'app',
+    label: 'Versión mínima (web)',
+    help: 'Igual, para la app web (se actualiza sola al recargar).',
+    kind: 'text',
+    unit: 'texto',
+    pattern: /^\d+\.\d+\.\d+$/,
+    example: '0.9.0',
+  },
+  {
+    key: 'PILOT_STARTED_AT',
+    group: 'app',
+    label: 'Inicio del piloto',
+    help: 'Fecha (AAAA-MM-DD, hora local) desde la que el dashboard cuenta las métricas del piloto.',
+    kind: 'text',
+    unit: 'texto',
+    pattern: /^\d{4}-\d{2}-\d{2}$/,
+    optional: true,
+    example: '2026-11-02',
+  },
 ];
 
 export type SettingKey = (typeof SETTINGS)[number]['key'];
@@ -187,6 +243,14 @@ export function validateSetting(
     } catch (error) {
       return { ok: false, message: (error as Error).message };
     }
+  }
+  if (def.kind === 'text') {
+    const text = typeof raw === 'string' ? raw.trim() : '';
+    if (text === '' && def.optional) return { ok: true, value: '' };
+    if (def.pattern && !def.pattern.test(text)) {
+      return { ok: false, message: `Formato inválido. Ejemplo: ${def.example ?? ''}` };
+    }
+    return { ok: true, value: text };
   }
   const value = typeof raw === 'string' ? Number(raw) : raw;
   if (typeof value !== 'number' || !Number.isFinite(value)) {

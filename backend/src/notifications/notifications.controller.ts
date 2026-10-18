@@ -29,6 +29,7 @@ import {
   RegisterDeviceDto,
   UnreadCountDto,
 } from './dto/notification.dto';
+import { SkipLegal } from '../legal/legal.guard';
 import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 
 const PAGE = 20;
@@ -41,6 +42,8 @@ export class NotificationsController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Post('devices')
+  // La app registra el push al iniciar sesión, antes de la pantalla de aceptación (ADR-0051).
+  @SkipLegal()
   @RateLimit('deviceUser')
   @HttpCode(204)
   @ApiOperation({
@@ -61,6 +64,7 @@ export class NotificationsController {
   }
 
   @Delete('devices/:token')
+  @SkipLegal()
   @HttpCode(204)
   @ApiOperation({ summary: 'Dar de baja el token de push (al cerrar sesión)' })
   @ApiNoContentResponse()

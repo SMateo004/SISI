@@ -5,6 +5,7 @@ import { CATEGORIES } from './seed-data/categories';
 import { CITIES } from './seed-data/cities';
 import { FEATURE_FLAGS } from './seed-data/feature-flags';
 import { MODERATION_TERMS } from './seed-data/moderation-terms';
+import { isDraft, readLegalSources } from '../src/legal/legal-source';
 
 /**
  * Datos de referencia. Idempotente: solo crea lo que falta y nunca pisa cambios
@@ -62,6 +63,36 @@ async function main(): Promise<void> {
         data: { key: flag.key, cityId, enabled: flag.enabled, description: flag.description },
       });
       console.log(`Flag creado: ${flag.key}${flag.citySlug ? ` (${flag.citySlug})` : ''}`);
+    }
+
+    // Textos legales (ADR-0051): una versión final nunca se pisa; un borrador sí (se edita
+    // libremente hasta la revisión legal). Cambiar un texto final exige subir la versión.
+    for (const doc of readLegalSources()) {
+      const existing = await prisma.legalDocument.findUnique({
+        where: { type_version: { type: doc.type, version: doc.version } },
+      });
+      if (!existing) {
+        await prisma.legalDocument.create({
+          data: {
+            type: doc.type,
+            version: doc.version,
+            title: doc.title,
+            contentMd: doc.contentMd,
+          },
+        });
+        console.log(`Texto legal publicado: ${doc.type} v${String(doc.version)}`);
+      } else if (existing.contentMd !== doc.contentMd) {
+        if (!isDraft(existing.contentMd)) {
+          throw new Error(
+            `${doc.file}: la versión ${String(doc.version)} ya está publicada como final. Para cambiarla, sube la versión.`,
+          );
+        }
+        await prisma.legalDocument.update({
+          where: { id: existing.id },
+          data: { title: doc.title, contentMd: doc.contentMd },
+        });
+        console.log(`Borrador legal actualizado: ${doc.type} v${String(doc.version)}`);
+      }
     }
   } finally {
     await prisma.$disconnect();

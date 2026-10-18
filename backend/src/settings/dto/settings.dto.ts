@@ -6,11 +6,12 @@ const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? val
 
 export class SettingDto {
   @ApiProperty({ example: 'MATCHING_RING_WAIT_MS' }) key!: string;
-  @ApiProperty({ enum: ['matching', 'ofertas', 'trabajos', 'cobros'] }) group!: string;
+  @ApiProperty({ enum: ['matching', 'ofertas', 'trabajos', 'cobros', 'app'] }) group!: string;
   @ApiProperty({ example: 'Espera por anillo' }) label!: string;
   @ApiProperty() help!: string;
-  @ApiProperty({ enum: ['int', 'decimal', 'rings'] }) kind!: string;
-  @ApiProperty({ enum: ['ms', 'días', 'hora', 'Bs', 'ofertas', 'veces', 'anillos'] }) unit!: string;
+  @ApiProperty({ enum: ['int', 'decimal', 'rings', 'text'] }) kind!: string;
+  @ApiProperty({ enum: ['ms', 'días', 'hora', 'Bs', 'ofertas', 'veces', 'anillos', 'texto'] })
+  unit!: string;
   @ApiProperty({ type: Number, nullable: true }) min!: number | null;
   @ApiProperty({ type: Number, nullable: true }) max!: number | null;
   @ApiProperty({ example: '45000', description: 'Valor vigente, como texto' })

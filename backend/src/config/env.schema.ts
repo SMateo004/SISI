@@ -247,6 +247,37 @@ export const envSchema = z
     MAPS_API_KEY: optionalString,
     RATE_GEOCODE_IP_PER_MIN: positiveInt(60),
     SENTRY_DSN: z.preprocess(emptyAsUndefined, z.url().optional()),
+    // App y piloto (ADR-0052, ADR-0054). Valores por defecto del panel (app_settings).
+    /** WhatsApp Business de soporte (+591…); vacío = sin botón de ayuda. */
+    SUPPORT_WHATSAPP: z
+      .string()
+      .default('')
+      .refine((v) => v === '' || /^\+591[67]\d{7}$/.test(v), 'Celular de Bolivia (+591…)'),
+    /** Versión mínima de la app por plataforma: una menor recibe 426 APP_UPGRADE_REQUIRED. */
+    APP_MIN_VERSION_ANDROID: z
+      .string()
+      .regex(/^\d+\.\d+\.\d+$/)
+      .default('0.0.0'),
+    APP_MIN_VERSION_IOS: z
+      .string()
+      .regex(/^\d+\.\d+\.\d+$/)
+      .default('0.0.0'),
+    APP_MIN_VERSION_WEB: z
+      .string()
+      .regex(/^\d+\.\d+\.\d+$/)
+      .default('0.0.0'),
+    /** Enlaces a la tienda para "Actualiza la app". */
+    APP_STORE_URL_ANDROID: optionalString,
+    APP_STORE_URL_IOS: optionalString,
+    /** Inicio del piloto (AAAA-MM-DD, hora local de la ciudad) para las métricas del panel. */
+    PILOT_STARTED_AT: z
+      .string()
+      .default('')
+      .refine((v) => v === '' || /^\d{4}-\d{2}-\d{2}$/.test(v), 'Fecha AAAA-MM-DD'),
+    /** Exigir la aceptación de los textos legales vigentes (ADR-0051). Solo se apaga en pruebas. */
+    LEGAL_ACCEPTANCE_REQUIRED: z
+      .preprocess(emptyAsUndefined, z.stringbool().optional())
+      .transform((v) => v ?? true),
     // Alertas operativas del worker (OpsMonitor, ADR-0048). Los e2e usan milisegundos.
     OPS_MONITOR_MS: positiveInt(60_000),
     /** Ventana de los contadores de fallos (OTP y push). */

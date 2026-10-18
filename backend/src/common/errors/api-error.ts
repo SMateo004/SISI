@@ -15,7 +15,7 @@ export class ApiErrorBody {
 
 export class ApiError extends HttpException {
   constructor(
-    status: HttpStatus,
+    status: HttpStatus | number,
     readonly code: string,
     message: string,
     extra: Record<string, unknown> = {},

@@ -62,7 +62,29 @@ export { uniqueIp, uniquePhone, uniqueSuffix } from './unique';
 export const e164 = (local: string): string => `+591${local}`;
 
 /** Login completo: pide el código, lo lee del ConsoleOtpProvider y lo verifica. */
-export async function login(t: TestApp, phone = uniquePhone()): Promise<LoginResponseDto> {
+/**
+ * Acepta los textos legales vigentes como lo haría la app al registrarse (ADR-0051). login()
+ * lo hace por defecto: sin aceptar, la API responde 403 LEGAL_ACCEPTANCE_REQUIRED.
+ */
+export async function acceptLegal(t: TestApp, token: string): Promise<void> {
+  const server = t.app.getHttpServer();
+  const docs = (await request(server).get('/legal/current').expect(200)).body as {
+    type: 'terms' | 'privacy';
+    version: number;
+  }[];
+  const version = (type: string) => docs.find((d) => d.type === type)?.version ?? 1;
+  await request(server)
+    .post('/me/legal/accept')
+    .set(...bearer(token))
+    .send({ termsVersion: version('terms'), privacyVersion: version('privacy'), adult: true })
+    .expect(200);
+}
+
+export async function login(
+  t: TestApp,
+  phone = uniquePhone(),
+  opts: { acceptLegal?: boolean } = {},
+): Promise<LoginResponseDto> {
   const ip = uniqueIp();
   const server = t.app.getHttpServer();
   await request(server)
@@ -77,7 +99,9 @@ export async function login(t: TestApp, phone = uniquePhone()): Promise<LoginRes
     .set('X-Forwarded-For', ip)
     .send({ phone, code })
     .expect(200);
-  return res.body as LoginResponseDto;
+  const session = res.body as LoginResponseDto;
+  if (opts.acceptLegal ?? true) await acceptLegal(t, session.accessToken);
+  return session;
 }
 
 /** Borra los cooldowns de pedido de código (para un segundo login del mismo número). */

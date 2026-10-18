@@ -100,6 +100,7 @@ describe('Notificaciones y push (e2e, ADR-0027)', () => {
     await request(server())
       .post(`/admin/requests/${id}/release`)
       .set(...bearer(admin.accessToken))
+      .send({ reason: 'Revisada: no infringe las normas.' })
       .expect(200);
 
     const page = await waitFor(
@@ -168,6 +169,7 @@ describe('Notificaciones y push (e2e, ADR-0027)', () => {
     await request(server())
       .post(`/admin/requests/${id}/release`)
       .set(...bearer(admin.accessToken))
+      .send({ reason: 'Revisada: no infringe las normas.' })
       .expect(200);
     await waitFor(
       async () => ((await notifications(employer.accessToken)).items.length > 0 ? true : undefined),
@@ -195,6 +197,7 @@ describe('Notificaciones y push (e2e, ADR-0027)', () => {
       await request(server())
         .post(`/admin/requests/${id}/release`)
         .set(...bearer(admin.accessToken))
+        .send({ reason: 'Revisada: no infringe las normas.' })
         .expect(200);
     }
     const unread = async () =>

@@ -667,6 +667,8 @@ enum ChatMessageStatus {
   entregado
   /// Coincidió con la moderación (R9.2): no se entrega; solo lo ve quien lo envió.
   retenido
+  /// El admin lo revisó y no lo entrega (Fase 6). Para quien lo envió sigue como "no enviado".
+  descartado
 
   @@map("chat_message_status")
 }

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsInt,
   IsLatitude,
@@ -10,6 +10,7 @@ import {
   Matches,
   Max,
   MaxLength,
+  MinLength,
   Min,
 } from 'class-validator';
 import { MONEY_PATTERN } from '../../categories/effective-category';
@@ -155,10 +156,13 @@ export class ListRequestsQuery {
   limit?: number;
 }
 
-export class RejectRequestDto {
+/** Liberar o rechazar una retenida (panel): motivo obligatorio, queda en la auditoría. */
+export class ModerationDecisionDto {
   @ApiProperty({ example: 'Ofrece venta de productos, no un servicio.' })
-  @IsString()
+  @IsString({ message: 'Escribe el motivo.' })
+  @MinLength(5, { message: 'Escribe el motivo (al menos 5 letras).' })
   @MaxLength(300)
+  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))
   reason!: string;
 }
 
@@ -167,4 +171,9 @@ export class AdminHeldRequestDto extends RequestDto {
   matches!: unknown;
 
   @ApiProperty() employerId!: string;
+}
+
+export class AdminRequestPageDto {
+  @ApiProperty({ type: AdminHeldRequestDto, isArray: true }) items!: AdminHeldRequestDto[];
+  @ApiProperty({ type: String, nullable: true }) nextCursor!: string | null;
 }

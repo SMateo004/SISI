@@ -8,16 +8,20 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { type AuthenticatedUser, CurrentUser } from '../auth/decorators/auth.decorators';
+import { AdminCtx, type AdminContext } from '../audit/admin-context';
 import { Admin } from '../common/admin/admin-permissions';
 import { ApiErrorBody } from '../common/errors/api-error';
+import { ModerationDecisionDto } from '../requests/dto/request.dto';
 import { ChatService } from './chat.service';
 import {
   AdminHeldMessageDto,
+  AdminHeldMessagePageDto,
   ChatPageDto,
   ListMessagesQuery,
   MarkReadDto,
@@ -81,7 +85,7 @@ export class ChatController {
   }
 }
 
-/** Mensajes retenidos por moderación (mínimo; la consola llega en la Fase 6). */
+/** Mensajes retenidos por moderación (R9.2): revisión en el panel. */
 @ApiTags('admin')
 @ApiBearerAuth()
 @Admin('moderacion')
@@ -91,9 +95,41 @@ export class AdminChatController {
   constructor(private readonly chat: ChatService) {}
 
   @Get('held')
-  @ApiOperation({ summary: 'Mensajes de chat retenidos (los 100 más recientes)' })
-  @ApiOkResponse({ type: [AdminHeldMessageDto] })
-  held(): Promise<AdminHeldMessageDto[]> {
-    return this.chat.held();
+  @ApiOperation({ summary: 'Mensajes de chat retenidos, del más antiguo al más nuevo' })
+  @ApiQuery({ name: 'cursor', required: false, description: 'nextCursor de la página anterior' })
+  @ApiOkResponse({ type: AdminHeldMessagePageDto })
+  held(
+    @Query('cursor', new ParseUUIDPipe({ optional: true })) cursor?: string,
+  ): Promise<AdminHeldMessagePageDto> {
+    return this.chat.held(cursor);
+  }
+
+  @Post(':messageId/release')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Liberar un mensaje retenido: se entrega al destinatario',
+    description: 'Con motivo; queda en la auditoría.',
+  })
+  @ApiOkResponse({ type: AdminHeldMessageDto })
+  @ApiConflictResponse({ type: ApiErrorBody, description: 'MESSAGE_ALREADY_REVIEWED' })
+  release(
+    @AdminCtx() ctx: AdminContext,
+    @Param('messageId', ParseUUIDPipe) messageId: string,
+    @Body() dto: ModerationDecisionDto,
+  ): Promise<AdminHeldMessageDto> {
+    return this.chat.release(ctx, messageId, dto.reason);
+  }
+
+  @Post(':messageId/discard')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Descartar un mensaje retenido: no se entrega nunca' })
+  @ApiOkResponse({ type: AdminHeldMessageDto })
+  @ApiConflictResponse({ type: ApiErrorBody, description: 'MESSAGE_ALREADY_REVIEWED' })
+  discard(
+    @AdminCtx() ctx: AdminContext,
+    @Param('messageId', ParseUUIDPipe) messageId: string,
+    @Body() dto: ModerationDecisionDto,
+  ): Promise<AdminHeldMessageDto> {
+    return this.chat.discard(ctx, messageId, dto.reason);
   }
 }

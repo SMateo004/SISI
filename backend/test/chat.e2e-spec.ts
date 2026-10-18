@@ -1,5 +1,9 @@
 import request from 'supertest';
-import type { AdminHeldMessageDto, ChatPageDto, SentMessageDto } from '../src/chat/dto/chat.dto';
+import type {
+  AdminHeldMessagePageDto,
+  ChatPageDto,
+  SentMessageDto,
+} from '../src/chat/dto/chat.dto';
 import { assignJob } from './utils/jobs';
 import { connectSocket, type TestSocket } from './utils/socket';
 import {
@@ -151,8 +155,8 @@ describe('Chat del trabajo (e2e, ADR-0031)', () => {
         .get('/admin/chat/held')
         .set(...bearer(admin.accessToken))
         .expect(200)
-    ).body as AdminHeldMessageDto[];
-    expect(list.find((m) => m.id === held.id)).toMatchObject({ jobId, senderId: worker.id });
+    ).body as AdminHeldMessagePageDto;
+    expect(list.items.find((m) => m.id === held.id)).toMatchObject({ jobId, senderId: worker.id });
     await request(server())
       .get('/admin/chat/held')
       .set(...bearer(worker.accessToken))

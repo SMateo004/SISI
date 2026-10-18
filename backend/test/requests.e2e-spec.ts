@@ -1,6 +1,6 @@
 import request from 'supertest';
 import type {
-  AdminHeldRequestDto,
+  AdminRequestPageDto,
   CreatedRequestDto,
   PublishResultDto,
   RequestDto,
@@ -180,14 +180,15 @@ describe('Solicitudes de servicio (e2e)', () => {
           .get('/admin/requests')
           .set(...bearer(admin.accessToken))
           .expect(200)
-      ).body as AdminHeldRequestDto[];
-      const mine = held.find((r) => r.id === created.request.id);
+      ).body as AdminRequestPageDto;
+      const mine = held.items.find((r) => r.id === created.request.id);
       expect(JSON.stringify(mine?.matches)).toContain('cocain');
 
       const released = (
         await request(server())
           .post(`/admin/requests/${created.request.id}/release`)
           .set(...bearer(admin.accessToken))
+          .send({ reason: 'Contexto válido: es un servicio de limpieza.' })
           .expect(200)
       ).body as RequestDto;
       expect(released.status).toBe('buscando');

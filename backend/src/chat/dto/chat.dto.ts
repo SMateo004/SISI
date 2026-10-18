@@ -82,3 +82,8 @@ export class AdminHeldMessageDto {
   @ApiProperty({ description: 'Términos que coincidieron' }) matches!: unknown;
   @ApiProperty({ type: String, format: 'date-time' }) createdAt!: string;
 }
+
+export class AdminHeldMessagePageDto {
+  @ApiProperty({ type: AdminHeldMessageDto, isArray: true }) items!: AdminHeldMessageDto[];
+  @ApiProperty({ type: String, nullable: true }) nextCursor!: string | null;
+}

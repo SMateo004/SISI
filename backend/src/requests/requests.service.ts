@@ -2,6 +2,9 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CategoryResolver } from '../categories/category-resolver';
 import { decimal, toBs } from '../categories/effective-category';
+import { AdminAuditService } from '../audit/admin-audit.service';
+import type { AdminContext } from '../audit/admin-context';
+import { assertNotSelf } from '../common/admin/self-review';
 import { ApiError } from '../common/errors/api-error';
 import { RateLimitStore } from '../common/rate-limit/rate-limit.store';
 import { RateLimitedException } from '../common/rate-limit/rate-limited.exception';
@@ -21,7 +24,7 @@ import {
   STORAGE_PREFIX,
 } from '../storage/upload-policy';
 import type {
-  AdminHeldRequestDto,
+  AdminRequestPageDto,
   CreatedRequestDto,
   CreateRequestDto,
   PublishResultDto,
@@ -33,6 +36,8 @@ import { priceWarnings } from './price-warning';
 import type { RequestStatus } from './request-status.machine';
 import { RequestStatusService } from './request-status.service';
 import { RequestsRepository } from './requests.repository';
+
+const ADMIN_PAGE = 25;
 
 const requestInclude = {
   category: { select: { id: true, slug: true, name: true } },
@@ -86,6 +91,7 @@ export class RequestsService {
     private readonly storage: StorageService,
     private readonly rateLimits: RateLimitStore,
     private readonly outbox: OutboxService,
+    private readonly audit: AdminAuditService,
     @Inject(ConfigService) private readonly config: AppConfigService,
   ) {
     this.totalRings = parseRings(config.get('MATCHING_RINGS', { infer: true })).length;
@@ -304,47 +310,66 @@ export class RequestsService {
     return dto;
   }
 
-  // ---- Admin (la pantalla llega en la Fase 6) ----
+  // ---- Admin (panel, Fase 6) ----
 
-  async listByStatus(status: RequestStatus): Promise<AdminHeldRequestDto[]> {
+  /** Por estado (por defecto, retenidas), de la más antigua a la más nueva, 25 por página. */
+  async listByStatus(status: RequestStatus, cursor?: string): Promise<AdminRequestPageDto> {
     const rows = await this.prisma.serviceRequest.findMany({
       where: { status },
       include: requestInclude,
-      orderBy: { createdAt: 'asc' },
-      take: 100,
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: ADMIN_PAGE + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
-    const dtos = await this.toDtos(rows);
-    return dtos.map((dto, i) =>
-      Object.assign(dto, {
-        matches: rows[i]?.moderationMatches ?? null,
-        employerId: rows[i]?.employerId ?? '',
-      }),
-    );
+    const page = rows.slice(0, ADMIN_PAGE);
+    const dtos = await this.toDtos(page);
+    return {
+      items: dtos.map((dto, i) =>
+        Object.assign(dto, {
+          matches: page[i]?.moderationMatches ?? null,
+          employerId: page[i]?.employerId ?? '',
+        }),
+      ),
+      nextCursor: rows.length > ADMIN_PAGE ? (page.at(-1)?.id ?? null) : null,
+    };
   }
 
-  async release(adminId: string, requestId: string): Promise<RequestDto> {
+  /** Libera una retenida (R3.3): pasa a buscando y entra al matching. Auditada. */
+  async release(ctx: AdminContext, requestId: string, reason: string): Promise<RequestDto> {
+    const adminId = ctx.adminId;
+    await this.assertNotOwn(adminId, requestId);
     const now = new Date();
     await this.prisma.$transaction(async (tx) => {
-      await this.status.apply(
+      const { from, to } = await this.status.apply(
         requestId,
         'RELEASE',
         adminId,
         {
           data: { reviewedById: adminId, reviewedAt: now, publishedAt: now },
-          reason: 'Liberada por moderación',
+          reason,
         },
         tx,
       );
       await this.outbox.add(tx, 'request.released', requestId, { requestId });
       await this.outbox.add(tx, 'request.searching', requestId, { requestId });
+      await this.audit.record(tx, ctx, {
+        action: 'moderation.request_release',
+        targetType: 'request',
+        targetId: requestId,
+        before: { status: from },
+        after: { status: to },
+        reason,
+      });
     });
     return this.adminView(requestId);
   }
 
-  async reject(adminId: string, requestId: string, reason: string): Promise<RequestDto> {
+  async reject(ctx: AdminContext, requestId: string, reason: string): Promise<RequestDto> {
+    const adminId = ctx.adminId;
+    await this.assertNotOwn(adminId, requestId);
     const now = new Date();
     await this.prisma.$transaction(async (tx) => {
-      await this.status.apply(
+      const { from, to } = await this.status.apply(
         requestId,
         'REJECT',
         adminId,
@@ -361,8 +386,25 @@ export class RequestsService {
         tx,
       );
       await this.outbox.add(tx, 'request.rejected', requestId, { requestId });
+      await this.audit.record(tx, ctx, {
+        action: 'moderation.request_reject',
+        targetType: 'request',
+        targetId: requestId,
+        before: { status: from },
+        after: { status: to },
+        reason,
+      });
     });
     return this.adminView(requestId);
+  }
+
+  private async assertNotOwn(adminId: string, requestId: string): Promise<void> {
+    const row = await this.prisma.serviceRequest.findUnique({
+      where: { id: requestId },
+      select: { employerId: true },
+    });
+    if (!row) throw notFound();
+    assertNotSelf(adminId, [row.employerId], 'No puedes moderar tu propia solicitud.');
   }
 
   // ---- Internos ----

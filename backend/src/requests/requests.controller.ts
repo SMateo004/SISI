@@ -26,17 +26,18 @@ import {
   ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
 import { type AuthenticatedUser, CurrentUser } from '../auth/decorators/auth.decorators';
+import { AdminCtx, type AdminContext } from '../audit/admin-context';
 import { Admin } from '../common/admin/admin-permissions';
 import { ApiErrorBody } from '../common/errors/api-error';
 import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 import { ConfirmUploadDto, PresignedUploadDto, UploadRequestDto } from '../storage/dto/upload.dto';
 import {
-  AdminHeldRequestDto,
+  AdminRequestPageDto,
   CreatedRequestDto,
   CreateRequestDto,
   ListRequestsQuery,
   PublishResultDto,
-  RejectRequestDto,
+  ModerationDecisionDto,
   RequestDto,
   RequestPageDto,
 } from './dto/request.dto';
@@ -175,12 +176,16 @@ export class AdminRequestsController {
   @Get()
   @ApiOperation({ summary: 'Solicitudes por estado (por defecto, las retenidas por moderación)' })
   @ApiQuery({ name: 'status', enum: REQUEST_STATUSES, required: false })
-  @ApiOkResponse({ type: AdminHeldRequestDto, isArray: true })
-  list(@Query('status') status?: string): Promise<AdminHeldRequestDto[]> {
+  @ApiQuery({ name: 'cursor', required: false, description: 'nextCursor de la página anterior' })
+  @ApiOkResponse({ type: AdminRequestPageDto })
+  list(
+    @Query('status') status?: string,
+    @Query('cursor', new ParseUUIDPipe({ optional: true })) cursor?: string,
+  ): Promise<AdminRequestPageDto> {
     const value = (REQUEST_STATUSES as readonly string[]).includes(status ?? '')
       ? (status as RequestStatus)
       : 'retenida';
-    return this.requests.listByStatus(value);
+    return this.requests.listByStatus(value, cursor);
   }
 
   @Post(':id/release')
@@ -189,10 +194,11 @@ export class AdminRequestsController {
   @ApiOkResponse({ type: RequestDto })
   @ApiConflictResponse({ type: ApiErrorBody, description: 'REQUEST_TRANSITION_NOT_ALLOWED' })
   release(
-    @CurrentUser() admin: AuthenticatedUser,
+    @AdminCtx() ctx: AdminContext,
     @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: ModerationDecisionDto,
   ): Promise<RequestDto> {
-    return this.requests.release(admin.id, id);
+    return this.requests.release(ctx, id, dto.reason);
   }
 
   @Post(':id/reject')
@@ -203,10 +209,10 @@ export class AdminRequestsController {
   })
   @ApiOkResponse({ type: RequestDto })
   reject(
-    @CurrentUser() admin: AuthenticatedUser,
+    @AdminCtx() ctx: AdminContext,
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() dto: RejectRequestDto,
+    @Body() dto: ModerationDecisionDto,
   ): Promise<RequestDto> {
-    return this.requests.reject(admin.id, id, dto.reason);
+    return this.requests.reject(ctx, id, dto.reason);
   }
 }

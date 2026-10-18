@@ -84,11 +84,7 @@ describe('Verificaciones en el panel (e2e, R1.3, R1.4, R9.5)', () => {
       ],
     });
     expect(detail.age).toBeGreaterThanOrEqual(26);
-    expect(detail.documents.map((d) => d.type).sort()).toEqual([
-      'ci_back',
-      'ci_front',
-      'selfie',
-    ]);
+    expect(detail.documents.map((d) => d.type).sort()).toEqual(['ci_back', 'ci_front', 'selfie']);
     for (const d of detail.documents) {
       expect(d.url).toContain('X-Amz-Expires=300');
       expect(d.url).toContain('response-cache-control=no-store');

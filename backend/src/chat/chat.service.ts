@@ -1,5 +1,8 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AdminAuditService } from '../audit/admin-audit.service';
+import type { AdminContext } from '../audit/admin-context';
+import { assertNotSelf } from '../common/admin/self-review';
 import { ApiError } from '../common/errors/api-error';
 import { RateLimitStore } from '../common/rate-limit/rate-limit.store';
 import { RateLimitedException } from '../common/rate-limit/rate-limited.exception';
@@ -12,11 +15,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { chatWindow, HELD_NOTICE } from './chat.rules';
 import type {
   AdminHeldMessageDto,
+  AdminHeldMessagePageDto,
   ChatMessageDto,
   ChatPageDto,
   MarkReadResultDto,
   SentMessageDto,
 } from './dto/chat.dto';
+
+const ADMIN_PAGE = 25;
 
 interface ChatJob {
   id: string;
@@ -42,6 +48,7 @@ export class ChatService {
     private readonly moderation: ModerationService,
     private readonly outbox: OutboxService,
     private readonly rateLimits: RateLimitStore,
+    private readonly audit: AdminAuditService,
     @Inject(ConfigService) private readonly config: AppConfigService,
   ) {
     this.openAfterMs = config.get('JOB_CHAT_OPEN_AFTER_MS', { infer: true });
@@ -152,22 +159,97 @@ export class ChatService {
     return { updated: count };
   }
 
-  // ---- Admin ----
+  // ---- Admin (panel, Fase 6) ----
 
-  async held(): Promise<AdminHeldMessageDto[]> {
+  /** Retenidos, del más antiguo al más nuevo (el que más espera, primero), 25 por página. */
+  async held(cursor?: string): Promise<AdminHeldMessagePageDto> {
     const rows = await this.prisma.chatMessage.findMany({
       where: { status: 'retenido' },
-      orderBy: { createdAt: 'desc' },
-      take: 100,
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: ADMIN_PAGE + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
-    return rows.map((m) => ({
-      id: m.id,
-      jobId: m.jobId,
-      senderId: m.senderId,
-      body: m.body,
-      matches: m.moderationMatches ?? [],
-      createdAt: m.createdAt.toISOString(),
-    }));
+    const page = rows.slice(0, ADMIN_PAGE);
+    return {
+      items: page.map((m) => ({
+        id: m.id,
+        jobId: m.jobId,
+        senderId: m.senderId,
+        body: m.body,
+        matches: m.moderationMatches ?? [],
+        createdAt: m.createdAt.toISOString(),
+      })),
+      nextCursor: rows.length > ADMIN_PAGE ? (page.at(-1)?.id ?? null) : null,
+    };
+  }
+
+  /**
+   * Libera un retenido (R9.2): se entrega con su hora original (chat:message y push por el
+   * outbox). Auditado; nunca sobre un trabajo del propio admin.
+   */
+  release(ctx: AdminContext, messageId: string, reason: string): Promise<AdminHeldMessageDto> {
+    return this.review(ctx, messageId, reason, 'entregado');
+  }
+
+  /** Descarta un retenido: no se entrega nunca. Quien lo envió lo sigue viendo como no enviado. */
+  discard(ctx: AdminContext, messageId: string, reason: string): Promise<AdminHeldMessageDto> {
+    return this.review(ctx, messageId, reason, 'descartado');
+  }
+
+  private async review(
+    ctx: AdminContext,
+    messageId: string,
+    reason: string,
+    to: 'entregado' | 'descartado',
+  ): Promise<AdminHeldMessageDto> {
+    const message = await this.prisma.chatMessage.findUnique({
+      where: { id: messageId },
+      include: { job: { select: { workerId: true, employerId: true } } },
+    });
+    if (!message) {
+      throw new ApiError(HttpStatus.NOT_FOUND, 'MESSAGE_NOT_FOUND', 'El mensaje no existe.');
+    }
+    assertNotSelf(
+      ctx.adminId,
+      [message.job.workerId, message.job.employerId],
+      'No puedes moderar mensajes de un trabajo tuyo.',
+    );
+    await this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.chatMessage.updateMany({
+        where: { id: messageId, status: 'retenido' },
+        data: { status: to },
+      });
+      if (count === 0) {
+        throw new ApiError(
+          HttpStatus.CONFLICT,
+          'MESSAGE_ALREADY_REVIEWED',
+          'Este mensaje ya fue revisado.',
+        );
+      }
+      if (to === 'entregado') {
+        await this.outbox.add(tx, 'chat.message_sent', message.jobId, {
+          jobId: message.jobId,
+          messageId,
+        });
+      }
+      await this.audit.record(tx, ctx, {
+        action: to === 'entregado' ? 'moderation.chat_release' : 'moderation.chat_discard',
+        targetType: 'chat_message',
+        targetId: messageId,
+        before: { status: 'retenido' },
+        after: { status: to },
+        reason,
+        cityId: message.cityId,
+      });
+    });
+    return {
+      id: message.id,
+      jobId: message.jobId,
+      senderId: message.senderId,
+      body: message.body,
+      matches: message.moderationMatches ?? [],
+      createdAt: message.createdAt.toISOString(),
+    };
   }
 
   private async partyJob(userId: string, jobId: string): Promise<ChatJob> {
@@ -202,7 +284,8 @@ function toDto(m: ChatMessage, userId: string): ChatMessageDto {
     senderId: m.senderId,
     mine: m.senderId === userId,
     body: m.body,
-    status: m.status,
+    // Descartado por el admin: para quien lo envió sigue siendo "no se envió".
+    status: m.status === 'descartado' ? 'retenido' : m.status,
     readAt: m.readAt?.toISOString() ?? null,
     createdAt: m.createdAt.toISOString(),
   };

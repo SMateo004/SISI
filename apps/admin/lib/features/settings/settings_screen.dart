@@ -8,8 +8,21 @@ import '../../core/format/money.dart';
 import '../../core/http/api_client.dart';
 import '../../core/widgets/common.dart';
 import '../../core/widgets/confirm_action_dialog.dart';
+import '../pilot/pilot_panel.dart';
 
-const _tabs = [('parametros', 'Parámetros'), ('flags', 'Feature flags')];
+const _tabs = [
+  ('parametros', 'Parámetros'),
+  ('flags', 'Feature flags'),
+  ('piloto', 'Piloto'),
+];
+
+const _groups = {
+  'matching': 'Matching',
+  'ofertas': 'Ofertas',
+  'trabajos': 'Trabajos',
+  'cobros': 'Cobros',
+  'app': 'App y piloto',
+};
 
 final settingsProvider = FutureProvider.autoDispose<List<SettingDto>>((
   ref,
@@ -42,7 +55,13 @@ class SettingsScreen extends ConsumerWidget {
         onSelect: (t) => context.go('/configuracion/$t'),
       ),
       const SizedBox(height: 8),
-      Expanded(child: tab == 'flags' ? const _Flags() : const _Parameters()),
+      Expanded(
+        child: switch (tab) {
+          'flags' => const _Flags(),
+          'piloto' => const PilotPanel(),
+          _ => const _Parameters(),
+        },
+      ),
     ],
   );
 }
@@ -55,12 +74,15 @@ String describeSetting(SettingDto s, String value) {
     'Bs' => formatBs(value),
     'hora' => '$value:00',
     'días' => '$value días',
+    'texto' when value.isEmpty => '(vacío)',
     _ => value,
   };
 }
 
 /// Texto que escribe el admin → valor de la API (los ms se escriben en minutos).
 String? toApiValue(SettingDto s, String input) {
+  // Texto (WhatsApp, versión, fecha): tal cual; vacío borra el valor si el parámetro lo admite.
+  if (s.unit.value == 'texto') return input.trim();
   final text = input.trim().replaceAll(',', '.');
   if (text.isEmpty) return null;
   if (s.unit.value == 'ms') {
@@ -124,11 +146,11 @@ class _Parameters extends ConsumerWidget {
     data: (list) => ListView(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       children: [
-        for (final group in ['matching', 'ofertas', 'trabajos', 'cobros']) ...[
+        for (final group in _groups.keys) ...[
           Padding(
             padding: const EdgeInsets.only(top: 12, bottom: 4),
             child: Text(
-              group[0].toUpperCase() + group.substring(1),
+              _groups[group]!,
               style: Theme.of(context).textTheme.titleMedium,
             ),
           ),

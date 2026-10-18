@@ -7,6 +7,7 @@ import '../../core/format/money.dart';
 import '../../core/http/api_client.dart';
 import '../../core/widgets/common.dart';
 import '../../core/widgets/confirm_action_dialog.dart';
+import 'city_area_dialog.dart';
 
 const _tabs = [('categorias', 'Categorías'), ('ciudades', 'Ciudades')];
 
@@ -99,13 +100,19 @@ class _Cities extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       children: [
         const Text(
-          'Las ciudades se agregan por seed o migración (solo lectura en el MVP).',
+          'Las ciudades se agregan por seed o migración. Su zona de servicio se edita aquí.',
         ),
         for (final c in list)
           ListTile(
             title: Text(c.name),
             subtitle: Text(
               '${c.slug} · ${c.timezone}${c.active ? '' : ' · inactiva'}',
+            ),
+            trailing: OutlinedButton.icon(
+              key: Key('city-area-${c.slug}'),
+              onPressed: () => editCityArea(context, c),
+              icon: const Icon(Icons.map_outlined),
+              label: const Text('Zona'),
             ),
           ),
       ],

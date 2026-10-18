@@ -1,33 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sisi_api/sisi_api.dart';
 
 import '../helpers/fakes.dart';
-
-DashboardDto _dashboard() => DashboardDto(
-  range: DashboardDtoRangeEnum.day,
-  cityId: 'c1',
-  cityName: 'Santa Cruz de la Sierra',
-  from: DateTime.utc(2026, 10, 19, 4),
-  to: DateTime.utc(2026, 10, 20, 4),
-  requestsCreated: 12,
-  assignmentRatePct: 75,
-  expirationRatePct: 8.3,
-  avgFirstOfferSec: 95,
-  jobsCompleted: 7,
-  cancellationsByReason: [
-    CancellationCountDto(reason: 'cambio_de_planes', count: 2),
-  ],
-  commissionGeneratedBs: '136.50',
-  commissionCollectedBs: '90.00',
-  overdueDebtBs: '58.50',
-  overdueWorkers: 3,
-  workersAvailableNow: 4,
-  queues: counters(verifications: 2),
-);
+import '../helpers/fixtures.dart';
 
 FakeApi _api() =>
-    FakeApi()..on(#dashboardControllerGet, (_) async => ok(_dashboard()));
+    FakeApi()..on(#dashboardControllerGet, (_) async => ok(dashboard()));
 
 void main() {
   testWidgets('sin sesión va al ingreso; con el código entra al dashboard', (

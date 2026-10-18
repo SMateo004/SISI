@@ -1,5 +1,7 @@
 import 'package:sisi_api/sisi_api.dart';
 
+import 'fakes.dart';
+
 final _t = DateTime.utc(2026, 10, 19, 14);
 
 VerificationRowDto verificationRow({
@@ -346,4 +348,26 @@ AuditEntryDto auditEntry({String action = 'billing.payment'}) => AuditEntryDto(
   userAgent: null,
   cityId: null,
   createdAt: _t,
+);
+
+DashboardDto dashboard() => DashboardDto(
+  range: DashboardDtoRangeEnum.day,
+  cityId: 'c1',
+  cityName: 'Santa Cruz de la Sierra',
+  from: DateTime.utc(2026, 10, 19, 4),
+  to: DateTime.utc(2026, 10, 20, 4),
+  requestsCreated: 12,
+  assignmentRatePct: 75,
+  expirationRatePct: 8.3,
+  avgFirstOfferSec: 95,
+  jobsCompleted: 7,
+  cancellationsByReason: [
+    CancellationCountDto(reason: 'cambio_de_planes', count: 2),
+  ],
+  commissionGeneratedBs: '136.50',
+  commissionCollectedBs: '90.00',
+  overdueDebtBs: '58.50',
+  overdueWorkers: 3,
+  workersAvailableNow: 4,
+  queues: counters(verifications: 2),
 );

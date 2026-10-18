@@ -16,7 +16,14 @@ final dashboardProvider = FutureProvider.autoDispose
       return res.data!;
     });
 
-/// Dashboard del día y de la semana (hora local de la ciudad).
+final pilotMetricsProvider = FutureProvider.autoDispose<PilotMetricsDto>((
+  ref,
+) async {
+  final res = await ref.watch(adminApiProvider).dashboardControllerPilot();
+  return res.data!;
+});
+
+/// Dashboard del día y de la semana (hora local de la ciudad) y métricas del piloto.
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
@@ -29,7 +36,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final value = ref.watch(dashboardProvider(_range));
+    final pilot = _range == 'pilot';
+    final value = ref.watch(dashboardProvider(pilot ? 'week' : _range));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -42,6 +50,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               segments: const [
                 ButtonSegment(value: 'day', label: Text('Hoy')),
                 ButtonSegment(value: 'week', label: Text('Esta semana')),
+                ButtonSegment(value: 'pilot', label: Text('Piloto')),
               ],
               selected: {_range},
               onSelectionChanged: (s) => setState(() => _range = s.first),
@@ -49,16 +58,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             IconButton(
               tooltip: 'Actualizar',
               icon: const Icon(Icons.refresh),
-              onPressed: () => ref.invalidate(dashboardProvider(_range)),
+              onPressed: () => pilot
+                  ? ref.invalidate(pilotMetricsProvider)
+                  : ref.invalidate(dashboardProvider(_range)),
             ),
           ],
         ),
         Expanded(
-          child: AsyncBody(
-            value: value,
-            onRetry: () => ref.invalidate(dashboardProvider(_range)),
-            data: (d) => _DashboardBody(d),
-          ),
+          child: pilot
+              ? AsyncBody(
+                  value: ref.watch(pilotMetricsProvider),
+                  onRetry: () => ref.invalidate(pilotMetricsProvider),
+                  data: (m) => _PilotBody(m),
+                )
+              : AsyncBody(
+                  value: value,
+                  onRetry: () => ref.invalidate(dashboardProvider(_range)),
+                  data: (d) => _DashboardBody(d),
+                ),
         ),
       ],
     );
@@ -146,6 +163,102 @@ class _DashboardBody extends StatelessWidget {
             _Queue('Reportes', q.reports, '/moderacion/reportes'),
             _Queue('Disputas', q.disputes, '/moderacion/disputas'),
             _Queue('Comprobantes', q.submissions, '/cobros/comprobantes'),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+String _pct(num? v) =>
+    v == null ? '—' : '${v.toString().replaceAll('.', ',')} %';
+
+/// Piloto (ADR-0052): embudo, tasas y retención semanal desde el inicio del piloto.
+class _PilotBody extends StatelessWidget {
+  const _PilotBody(this.m);
+
+  final PilotMetricsDto m;
+
+  @override
+  Widget build(BuildContext context) {
+    final f = m.funnel;
+    final theme = Theme.of(context);
+    String share(num part) =>
+        f.created == 0 ? '' : ' (${(part * 100 / f.created).round()} %)';
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      children: [
+        Text(
+          m.startedAt == null
+              ? 'Últimas 8 semanas (configura "Inicio del piloto" en Parámetros)'
+              : 'Desde el inicio del piloto: ${m.startedAt}',
+        ),
+        const SizedBox(height: 12),
+        Text('Embudo', style: theme.textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _Metric(
+              'Solicitudes creadas',
+              '${f.created}',
+              key: const Key('p-created'),
+            ),
+            _Metric(
+              'Con primera oferta',
+              '${f.withOffer}${share(f.withOffer)}',
+            ),
+            _Metric('Asignadas', '${f.assigned}${share(f.assigned)}'),
+            _Metric('Terminadas', '${f.completed}${share(f.completed)}'),
+            _Metric(
+              'Comisión cobrada',
+              '${f.commissionCollected}${share(f.commissionCollected)}',
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _Metric(
+              'Tiempo a la primera oferta',
+              m.avgFirstOfferSec == null
+                  ? '—'
+                  : '${(m.avgFirstOfferSec! / 60).toStringAsFixed(1).replaceAll('.', ',')} min',
+            ),
+            _Metric('Tasa de expiración', _pct(m.expirationRatePct)),
+            _Metric(
+              'Tasa de cobro',
+              _pct(m.collectionRatePct),
+              key: const Key('p-collection'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        Text('Retención semanal', style: theme.textTheme.titleMedium),
+        const SizedBox(height: 8),
+        DataTable(
+          key: const Key('p-weekly'),
+          columns: const [
+            DataColumn(label: Text('Semana')),
+            DataColumn(label: Text('Trabajadores'), numeric: true),
+            DataColumn(label: Text('Vuelven'), numeric: true),
+            DataColumn(label: Text('Empleadores'), numeric: true),
+            DataColumn(label: Text('Vuelven'), numeric: true),
+          ],
+          rows: [
+            for (final w in m.weekly)
+              DataRow(
+                cells: [
+                  DataCell(Text(w.weekStart)),
+                  DataCell(Text('${w.activeWorkers}')),
+                  DataCell(Text(_pct(w.workerRetentionPct))),
+                  DataCell(Text('${w.activeEmployers}')),
+                  DataCell(Text(_pct(w.employerRetentionPct))),
+                ],
+              ),
           ],
         ),
       ],

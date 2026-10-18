@@ -1,5 +1,7 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AdminAuditService } from '../audit/admin-audit.service';
+import type { AdminContext } from '../audit/admin-context';
 import { assertNotSelf } from '../common/admin/self-review';
 import { ApiError } from '../common/errors/api-error';
 import type { AppConfigService } from '../config/app-config';
@@ -28,6 +30,7 @@ export class BillingFilesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
+    private readonly audit: AdminAuditService,
     @Inject(ConfigService) private readonly config: AppConfigService,
   ) {}
 
@@ -37,12 +40,24 @@ export class BillingFilesService {
     return this.uploadUrl(STORAGE_PREFIX.company(), 'qr-cobro', contentType, sizeBytes);
   }
 
-  async setQr(adminId: string, key: string): Promise<{ qrUrl: string }> {
+  async setQr(ctx: AdminContext, key: string): Promise<{ qrUrl: string }> {
     await this.assertUploaded(key, STORAGE_PREFIX.company());
-    await this.prisma.appSetting.upsert({
-      where: { key_scope: { key: QR_SETTING, scope: 'global' } },
-      create: { key: QR_SETTING, scope: 'global', value: { key }, updatedById: adminId },
-      update: { value: { key }, updatedById: adminId },
+    await this.prisma.$transaction(async (tx) => {
+      const before = await tx.appSetting.findUnique({
+        where: { key_scope: { key: QR_SETTING, scope: 'global' } },
+      });
+      await tx.appSetting.upsert({
+        where: { key_scope: { key: QR_SETTING, scope: 'global' } },
+        create: { key: QR_SETTING, scope: 'global', value: { key }, updatedById: ctx.adminId },
+        update: { value: { key }, updatedById: ctx.adminId },
+      });
+      await this.audit.record(tx, ctx, {
+        action: 'billing.qr_set',
+        targetType: 'app_setting',
+        targetId: QR_SETTING,
+        before: before?.value ?? null,
+        after: { key },
+      });
     });
     return { qrUrl: await this.signed(key) };
   }
@@ -108,7 +123,12 @@ export class BillingFilesService {
     return Promise.all(rows.map((r) => this.toDto(r)));
   }
 
-  async rejectSubmission(adminId: string, id: string, note: string): Promise<PaymentSubmissionDto> {
+  async rejectSubmission(
+    ctx: AdminContext,
+    id: string,
+    note: string,
+  ): Promise<PaymentSubmissionDto> {
+    const adminId = ctx.adminId;
     const row = await this.prisma.paymentSubmission.findUnique({ where: { id } });
     if (!row)
       throw new ApiError(HttpStatus.NOT_FOUND, 'SUBMISSION_NOT_FOUND', 'El comprobante no existe.');
@@ -117,14 +137,28 @@ export class BillingFilesService {
       [row.workerId],
       'No puedes revisar comprobantes de tu propia cuenta de trabajador.',
     );
-    const { count } = await this.prisma.paymentSubmission.updateMany({
-      where: { id, status: 'pendiente' },
-      data: {
-        status: 'rechazado',
-        reviewNote: note,
-        reviewedById: adminId,
-        reviewedAt: new Date(),
-      },
+    const count = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.paymentSubmission.updateMany({
+        where: { id, status: 'pendiente' },
+        data: {
+          status: 'rechazado',
+          reviewNote: note,
+          reviewedById: adminId,
+          reviewedAt: new Date(),
+        },
+      });
+      if (updated.count > 0) {
+        await this.audit.record(tx, ctx, {
+          action: 'billing.submission_reject',
+          targetType: 'payment_submission',
+          targetId: id,
+          before: { status: 'pendiente' },
+          after: { status: 'rechazado', workerId: row.workerId },
+          reason: note,
+          cityId: row.cityId,
+        });
+      }
+      return updated.count;
     });
     if (count === 0) {
       throw new ApiError(

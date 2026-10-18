@@ -885,6 +885,9 @@ model BillingPeriod {
   @@unique([workerId, startAt])
   @@index([status, endAt])
   @@index([status, dueAt])
+  // Panel: periodos por semana y estado, más nuevos primero (Fase 6).
+  @@index([startAt])
+  @@index([status, startAt])
   @@map("billing_periods")
 }
 

@@ -1,5 +1,7 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AdminAuditService } from '../audit/admin-audit.service';
+import type { AdminContext } from '../audit/admin-context';
 import { assertNotSelf } from '../common/admin/self-review';
 import { ApiError } from '../common/errors/api-error';
 import { withIdempotency } from '../common/idempotency/idempotency';
@@ -43,6 +45,7 @@ export class BillingAdminService {
     private readonly ledger: BillingLedgerService,
     private readonly outbox: OutboxService,
     private readonly storage: StorageService,
+    private readonly audit: AdminAuditService,
     @Inject(ConfigService) private readonly config: AppConfigService,
   ) {}
 
@@ -73,12 +76,17 @@ export class BillingAdminService {
     return { key, uploadUrl: url, ...rest };
   }
 
+  /**
+   * Registra un pago (ADR-0037). La auditoría va dentro del bloque idempotente: un reintento
+   * con la misma clave devuelve el resultado original sin otra fila.
+   */
   async registerPayment(
-    adminId: string,
+    ctx: AdminContext,
     idempotencyKey: string,
     dto: RegisterPaymentDto,
     now: Date = new Date(),
   ): Promise<PaymentResultDto> {
+    const adminId = ctx.adminId;
     assertNotSelf(adminId, [dto.workerId], SELF_PAYMENT);
     const amount = new Prisma.Decimal(dto.amountBs);
     if (amount.lte(0)) {
@@ -193,6 +201,22 @@ export class BillingAdminService {
             workerId: dto.workerId,
           });
           const balance = await this.ledger.workerBalance(tx, dto.workerId);
+          await this.audit.record(tx, ctx, {
+            action: 'billing.payment',
+            targetType: 'worker',
+            targetId: dto.workerId,
+            before: { balanceBs: balance.add(amount) },
+            after: {
+              balanceBs: balance,
+              paymentId: payment.id,
+              amountBs: amount,
+              method: dto.method,
+              submissionId: submission?.id ?? null,
+              allocations: applied,
+            },
+            reason: BillingAdminService.optional(dto.reference) ?? null,
+            cityId: current.cityId,
+          });
           return {
             paymentId: payment.id,
             workerId: dto.workerId,
@@ -207,11 +231,12 @@ export class BillingAdminService {
   }
 
   async registerAdjustment(
-    adminId: string,
+    ctx: AdminContext,
     idempotencyKey: string,
     dto: RegisterAdjustmentDto,
     now: Date = new Date(),
   ): Promise<AdjustmentResultDto> {
+    const adminId = ctx.adminId;
     assertNotSelf(adminId, [dto.workerId], SELF_PAYMENT);
     const amount = new Prisma.Decimal(dto.amountBs);
     if (amount.isZero()) {
@@ -248,6 +273,22 @@ export class BillingAdminService {
             cause: 'ajuste',
           });
           const balance = await this.ledger.workerBalance(tx, dto.workerId);
+          await this.audit.record(tx, ctx, {
+            action: 'billing.adjustment',
+            targetType: 'worker',
+            targetId: dto.workerId,
+            before: { balanceBs: balance.sub(amount) },
+            after: {
+              balanceBs: balance,
+              entryId: entry.id,
+              periodId,
+              amountBs: amount,
+              periodStatus: status,
+              correctsEntryId: dto.correctsEntryId ?? null,
+            },
+            reason: dto.reason.trim(),
+            cityId: locked.cityId,
+          });
           return {
             entryId: entry.id.toString(),
             periodId,

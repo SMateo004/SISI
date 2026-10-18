@@ -21,12 +21,25 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { type AuthenticatedUser, CurrentUser } from '../auth/decorators/auth.decorators';
+import { AdminCtx, type AdminContext } from '../audit/admin-context';
 import { Admin } from '../common/admin/admin-permissions';
 import { ApiErrorBody } from '../common/errors/api-error';
 import { requireIdempotencyKey } from '../common/idempotency/idempotency';
 import { PresignedUploadDto } from '../storage/dto/upload.dto';
 import { BillingAdminService } from './billing-admin.service';
 import { BillingFilesService } from './billing-files.service';
+import { BillingPanelService } from './billing-panel.service';
+import {
+  AdjustmentPreviewDto,
+  BalancePreviewDto,
+  CurrentQrDto,
+  LedgerPageDto,
+  LedgerQueryDto,
+  OverdueListDto,
+  PanelPeriodPageDto,
+  PaymentPreviewDto,
+  PeriodsQueryDto,
+} from './dto/billing-panel.dto';
 import {
   FileUploadDto,
   ListSubmissionsQuery,
@@ -67,7 +80,70 @@ export class AdminBillingController {
   constructor(
     private readonly billing: BillingAdminService,
     private readonly files: BillingFilesService,
+    private readonly panel: BillingPanelService,
   ) {}
+
+  @Get('periods')
+  @ApiOperation({
+    summary: 'Periodos de cobro con filtros por estado, semana y ciudad',
+    description: 'Más nuevos primero, 25 por página. El saldo es la suma del ledger.',
+  })
+  @ApiOkResponse({ type: PanelPeriodPageDto })
+  periods(@Query() query: PeriodsQueryDto): Promise<PanelPeriodPageDto> {
+    return this.panel.periods(query);
+  }
+
+  @Get('overdue')
+  @ApiOperation({ summary: 'Periodos vencidos con monto y días de atraso (R7.7)' })
+  @ApiOkResponse({ type: OverdueListDto })
+  overdue(): Promise<OverdueListDto> {
+    return this.panel.overdue();
+  }
+
+  @Get('workers/:id/ledger')
+  @ApiOperation({
+    summary: 'Ledger completo de un trabajador con saldo acumulado',
+    description: 'Del más nuevo al más viejo, 50 por página.',
+  })
+  @ApiOkResponse({ type: LedgerPageDto })
+  ledger(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() query: LedgerQueryDto,
+  ): Promise<LedgerPageDto> {
+    return this.panel.ledgerOf(id, query.cursor);
+  }
+
+  @Post('payments/preview')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Efecto de un pago antes de registrarlo',
+    description: 'Saldo antes y después, periodos que cubre y si desbloquea. No guarda nada.',
+  })
+  @ApiOkResponse({ type: BalancePreviewDto })
+  previewPayment(
+    @AdminCtx() ctx: AdminContext,
+    @Body() dto: PaymentPreviewDto,
+  ): Promise<BalancePreviewDto> {
+    return this.panel.previewPayment(ctx, dto);
+  }
+
+  @Post('adjustments/preview')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Efecto de un ajuste antes de registrarlo (no guarda nada)' })
+  @ApiOkResponse({ type: BalancePreviewDto })
+  previewAdjustment(
+    @AdminCtx() ctx: AdminContext,
+    @Body() dto: AdjustmentPreviewDto,
+  ): Promise<BalancePreviewDto> {
+    return this.panel.previewAdjustment(ctx, dto);
+  }
+
+  @Get('qr')
+  @ApiOperation({ summary: 'QR de cobro actual (URL temporal), o null si no hay' })
+  @ApiOkResponse({ type: CurrentQrDto })
+  async currentQr(): Promise<CurrentQrDto> {
+    return { qrUrl: await this.files.qrUrl() };
+  }
 
   @Post('receipts/upload-url')
   @ApiOperation({ summary: 'URL para subir el comprobante de un pago (receipts/, privado)' })
@@ -94,11 +170,11 @@ export class AdminBillingController {
   })
   @ApiConflictResponse({ type: ApiErrorBody, description: 'IDEMPOTENCY_KEY_REUSED' })
   registerPayment(
-    @CurrentUser() current: AuthenticatedUser,
+    @AdminCtx() ctx: AdminContext,
     @Headers('idempotency-key') key: string | undefined,
     @Body() dto: RegisterPaymentDto,
   ): Promise<PaymentResultDto> {
-    return this.billing.registerPayment(current.id, requireIdempotencyKey(key), dto);
+    return this.billing.registerPayment(ctx, requireIdempotencyKey(key), dto);
   }
 
   @Post('adjustments')
@@ -112,11 +188,11 @@ export class AdminBillingController {
   @ApiOkResponse({ type: AdjustmentResultDto })
   @ApiConflictResponse({ type: ApiErrorBody, description: 'IDEMPOTENCY_KEY_REUSED' })
   registerAdjustment(
-    @CurrentUser() current: AuthenticatedUser,
+    @AdminCtx() ctx: AdminContext,
     @Headers('idempotency-key') key: string | undefined,
     @Body() dto: RegisterAdjustmentDto,
   ): Promise<AdjustmentResultDto> {
-    return this.billing.registerAdjustment(current.id, requireIdempotencyKey(key), dto);
+    return this.billing.registerAdjustment(ctx, requireIdempotencyKey(key), dto);
   }
 
   @Get('workers/:id')
@@ -139,8 +215,8 @@ export class AdminBillingController {
     description: 'Después del PUT a la URL de subida. Los trabajadores lo ven en "Pagar comisión".',
   })
   @ApiOkResponse({ type: QrResultDto })
-  setQr(@CurrentUser() current: AuthenticatedUser, @Body() dto: SetQrDto): Promise<QrResultDto> {
-    return this.files.setQr(current.id, dto.key);
+  setQr(@AdminCtx() ctx: AdminContext, @Body() dto: SetQrDto): Promise<QrResultDto> {
+    return this.files.setQr(ctx, dto.key);
   }
 
   @Get('submissions')
@@ -158,10 +234,10 @@ export class AdminBillingController {
   })
   @ApiOkResponse({ type: PaymentSubmissionDto })
   rejectSubmission(
-    @CurrentUser() current: AuthenticatedUser,
+    @AdminCtx() ctx: AdminContext,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: RejectSubmissionDto,
   ): Promise<PaymentSubmissionDto> {
-    return this.files.rejectSubmission(current.id, id, dto.note.trim());
+    return this.files.rejectSubmission(ctx, id, dto.note.trim());
   }
 }

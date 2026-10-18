@@ -21,6 +21,86 @@ Aprobadas el 2026-10-14. Hay que reflejarlas en el documento 01 en la sección i
 | Bloqueo y modo | Si pasa a `bloqueado_deuda` o `suspendido_moderacion` estando en modo trabajador, la cuenta cambia sola a `employer` y se le notifica. Al desbloquearse no vuelve sola: usa el interruptor. | R1.6 |
 | Teléfonos | MVP: solo +591. Prefijos permitidos en configuración (`PHONE_ALLOWED_COUNTRY_CODES`). | R1.1 |
 
+## Lanzamiento del piloto: bloqueantes que dependen de ti (Fase 7)
+- [ ] **Nombre comercial** e identificadores finales.
+  - Hoy son provisionales: Android `bo.sisi.sisi_mobile`, iOS `bo.sisi.sisiMobile`.
+  - No se pueden cambiar después de publicar. Se fijan con `ANDROID_APP_ID` y `APP_NAME` en el Environment `production` (ADR-0054).
+  - Con el nombre: ícono, splash y prefijo de la referencia de pago (`SISI-…`).
+- [ ] **Dominio propio:** sin él, producción usa `.onrender.com` y `.vercel.app` (ADR-0039).
+- [ ] **Rangos de precio confirmados:** hoy son los provisionales de la Fase 2.
+- [ ] **Términos de moderación revisados** con alguien de Santa Cruz.
+- [ ] **Textos legales finales:** términos, privacidad y eliminación de datos.
+  - Reemplazan los borradores de `backend/legal/`.
+  - **Sin ellos no se construyen la API de producción ni el AAB de producción** (ADR-0051).
+  - Si quieres el humo y la pista interna antes, una versión "v0 piloto cerrado" sin marcadores, revisada por ti, los destraba.
+- [ ] **QR real de la empresa:** Panel → Cobros → QR.
+- [ ] **Cuentas de producción:**
+  - Bird, con el remitente habilitado en Bolivia;
+  - Firebase;
+  - Google Maps, con llaves restringidas y presupuesto;
+  - Cloudflare R2, con un bucket privado;
+  - Sentry;
+  - workspace pago de Render;
+  - Google Play Console;
+  - GitHub Environments `production` y `production-approval` (runbook, "Producción").
+- [ ] **WhatsApp Business de soporte:** Panel → Parámetros.
+- [ ] **Canal de alertas:** propuesta email del equipo (más un webhook de Slack opcional), para Sentry y el monitor externo.
+- [ ] **Polígono de la zona del piloto:** Panel → Catálogo → Ciudades → Zona.
+- [ ] **Staging:** sigue bloqueado por los pasos manuales de la Fase 6. Lo necesitan la prueba de carga, el simulacro de alertas y la validación de la CSP.
+
+## Decisiones del Paso 0 de la Fase 7 (esperan tu respuesta)
+La tabla completa de valores en propuesta está en el reporte de la Fase 7. Estas son las recomendaciones que cambian algo. **No se aplicó ninguna en producción:**
+- [ ] **Anillos:** `2:5,5:15,10:15` (anillos 2 y 3 de 10 a 15 trabajadores; el 1 lo fija R4.2). Es parámetro del panel.
+- [ ] **Búsqueda mínima:** 5 min (hoy 3). Es parámetro del panel.
+- [ ] **Códigos OTP por IP:** 60 por hora (hoy 20), por el CGNAT de las operadoras. Variable `RATE_OTP_IP_PER_HOUR`.
+- [ ] **Nombre obligatorio para trabajar:** cambio de regla; hoy "Trabajador" si no hay nombre.
+- [ ] **Plazo operativo de una disputa:** 48 h (solo runbook, sin código).
+- [x] **URLs firmadas de 15 min en producción:** `render.yaml` (ADR-0047). La foto de perfil y las de las solicitudes pasan de 1 h a 15 min.
+
+## Propuestas de la Fase 7 por validar
+- [ ] **Retención (ADR-0050).** Apagada (`RETENTION_ENABLED=false`) hasta aprobar estos plazos:
+
+  | Dato | Plazo propuesto |
+  | --- | --- |
+  | Documentos de rechazados | 90 días |
+  | Última ubicación de inactivos | 30 días |
+  | Chat | 180 días después del trabajo (salvo reportes pendientes) |
+  | Borradores | 7 días |
+  | Comprobantes rechazados | 1 año |
+  | Comprobantes registrados | 5 años |
+  | Avisos leídos | 90 días |
+  | Tokens vencidos y claves de idempotencia | 30 días |
+
+  La auditoría y el ledger se conservan sin límite.
+- [ ] **Eliminación de cuenta (ADR-0049):** anonimizar y conservar la contabilidad con el id.
+  - No se puede con deuda, con un trabajo activo ni con un comprobante en revisión.
+  - El número queda libre para una cuenta nueva.
+  - Se guarda un HMAC del teléfono para reconocer si vuelve.
+  - Validar con la revisión legal (plazo contable y HMAC).
+- [ ] **Piloto cerrado (ADR-0052):** las cuentas que ya existen siguen entrando aunque se las quite de la lista; un número fuera de la lista no recibe SMS. Validar si alguien quitado debe perder el acceso.
+- [ ] **Alertas (ADR-0048):** confirmar los umbrales `OPS_*`:
+  - outbox: 5 min;
+  - colas: 5 min o 10 fallidos;
+  - OTP: 5 fallos en ~10 min;
+  - push: 20 fallos o el 20 %;
+  - cron: 2 h.
+- [ ] **CSP de las apps web:** sale en `Report-Only`. Validarla en staging (consola del navegador) y encender `CSP_ENFORCE=true`.
+- [ ] **Versionado:** el primer piloto es la `0.9.0`; la `1.0.0`, la apertura pública.
+- [ ] **Prisma 7.10.1:** arregla 4 vulnerabilidades altas del CLI (no de la API), pero trae scripts de instalación nuevos (`prisma` preinstall, `@prisma/engines` postinstall). **Necesito tu aprobación** para agregarlos a `allowScripts` (`docs/seguridad/dependencias.md`). La excepción vence el 2026-11-30.
+- [ ] **Primer admin en producción:** SQL revisado por dos personas y anotado en el runbook ("Producción → Primer admin").
+
+## Después del piloto
+- [ ] **iOS:** cuenta de Apple Developer; enlazar los entitlements en Xcode; llave APNs en Firebase; `IOS_PUSH=true`; TestFlight (ADR-0054).
+- [ ] **Pasarela de pago:** el flag `payments.gateway` existe, pero sin implementación (ADR-0037).
+- [ ] **Facturación de la comisión:** según la revisión tributaria. `payments.invoice_number` ya existe.
+- [ ] **Ubicación en segundo plano:** permiso, servicio en primer plano y justificación ante las tiendas.
+- [ ] **Imágenes en el chat,** con moderación de imágenes.
+- [ ] **Roles de admin** (moderador, finanzas): una fila en `PERMISSIONS_BY_ROLE` (ADR-0040).
+- [ ] **Suspensión de empleadores** y bloqueo permanente (Fases 4 y 6).
+- [ ] **App móvil con el cliente generado** (ADR-0045).
+- [ ] **Valores de los parámetros por ciudad** (ADR-0043), cuando haya una segunda ciudad.
+- [ ] **Subida de Flutter:** con ella `google_maps_flutter` 2.19, `firebase_*` 5/17 y `sentry_flutter` 10 (`docs/seguridad/dependencias.md`).
+
 ## Propuestas de la Fase 6 por validar
 - [ ] **Permisos por rol:** hoy `admin` tiene los 8 permisos del panel (`dashboard`, `verificaciones`, `moderacion`, `cobros`, `catalogo`, `configuracion`, `usuarios`, `auditoria`). Definir si habrá roles de moderador o finanzas: agregar un rol es una fila en `PERMISSIONS_BY_ROLE` y su valor en `user_role` (ADR-0040).
 - [ ] **Suspensión de empleadores:** "Suspender" en el panel aplica solo al perfil de trabajador. Para un empleador marcado por 3 reportes válidos solo existe quitar la marca. Definir si un empleador puede ser suspendido y qué pierde (ingresar, publicar).
@@ -30,7 +110,7 @@ Aprobadas el 2026-10-14. Hay que reflejarlas en el documento 01 en la sección i
 - [ ] **CSV para el contador:** separado por comas, punto decimal, UTF-8 con BOM. Confirmar con el contador (en Excel con configuración regional de Bolivia puede esperar punto y coma).
 - [ ] **Documentos de identidad en el panel:** se ven sin botón de descarga y con URL de 5 min, pero no se puede impedir una captura de pantalla. Definir la norma interna.
 - [ ] **Auditoría:** crece sin límite. Definir retención o archivado (p. ej. por año).
-- [ ] **Primer admin en producción:** `dev-tools` no corre en producción. Definir cómo se da el rol (propuesta: SQL revisado por dos personas y registrado en el runbook).
+- [x] ~~**Primer admin en producción**~~ — Fase 7: procedimiento propuesto en el runbook ("Producción → Primer admin"); su aprobación sigue en "Propuestas de la Fase 7".
 - [ ] **Doc 02 §6:** agregar `admin:counters` (solo para el panel, ADR-0044) a la lista de eventos de tiempo real.
 
 ## Detectadas en la Fase 6
@@ -88,7 +168,7 @@ Implementadas como propuesta; cambiarlas es configuración (variables de entorno
 - [ ] **Push en iOS:** pendiente hasta tener la cuenta de Apple Developer (llave APNs en Firebase). Ver README, "Firebase".
 - [ ] **Firebase sin configurar:** staging corre con `PUSH_PROVIDER=fake` (solo log). Crear el proyecto y cargar las variables (README, "Firebase") antes de probar push en staging.
 - [x] **Limpieza del outbox:** job diario que borra los eventos publicados hace más de `OUTBOX_RETENTION_DAYS` (7) días (Fase 4, ADR-0022).
-- [ ] **Historial de ofertas:** reemplazar una oferta pisa el monto anterior (solo queda `revision`). Si hace falta auditar montos, agregar una tabla de eventos de oferta.
+- [x] ~~**Historial de ofertas**~~ — Fase 6: `offer_events` append-only (ADR-0042).
 - [x] **Contacto:** la API da `telUri` y `whatsappUri` (Fase 4); la app agrega "Llamar" y "WhatsApp" con `url_launcher`.
 - [x] **Bandeja de avisos en la app:** pantalla de avisos con contador en el ícono y "Marcar todo como leído" (Fase 4).
 - [ ] **Varias instancias de la API:** el socket usa solo el transporte `websocket`, así no hacen falta sticky sessions. Si algún cliente necesitara `polling`, habría que activarlas en Render.
@@ -108,10 +188,10 @@ Implementadas como propuesta; cambiarlas es dato (admin o seed) o configuración
 - [ ] **Precio bajo el mínimo:** se advierte y se deja publicar (R3.2). Confirmar que no haya un piso duro.
 
 ## Detectadas en la Fase 2
-- [ ] **Borradores abandonados:** las solicitudes en `borrador` y sus fotos quedan para siempre. Definir cuánto viven y agregar un job de limpieza (BullMQ) que borre fotos del bucket.
+- [x] ~~**Borradores abandonados**~~ — Fase 7: job de retención que borra la solicitud y sus fotos (ADR-0050). El plazo (7 días) está en "Propuestas de la Fase 7".
 - [x] ~~**Eventos no durables** (ADR-0020)~~ — Fase 3, 2026-10-15: outbox transaccional, relay a BullMQ con jobId determinístico y reconciliador (ADR-0022).
 - [x] ~~**Aviso al empleador cuando el admin libera o rechaza**~~ — Fase 3, 2026-10-15: aviso guardado + push (ADR-0027).
-- [ ] **Panel admin de moderación:** liberar/rechazar y editar términos hoy es solo por API (`/admin/...`). Pantallas en la Fase 6.
+- [x] ~~**Panel admin de moderación**~~ — Fase 6 (panel).
 - [ ] **Edición de la solicitud** después de publicar: no existe (solo cancelar). Confirmar que es la regla deseada.
 - [x] ~~**Expiración de solicitudes**~~ — Fase 3, 2026-10-15: tras el último anillo, sin ofertas expira; con ofertas, tras el plazo de elección (ADR-0025). Plazos en propuesta: ver la Fase 3.
 - [x] ~~**Test e2e intermitente**~~ — Fase 3, 2026-10-15: estado compartido entre corridas (teléfonos que se repetían, base sin limpiar, dos corridas a la vez, timeout de 5 s). Aislamiento y 20 de 20 (ADR-0028).
@@ -130,27 +210,27 @@ Valores implementados como propuesta; cambiarlos es configuración o un ajuste m
 
 ## Detectadas en la Fase 1
 - [ ] **OTP por consola en staging** (ADR-0011): el código sale en los logs de Render. Aceptado **solo mientras staging no se publique a usuarios reales** (ver `docs/runbook.md`). Antes de abrir staging a terceros: configurar Bird en staging (`OTP_PROVIDER=bird`).
-- [ ] **Primer administrador en producción:** hoy el rol se asigna con `dev-tools make-admin`, que no corre en production. Definir el procedimiento (SQL controlado o comando con aprobación) antes de la Fase 6.
+- [x] ~~**Primer administrador en producción**~~ — ver la Fase 6 y el runbook (Fase 7).
 - [x] **Avisos al trabajador** (`WorkerNotifier`): `account:blocked` / `account:unblocked` y push (Fase 5, `RealtimeWorkerNotifier`).
 - [x] **Deuda vencida** (`DebtStatusProvider`): periodos `vencido` (Fase 5, `BillingDebtStatusProvider`).
 - [ ] **Bloqueo permanente** por moderación: no existe en R1.4. Definir si se agrega un estado o se maneja como suspensión indefinida.
 - [ ] **Tokens en la versión web** (ADR-0014): evaluar pasar el refresh a una cookie `httpOnly` (vía API) antes de abrir la web a usuarios reales; CSP estricta en Vercel.
 - [x] ~~**Adopción del cliente Dart generado** en `apps/admin`~~ — Fase 6 (ADR-0045). La app móvil sigue con sus modelos (pendiente en la Fase 6).
 - [ ] **CORS del bucket R2:** agregar los dominios definitivos de la app web cuando existan (hoy solo se configuran los de staging).
-- [ ] **Conservación de fotos de identidad:** cuánto tiempo se guardan y cuándo se borran (relacionado con la revisión legal de datos personales).
+- [ ] **Conservación de fotos de identidad:** propuesta de la Fase 7: las de solicitudes rechazadas se borran a los 90 días, y las de aprobados se conservan mientras la cuenta exista y se borran al eliminarla (ADR-0049, ADR-0050). Falta la revisión legal.
 
 ## Detectadas en la Fase 0
-- [ ] **ID de la app / bundle id** (Android `applicationId`, iOS bundle). Provisional: `bo.sisi.mobile` y `bo.sisi.admin`. Depende de la marca; cambiarlo antes de publicar en tiendas (no se puede cambiar después).
+- [ ] **ID de la app / bundle id:** los reales hoy son Android `bo.sisi.sisi_mobile` e iOS `bo.sisi.sisiMobile`. Depende de la marca; se fija antes de publicar (ver "Lanzamiento del piloto").
 - [ ] **Dominio final** para `api.`, `app.` y `admin.` (afecta `CORS_ORIGINS`, `API_URL`, Vercel, Render y el CORS del bucket R2).
 - [x] ~~**Proveedor de OTP**~~ — Bird.com, 2026-10-14 (ADR-0011). Detalles por validar arriba.
 - [ ] **Mapas:** Google Maps o Mapbox. Fase 2: implementado con **Google como propuesta** detrás de interfaces cambiables (ADR-0021). Ver la Fase 2.
 - [x] ~~**Almacenamiento**~~ — Cloudflare R2 en producción, RustFS en local, 2026-10-14 (ADR-0012).
 - [ ] **Render:** región (propuesta `virginia`, la más cercana a Bolivia) y planes de staging (production debe usar planes pagos según doc 02 §8; staging puede ir en planes bajos).
 - [x] ~~**Ciudades: área de cobertura**~~ — Fase 2, 2026-10-14: `center` + `service_radius_km` y `service_area` (polígono) opcional (ADR-0019). Valores de Santa Cruz por validar en la Fase 2.
-- [ ] **Hora de Bolivia:** el cron usa UTC−4 fijo ("59 3 * * 1"). Bolivia no aplica horario de verano hoy; si cambiara, ajustar.
-- [ ] **Firma de apps:** keystore Android (upload key) y certificados iOS; cuentas de Google Play y Apple Developer.
+- [x] ~~**Hora de Bolivia**~~ — resuelto: el cron corre cada hora y los límites se calculan en la zona de la ciudad (ADR-0035, ADR-0036).
+- [ ] **Firma de apps:** la de Android está lista con la upload key fuera del repositorio (ADR-0054); falta generar la llave y las cuentas de Play y Apple (ver "Lanzamiento del piloto").
 - [ ] **Código Flutter compartido:** hoy `core/` está duplicado en mobile y admin. Evaluar un paquete Dart en `packages/` cuando crezca (ver ADR-0005).
 - [x] ~~**Cliente Dart desde OpenAPI**~~ — openapi-generator `dart-dio` vía Docker, 2026-10-14 (ADR-0015). Adopción en las apps: pendiente arriba.
-- [ ] **Sentry:** confirmar cuenta y si se activa desde Fase 1.
+- [ ] **Sentry:** integrado en la Fase 7 (ADR-0048); falta crear la cuenta y los proyectos (ver "Lanzamiento del piloto").
 - [x] ~~**URL fija de staging en Vercel**~~ — Fase 6, 2026-10-17: proyectos de Vercel separados (`app-web-staging`, `admin-staging`) desplegados con `--prod`, y la URL `.onrender.com` de `api-staging` (ADR-0039). Al tener dominio, ver la migración en el ADR.
 - [ ] **Protección de staging en Vercel:** con `--prod` las URLs `.vercel.app` de los proyectos de staging son públicas salvo que se active Deployment Protection. Decidir si staging queda privado o público para pruebas con usuarios (el OTP por consola exige que no se abra a terceros).

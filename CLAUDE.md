@@ -30,6 +30,12 @@ Lee docs/00-contexto-general-SISI.md, docs/01-reglas-de-negocio.md y docs/02-con
 - Eventos de dominio por outbox: OutboxService.add dentro de la misma transacción del cambio; nada de eventos en memoria (ADR-0022). Los handlers del worker deben ser idempotentes.
 - Tiempos de matching, outbox y ubicación siempre por configuración (los e2e usan milisegundos). Tiempo real: solo los eventos de doc 02 §6 (docs/realtime-events.md).
 - E2E: una corrida a la vez; identificadores con test/utils/unique.ts (nunca Date.now ni azar). Antes de cerrar una fase: npm run test:e2e:repeat -- 20 (ADR-0028).
+- Migraciones: expandir y luego contraer (ADR-0046). Una migración nunca rompe al código que sigue corriendo: primero se agrega (columna opcional, tabla, índice) y lo viejo se quita en una release posterior, con `-- contract: <motivo>` en la línea anterior. `npm run check:migrations` lo verifica en CI.
+- Producción solo con un tag vX.Y.Z sobre main y aprobación (deploy-production); la versión es una sola para backend y apps (`node tools/bump-version.mjs X.Y.Z`) y va en CHANGELOG.md.
+- Nunca datos personales en logs ni en Sentry: teléfonos con maskPhone y textos con redactText o redactValue (ADR-0047). Nunca registres códigos, tokens ni claves de archivo.
+- Toda ruta de usuario nueva con parámetro lleva su caso en test/idor.e2e-spec.ts (si no, el test falla). Límites por usuario con @RateLimit y `per: 'user'`.
+- Rutas que deben funcionar sin aceptar los textos legales o con una app vieja: @SkipLegal (ADR-0051) y @SkipAppVersion (ADR-0054); muy pocas.
+- Un dato personal o archivo nuevo de un usuario se suma a la eliminación de cuenta (ADR-0049) y a la retención (ADR-0050).
 
 ## Comandos
 - Local: docker compose -f infra/docker-compose.yml up -d
@@ -38,5 +44,7 @@ Lee docs/00-contexto-general-SISI.md, docs/01-reglas-de-negocio.md y docs/02-con
 - Cron de cobros (cada hora en Render): cd backend && npm run start:billing-cron; con reloj simulado: npm run dev:tools -- billing-run --at <ISO>
 - Herramientas de desarrollo (nunca en producción): cd backend && npm run dev:tools -- <comando> (ver docs/runbook.md)
 - Contrato API: node packages/api_contract/generate.mjs (OpenAPI + cliente Dart)
+- Release: node tools/bump-version.mjs X.Y.Z, CHANGELOG.md y tag vX.Y.Z en main (docs/runbook.md, "Producción"); node tools/check-legal.mjs; cd backend && npm run check:migrations
+- Prueba de carga (solo staging o local, con Docker): loadtest/README.md
 - App: cd apps/mobile && flutter run / flutter test
 - Admin: cd apps/admin && flutter run -d chrome / flutter test

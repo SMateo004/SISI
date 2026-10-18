@@ -1,0 +1,24 @@
+caso,descripcion,telefono,android,operadora,lugar,esperado,observado,resultado (ok/falla/pendiente),evidencia,notas
+A1,Precisión del GPS en un punto conocido,,,,Plaza 24 de Septiembre,< 30 m al aire libre,,,,
+A1,Precisión del GPS en un punto conocido,,,,2.º anillo,< 30 m al aire libre,,,,
+A1,Precisión del GPS en un punto conocido,,,,4.º anillo,< 30 m al aire libre,,,,
+A1,Precisión del GPS en un punto conocido,,,,Calle con edificios,< 80 m,,,,
+A1,Precisión del GPS en un punto conocido,,,,Zona abierta,< 30 m,,,,
+A2,Actualización al moverse 300 m,,,,,cada 100 m o 30 s,,,,
+A3,Distancia de la solicitud recibida,,,,,± 15 % de la real,,,,
+B1,Batería 1 h disponible (pantalla encendida),,,,,< 15 %/h en gama media,,,,batería inicio/fin y uso de la app
+B2,Pantalla apagada: sin GPS y la disponibilidad vence,,,,,vence a los 10 min,,,,
+C1,Push con la app cerrada (solicitud nueva),,,,,< 10 s y abre la solicitud,,,,
+C1,Push con el teléfono bloqueado 5 min,,,,,< 10 s,,,,
+C2,Push con la app en segundo plano,,,,,< 10 s,,,,
+C3,Push de oferta al empleador con la app cerrada,,,,,< 10 s,,,,
+C4,Push con ahorro de batería del fabricante,,,,,llega,,,,marca y modelo
+D1,Modo avión 2 min y reconexión,,,,,reconecta solo; solicitudes en la lista,,,,
+D2,Modo avión 10 min,,,,,la disponibilidad vence; se reactiva,,,,
+D3,Mensajes del chat durante el corte,,,,,llegan en orden al reconectar,,,,
+E1,Cambio WiFi y datos con un trabajo en camino,,,,,sin cortes de sesión ni del seguimiento,,,,
+F1,Flujo completo: ofertas y elección,,,,,primera oferta < 3 min,,,,tiempo a la primera oferta
+F1,Flujo completo: trabajo y calificación,,,,,todos los estados y el chat,,,,
+F2,Comisión en Ganancias,,,,,13 % con referencia y QR,,,,
+F3,Pago con QR y comprobante registrado,,,,,el saldo baja y llega el aviso,,,,
+F4,ETA estimado vs. llegada real,,,,,diferencia < 30 %,,,,minutos estimados / reales

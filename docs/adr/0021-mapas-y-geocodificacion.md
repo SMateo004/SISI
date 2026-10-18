@@ -14,3 +14,11 @@ El empleador marca la ubicación en un mapa y se le sugiere la dirección. El pr
 
 ## Consecuencias
 Cambiar a Mapbox es una implementación nueva de `GeocodingService` y de `MapViewBuilder`, sin tocar pantallas. Local, CI y tests funcionan sin llaves. Las llaves de la app son públicas por naturaleza: su protección son las restricciones en la consola de Google.
+
+## Actualización (Fase 7)
+Llaves de producción (runbook, "Google Maps"):
+- **Servidor:** solo Geocoding API, sin restricción de referer.
+- **Android:** paquete y SHA-1 del certificado de **Play App Signing** y del upload key.
+- **Web:** dominios de producción.
+
+Cuotas diarias por API y alertas de presupuesto en Google Cloud Billing al 50, 90 y 100 %.

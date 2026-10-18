@@ -26,3 +26,8 @@ Hay que guardar el carnet (ambos lados), la selfie y la foto de perfil. R9.5: lo
 - Si RustFS dejara de servir, se cambia la imagen (SeaweedFS era la alternativa evaluada) sin tocar código.
 - R2 necesita su propia regla de CORS con los dominios de la app web (paso manual).
 - Las fotos de perfil, si más adelante deben verse sin firma (otros usuarios, caché), pueden ir a un bucket público o CDN separado.
+
+## Actualización (Fase 7)
+- **Producción:** `STORAGE_ENDPOINT` debe ser https, y ninguna URL firmada vive más de 900 s (la foto de perfil y las de las solicitudes pasan de 1 h a 15 min).
+- **Buckets privados**, sin acceso público ni `r2.dev`. CORS solo para los orígenes de producción (`infra/storage/cors.production.json`).
+- **El worker también borra archivos:** los de cuentas eliminadas (ADR-0049) y los de la retención (ADR-0050).

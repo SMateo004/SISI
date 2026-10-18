@@ -26,3 +26,13 @@ Ventanas fijas: permiten hasta el doble en el borde entre ventanas. Es aceptable
 
 ## Actualización (Fase 6)
 Las rutas del panel tienen límites **por admin** (`AdminGuard`, ADR-0040): lecturas, escrituras y exportaciones. Detrás del proxy de Vercel todos los admins comparten IP, así que un límite por IP no serviría.
+
+## Actualización (Fase 7)
+Políticas **por usuario** con `@RateLimit` (`per: 'user'`), aplicadas por `UserRateLimitGuard` después de la autenticación:
+- reportes: 10/h;
+- URLs de subida: 60/h;
+- registros de dispositivo: 20/h;
+- eliminación de cuenta: 5/día;
+- interés del piloto: 10/h por IP.
+
+Ver ADR-0047. Para la prueba de carga, los límites por IP se suben temporalmente en staging (ADR-0053).

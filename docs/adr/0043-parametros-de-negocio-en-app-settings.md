@@ -44,3 +44,7 @@ Un catálogo tipado (`settings.catalog.ts`) define cada parámetro: tipo, unidad
   - **Anillos:** una solicitud ya en un anillo que deja de existir termina su búsqueda normalmente (`skip`).
 - **Rangos de producción:** el panel no acepta valores de prueba. Para pruebas manuales con tiempos cortos se usa el entorno.
 - **Pendiente:** valores por ciudad. La columna `scope` ya existe, pero el matching y billing leen solo el global.
+
+## Actualización (Fase 7)
+- **Tipo `text`** en el catálogo, validado por formato: `SUPPORT_WHATSAPP`, `APP_MIN_VERSION_ANDROID`, `APP_MIN_VERSION_IOS`, `APP_MIN_VERSION_WEB` y `PILOT_STARTED_AT`, en el grupo "App y piloto" (ADR-0052, ADR-0054).
+- **Corrección:** la ayuda de "Contraoferta máxima" dice ahora lo que hace el código: veces el máximo de referencia de la categoría, no el precio propuesto.

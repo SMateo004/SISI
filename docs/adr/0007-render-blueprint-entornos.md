@@ -12,3 +12,10 @@ Un solo `render.yaml` con `projects` → `environments` (`staging`, `production`
 
 ## Consecuencias
 Cualquier cambio de infraestructura pasa por PR al `render.yaml`. `billing-cron` usa UTC (`59 3 * * 1` = domingo 23:59 en Bolivia).
+
+## Actualización (Fase 7)
+- **Producción no se despliega sola:** `autoDeployTrigger: off` en api, worker y billing-cron; los despliega `deploy-production` con deploy hooks y el sha del tag (ADR-0046). Staging sigue con `checksPass`.
+- **Planes de producción:** api `standard`, worker y cron `starter`, Key Value `256mb` (pago, con persistencia) y Postgres `basic-1gb`.
+- **Backups:** recuperación a un punto en el tiempo (3 días en un workspace Hobby, 7 en Pro) y exportes lógicos de 7 días. Restaurar crea una base nueva (runbook).
+- **Worker:** recibe las variables del almacenamiento para borrar archivos (ADR-0049, ADR-0050).
+- **El cron de cobros** ya no usa una hora fija de Bolivia: corre cada hora y los límites se calculan en la zona de la ciudad (ADR-0035, ADR-0036).

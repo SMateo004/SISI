@@ -28,7 +28,7 @@ Producción no arranca con el OTP por consola: la API se niega a iniciar.
 - **Staging:** push o merge a `develop`.
   - Backend: Render despliega `api-staging`, `worker-staging` y `billing-cron-staging` solo si pasa backend-ci (`autoDeployTrigger: checksPass`). La API corre `prisma migrate deploy` y el seed antes de arrancar.
   - Web: `deploy-web` publica app-web y admin con `--prod` en sus proyectos de staging.
-- **Producción:** merge a `main`, igual que staging, pero con los servicios sin sufijo y el Environment `production` de GitHub.
+- **Producción:** solo con un tag `vX.Y.Z` sobre `main` y una aprobación manual. Un push a `main` no despliega nada (ADR-0046). Ver "Producción (Fase 7)".
 - **Verificar:** `curl https://<api-staging>.onrender.com/health`, y el resumen del run de `deploy-web` (Actions), que muestra las URLs.
 
 ### Revertir
@@ -127,7 +127,13 @@ WHERE status IN ('buscando', 'con_ofertas') ORDER BY published_at;
 | `JWT_REFRESH_SECRET` | Cierra todas las sesiones: todos vuelven a ingresar con su número. |
 | `OTP_PROVIDER_KEY` | Rotar en Bird y actualizar en Render; no afecta las sesiones. |
 | `FIREBASE_SERVICE_ACCOUNT` | Generar una clave nueva en Firebase, actualizarla en `api` y `worker`, y borrar la anterior en la consola. Los tokens de los dispositivos siguen sirviendo. |
-| `STORAGE_ACCESS_KEY` / `STORAGE_SECRET_KEY` | Crear un token nuevo en R2, actualizar en Render y revocar el anterior. Las URLs firmadas vigentes (≤ 1 h) dejan de funcionar. |
+| `STORAGE_ACCESS_KEY` / `STORAGE_SECRET_KEY` | Crear un token nuevo en R2, actualizarlo en `api` y `worker`, y revocar el anterior. Las URLs firmadas vigentes (≤ 15 min en producción) dejan de funcionar. |
+| `SENTRY_DSN` | Crear una llave nueva en Sentry (Project → Client Keys), cargarla en api, worker y cron y en las variables `SENTRY_DSN_*` de GitHub, y desactivar la anterior. No afecta a los usuarios. |
+| `MAPS_API_KEY` (servidor) | Crear la llave nueva con las mismas restricciones, cargarla, verificar una geocodificación y borrar la anterior. |
+| Upload key de Android | No se rota sola: si se pierde o se filtra, Play Console → Integridad de la app → "Solicitar restablecimiento de la clave de carga" (Play App Signing conserva la llave de firma). |
+| Deploy hooks de Render | Render → servicio → Settings → Deploy Hook → "Regenerate"; actualizar `RENDER_DEPLOY_HOOK_*` en el Environment `production`. |
+
+Después de rotar: `GET /health` y, si tocó Bird o Firebase, el humo (ingresar con un número de prueba y recibir un aviso).
 
 ## Documentos de identidad (R9.5)
 
@@ -265,3 +271,169 @@ Saldo, periodos y movimientos de un trabajador: `GET /admin/billing/workers/<uui
   - `ADMIN_COOKIE_PATH=/auth/admin` en `backend/.env`;
   - `flutter run -d chrome --web-port 8081 --dart-define=API_URL=http://localhost:3000`.
 - **Parámetros (ADR-0043):** el valor del panel manda; sin valor, el de la variable de entorno. "Volver al valor por defecto" borra el del panel. Si algo se comporta raro después de un cambio, revisar la auditoría (`config.setting_`).
+
+## Producción (Fase 7)
+
+### Antes del primer despliegue (una sola vez)
+1. **GitHub → Settings → Environments:**
+   - `production-approval`: revisores obligatorios (tú y otra persona). Sin secretos.
+   - `production`: regla "Deployment branches and tags" que solo admita tags `v*`.
+     - **Secretos:**
+       - `RENDER_DEPLOY_HOOK_API`, `RENDER_DEPLOY_HOOK_WORKER`, `RENDER_DEPLOY_HOOK_CRON`;
+       - `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID_APP_WEB`, `VERCEL_PROJECT_ID_ADMIN` (los proyectos de producción);
+       - `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`;
+       - `MAPS_API_KEY_ANDROID`.
+     - **Variables:**
+       - `API_URL`, `SOCKET_URL`, `MAPS_API_KEY_WEB`;
+       - `FIREBASE_*` (web y Android), `FIREBASE_VAPID_KEY`;
+       - `SENTRY_DSN_WEB`, `SENTRY_DSN_ADMIN`, `SENTRY_DSN_MOBILE`;
+       - `ANDROID_APP_ID`, `APP_NAME`;
+       - `CSP_ENFORCE` (`false` hasta validar la CSP).
+2. **Render:** aplicar el Blueprint en el ambiente `production`. Cargar los valores `sync: false`:
+   - `CORS_ORIGINS`: solo https, las URLs de Vercel de producción;
+   - `OTP_PROVIDER_KEY` y `OTP_SENDER` (Bird);
+   - `FIREBASE_SERVICE_ACCOUNT`;
+   - `STORAGE_*` (bucket R2 de producción);
+   - `MAPS_API_KEY` (servidor);
+   - `SENTRY_DSN`.
+
+   Copiar los deploy hooks de api, worker y billing-cron a los secretos de GitHub.
+3. **R2:** bucket privado (sin acceso público ni `r2.dev`), CORS desde `infra/storage/cors.production.json` con las URLs reales y un token con permisos solo sobre ese bucket.
+4. **Textos legales finales** en `backend/legal/` sin el marcador (si no, ni la API ni el AAB de producción se construyen).
+
+### Desplegar
+1. En `main`:
+
+   ```bash
+   node tools/bump-version.mjs 0.9.1
+   ```
+
+   Actualizar `CHANGELOG.md`, hacer el commit y esperar backend-ci en verde.
+2. Crear y subir el tag:
+
+   ```bash
+   git tag v0.9.1
+   git push origin v0.9.1
+   ```
+3. GitHub → Actions → `deploy-production`: `verify` revisa el commit, CI, versión, legales y migraciones. Luego **aprobar** en `approve`.
+4. El workflow llama a los deploy hooks de Render con el sha y espera a que `GET /version` lo muestre y `/health` responda. Después publica la web.
+5. **Humo:**
+   - `GET /health`;
+   - ingresar con tu número (OTP real);
+   - publicar una solicitud de prueba y cancelarla.
+
+### Revertir
+- **Código:** Render → servicio → Events → el deploy anterior → "Rollback" (api, worker y cron). O un tag nuevo con el `git revert`.
+- **Web:** Vercel → proyecto → Deployments → el anterior → "Promote to Production".
+- **Migraciones:** **no se revierten.** Por la regla de expandir y luego contraer, una migración nunca rompe el código anterior, así que volver al deploy anterior funciona con el esquema nuevo. Si una migración tuvo un error, se corrige con otra migración hacia adelante; nunca se edita una aplicada. Para quitar algo (`DROP`), se espera a que ninguna versión en uso lo lea y se marca con `-- contract:`.
+
+### Restaurar un backup de Postgres
+Restaurar **nunca sobrescribe la base actual: crea una nueva.**
+
+1. **Recuperación a un punto en el tiempo:** Render → `db` → Recovery → "Restore Database".
+   - Nombre nuevo, por ejemplo `db-restore-AAAAMMDD`.
+   - Elegir la hora (no puede ser de los últimos 10 minutos).
+   - Ventana: 3 días en un workspace Hobby, 7 en Pro.
+2. Validar los datos en la base nueva (Info → PSQL): conteos de `users`, `jobs` y `ledger_entries`, y el saldo de un trabajador conocido.
+3. Pausar el cron (Render → `billing-cron` → Suspend) y el worker.
+4. Cambiar `DATABASE_URL` de api, worker y billing-cron a la base nueva y redeployar los tres.
+5. Reanudar el worker y el cron, y verificar `/health` y el panel.
+6. La base original se conserva hasta confirmar. Después se suspende; no se borra sin una segunda persona.
+
+**Exportes lógicos** (7 días): Recovery → Export. Sirven para llevar una copia afuera o restaurar en local con `pg_restore` sobre una base vacía.
+
+### Re-ejecutar el cron de cobros
+Es idempotente (ADR-0036): correrlo de más no duplica nada.
+- Render → `billing-cron` → "Trigger Run". El monitor de Sentry recibe el check-in.
+- Si el cron estuvo caído varias horas, una sola corrida pone todo al día.
+
+### Primer admin en producción
+`dev-tools` no corre en producción. Procedimiento propuesto (pendiente de aprobar):
+1. La persona ingresa a la app con su número, para que exista la cuenta.
+2. Dos personas revisan la consulta y una la corre en Render → `db` → PSQL:
+
+   ```sql
+   UPDATE users SET role = 'admin' WHERE phone = '+5917XXXXXXX' AND deleted_at IS NULL RETURNING id, phone, role;
+   ```
+3. Se anota aquí la fecha, quién la corrió y quién la revisó.
+4. La persona ingresa al panel con `/auth/admin` (su sesión de la app no sirve en el panel).
+
+### Alertas (ADR-0048)
+**En Sentry:**
+- **Proyectos:** `sisi-backend`, `sisi-mobile` y `sisi-admin`.
+- **Reglas de alerta** hacia el canal elegido (propuesta: email del equipo):
+  - Backend, "A new issue is created" con el tag `alert` (outbox, colas, OTP y push del `OpsMonitor`);
+  - Backend, "Number of events > 10 in 5 min" (5xx);
+  - Mobile y admin: issues nuevas.
+- **Crons:** los monitores `billing-cron` y `worker-heartbeat` se crean solos con el primer check-in. Configurar sus avisos (Crons → monitor → Alerts).
+
+**Monitor externo de `/health`**, opciones:
+
+| Opción | Costo | Frecuencia | Avisa por |
+| --- | --- | --- | --- |
+| UptimeRobot (propuesta) | Gratis | 5 min | Email, Slack, webhook |
+| Better Stack | Gratis | 3 min; 30 s pago | Email, Slack, página de estado |
+| Sentry Uptime | En el plan de Sentry | 1 min | Las mismas reglas de Sentry |
+
+**Simulacro (solo staging):**
+- `npm run dev:tools -- ops-drill outbox` (o `otp`, `push`); esperar la alerta (≤ 1 min más la regla); `ops-drill clear` lo deshace.
+- **5xx:** `POST /admin/ops/drill-500` con la sesión del panel.
+- **Worker caído:** Render → `worker-staging` → Suspend por 10 minutos (salta el latido y el outbox atascado).
+- **Cron caído:** suspender `billing-cron-staging` por 2 h.
+
+### Google Maps (llaves de producción)
+- **Servidor** (`MAPS_API_KEY`): solo Geocoding API, sin referer.
+- **Android:** Maps SDK for Android con el paquete (`ANDROID_APP_ID`) y los SHA-1 del certificado de Play App Signing (Play Console → Integridad de la app) y del upload key.
+- **Web:** Maps JavaScript API, restringida a los dominios de producción.
+- **Google Cloud → Billing → Budgets:** presupuesto mensual con alertas al 50, 90 y 100 % al email del equipo, y cuotas diarias por API (Geocoding y Maps).
+
+### Android: upload key y Play
+1. **Generar la upload key** una sola vez, fuera del repositorio, y guardarla con sus contraseñas en el gestor de contraseñas del equipo:
+
+   ```bash
+   keytool -genkey -v -keystore upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+   ```
+2. Cargarla en GitHub:
+   - `ANDROID_KEYSTORE_BASE64`: el resultado de `base64 -w0 upload.jks`;
+   - `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` (`upload`) y `ANDROID_KEY_PASSWORD`.
+3. Actions → `mobile-release` → Run (o el tag). Descargar el artefacto: AAB y APK firmados.
+4. **Play Console:**
+   - crear la app con el nombre comercial;
+   - activar Play App Signing;
+   - Pruebas → Prueba interna → crear versión → subir el AAB;
+   - agregar a los probadores por email.
+5. Completar el formulario de seguridad de datos con `docs/tiendas/play-seguridad-de-datos.md` y la declaración de ubicación.
+
+### Piloto cerrado (ADR-0052)
+1. **Zona:** Panel → Catálogo → Ciudades → Zona. Pegar el GeoJSON del área (dibujado en geojson.io), probar puntos de los bordes y guardar con motivo.
+2. **Números:** Panel → Configuración → Piloto: pegar los números invitados (uno por línea).
+3. **Cerrar el piloto:** Configuración → Feature flags → `pilot.closed` (Santa Cruz) → encender.
+4. **Inicio del piloto:** Parámetros → "Inicio del piloto" (AAAA-MM-DD), para las métricas del dashboard.
+5. **Soporte:** Parámetros → "WhatsApp de soporte".
+6. **Seguimiento:**
+   - Dashboard → Piloto, una vez por semana;
+   - Configuración → Piloto → Interés: exportar el CSV para medir la demanda.
+
+### Actualización obligatoria (ADR-0054)
+Si una versión de la app tiene un error grave:
+1. Publicar la versión corregida en Play.
+2. Panel → Parámetros → "Versión mínima (Android)" = la versión corregida.
+
+Las apps viejas ven "Actualiza la app" en segundos.
+
+### Retención (ADR-0050)
+Apagada hasta aprobar los plazos.
+1. Ver cuánto borraría:
+
+   ```bash
+   npm run dev:tools -- retention --dry-run
+   ```
+
+   (staging o local; en producción, con `RETENTION_ENABLED=true` el worker la corre una vez por día).
+2. Encender: `RETENTION_ENABLED=true` en el worker de producción. Se revierte igual.
+
+### Eliminación de cuenta (ADR-0049)
+- **La persona la pide desde la app** (Perfil → Acerca de → Eliminar mi cuenta) **o en `/eliminar-cuenta`** de la app web.
+- **Si tiene deuda:** ve el monto y la referencia y no puede eliminar hasta pagar. Un pago registrado lo destraba.
+- **Si escribe a soporte:** indicarle esas dos vías. El panel no elimina cuentas, porque la confirmación es con el código que llega a su teléfono.
+

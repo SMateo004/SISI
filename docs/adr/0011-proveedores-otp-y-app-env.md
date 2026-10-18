@@ -22,3 +22,9 @@ Hace falta enviar el código sin tener todavía cuenta del proveedor real, y gar
 - **Staging con consola:** el código queda en los logs de Render. Solo es aceptable mientras staging no se publique a usuarios reales (advertencia en `render.yaml`, `docs/runbook.md` y pendientes).
 - Producción no despliega hasta tener Bird configurado. Es intencional.
 - WhatsApp queda pendiente (requiere plantilla aprobada en Bird); se agrega como otra implementación o canal sin tocar `OtpService`.
+
+## Actualización (Fase 7)
+- El `ConsoleOtpProvider` también se niega a construirse con `APP_ENV=production` (además de la fábrica).
+- La respuesta de Bird se registra redactada: sin teléfonos ni códigos (ADR-0047).
+- Con el piloto cerrado, un número fuera de la lista no recibe SMS (ADR-0052).
+- Cada fallo de envío cuenta para la alerta de OTP (ADR-0048).

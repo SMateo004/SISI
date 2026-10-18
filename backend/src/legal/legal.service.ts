@@ -14,6 +14,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { REDIS_CLIENT } from '../redis/redis.constants';
 import type { AcceptLegalDto, LegalDocumentDto } from './dto/legal.dto';
 import { isDraft, type LegalType } from './legal-source';
+import { pilotFlagOnInDb } from './pilot-texts';
 
 const TYPES: readonly LegalType[] = ['terms', 'privacy'];
 /** Cada instancia relee las versiones vigentes cada tanto (una versión nueva entra sin redeploy). */
@@ -54,6 +55,7 @@ export class LegalService implements OnModuleInit, OnModuleDestroy {
           `Producción no arranca sin textos legales finales (faltan: ${missing.join(', ') || '—'}; borradores: ${drafts.join(', ') || '—'}). ADR-0051.`,
         );
       }
+      await this.assertPilotFlagForPilotTexts();
     }
     this.timer = setInterval(() => {
       void this.reload().catch((error: unknown) => {
@@ -61,6 +63,25 @@ export class LegalService implements OnModuleInit, OnModuleDestroy {
       });
     }, REFRESH_MS);
     this.timer.unref();
+  }
+
+  /**
+   * Los textos v0 del piloto valen solo con la lista del piloto activa: con ellos vigentes,
+   * producción no arranca si `pilot.closed` está apagado en la ciudad por defecto (el seed lo
+   * enciende en cada deploy).
+   */
+  async assertPilotFlagForPilotTexts(): Promise<void> {
+    const pilot = [...this.current.values()].filter((d) => d.pilotOnly).map((d) => d.type);
+    if (pilot.length === 0) return;
+    const city = await this.prisma.city.findUniqueOrThrow({
+      where: { slug: this.config.get('DEFAULT_CITY_SLUG', { infer: true }) },
+      select: { id: true },
+    });
+    if (!(await pilotFlagOnInDb(this.prisma, city.id))) {
+      throw new Error(
+        `Producción no arranca con los textos v0 del piloto (${pilot.join(', ')}) y pilot.closed apagado: enciéndelo o publica los textos definitivos. ADR-0051.`,
+      );
+    }
   }
 
   onModuleDestroy(): void {
@@ -82,6 +103,7 @@ export class LegalService implements OnModuleInit, OnModuleDestroy {
         contentMd: row.contentMd,
         publishedAt: row.publishedAt.toISOString(),
         draft: isDraft(row.contentMd),
+        pilotOnly: row.pilotOnly,
       });
     }
     this.current = next;

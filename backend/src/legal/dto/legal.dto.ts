@@ -19,6 +19,8 @@ export class LegalDocumentDto {
   @ApiProperty({ description: 'Texto en Markdown' }) contentMd!: string;
   @ApiProperty({ type: String, format: 'date-time' }) publishedAt!: string;
   @ApiProperty({ description: 'Sigue pendiente de revisión legal (borrador)' }) draft!: boolean;
+  @ApiProperty({ description: 'Versión v0 que solo vale para el piloto cerrado con invitación' })
+  pilotOnly!: boolean;
 }
 
 export class AcceptLegalDto {

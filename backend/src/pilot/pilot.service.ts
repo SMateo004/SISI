@@ -5,9 +5,10 @@ import { ApiError } from '../common/errors/api-error';
 import { normalizePhone } from '../common/phone/phone';
 import type { AppConfigService } from '../config/app-config';
 import { FeatureFlagsService } from '../feature-flags/feature-flags.service';
+import { PILOT_FLAG, pilotOnlyTextsActive } from '../legal/pilot-texts';
 import { PrismaService } from '../prisma/prisma.service';
 
-export const PILOT_FLAG = 'pilot.closed';
+export { PILOT_FLAG };
 
 export interface PilotInterestInput {
   phone: string;
@@ -37,10 +38,20 @@ export class PilotService {
     });
   }
 
+  /**
+   * Cerrado con el flag encendido. En producción, además, mientras los textos vigentes sean los
+   * v0 del piloto (ADR-0051): si el flag faltara o se apagara, se falla cerrado.
+   */
+  async isClosed(cityId: string): Promise<boolean> {
+    if (await this.flags.isEnabled(PILOT_FLAG, cityId)) return true;
+    if (this.config.get('APP_ENV', { infer: true }) !== 'production') return false;
+    return pilotOnlyTextsActive(this.prisma);
+  }
+
   /** Lanza 403 PILOT_NOT_ALLOWED si ese número no puede crear una cuenta hoy. */
   async assertCanSignIn(phoneE164: string): Promise<void> {
     const city = await this.defaultCity();
-    if (!(await this.flags.isEnabled(PILOT_FLAG, city.id))) return;
+    if (!(await this.isClosed(city.id))) return;
     const existing = await this.prisma.user.findUnique({
       where: { phone: phoneE164 },
       select: { id: true },

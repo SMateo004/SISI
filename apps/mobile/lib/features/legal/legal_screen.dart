@@ -38,6 +38,30 @@ class DraftBanner extends StatelessWidget {
   }
 }
 
+/// Los textos v0 valen solo para el piloto cerrado con usuarios invitados (ADR-0051).
+class PilotTextsBanner extends StatelessWidget {
+  const PilotTextsBanner({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      key: const Key('legal-pilot-banner'),
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        'Versión v0 del piloto cerrado: vale solo para los usuarios invitados. '
+        'Antes de abrir la app al público te pediremos aceptar la versión definitiva.',
+        style: TextStyle(color: scheme.onSecondaryContainer),
+      ),
+    );
+  }
+}
+
 /// Aceptar los términos de uso y la política de privacidad vigentes, y declarar la mayoría
 /// de edad (registro y cada versión nueva, ADR-0051). Sin aceptar no se puede seguir.
 class LegalScreen extends ConsumerStatefulWidget {
@@ -131,12 +155,18 @@ class _LegalScreenState extends ConsumerState<LegalScreen> {
                   ),
                   title: Text(d.title),
                   subtitle: Text(
-                    'Versión ${d.version}${d.draft ? ' · BORRADOR' : ''}',
+                    'Versión ${d.version}'
+                    '${d.pilotOnly ? ' · Piloto cerrado' : ''}'
+                    '${d.draft ? ' · BORRADOR' : ''}',
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push(Routes.legalDocument(d.type)),
                 ),
               ),
+            if (list.any((d) => d.pilotOnly)) ...[
+              const SizedBox(height: 8),
+              const PilotTextsBanner(),
+            ],
             if (list.any((d) => d.draft)) ...[
               const SizedBox(height: 8),
               const DraftBanner(),
@@ -208,6 +238,10 @@ class LegalDocumentScreen extends ConsumerWidget {
             children: [
               if (doc.draft) ...[
                 const DraftBanner(),
+                const SizedBox(height: 16),
+              ],
+              if (doc.pilotOnly) ...[
+                const PilotTextsBanner(),
                 const SizedBox(height: 16),
               ],
               Text(

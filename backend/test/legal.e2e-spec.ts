@@ -12,6 +12,7 @@ describe('Textos legales y consentimiento (e2e)', () => {
         type: string;
         version: number;
         draft: boolean;
+        pilotOnly: boolean;
       }[]
     ).find((d) => d.type === type);
 
@@ -27,8 +28,8 @@ describe('Textos legales y consentimiento (e2e)', () => {
   it('los textos vigentes son públicos y hoy son borradores con marcador', async () => {
     const terms = await versionOf('terms');
     const privacy = await versionOf('privacy');
-    expect(terms).toMatchObject({ version: 1, draft: true });
-    expect(privacy).toMatchObject({ version: 1, draft: true });
+    expect(terms).toMatchObject({ version: 1, draft: true, pilotOnly: true });
+    expect(privacy).toMatchObject({ version: 1, draft: true, pilotOnly: true });
   });
 
   it('sin aceptar: /me avisa qué falta y el resto responde 403 LEGAL_ACCEPTANCE_REQUIRED', async () => {

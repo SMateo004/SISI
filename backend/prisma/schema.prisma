@@ -1095,6 +1095,8 @@ model LegalDocument {
   version     Int
   title       String
   contentMd   String            @map("content_md")
+  /// Texto "v0" del piloto cerrado: mientras esté vigente, producción exige pilot.closed (ADR-0051).
+  pilotOnly   Boolean           @default(false) @map("pilot_only")
   publishedAt DateTime          @default(now()) @map("published_at") @db.Timestamptz(3)
   createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
 

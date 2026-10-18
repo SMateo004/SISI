@@ -11,6 +11,7 @@ class FakeClientAppRepository implements ClientAppRepository {
     this.support,
     List<String>? legalPending,
     this.draft = true,
+    this.pilotOnly = false,
   }) : pending = legalPending ?? const [];
 
   bool upgradeRequired;
@@ -18,6 +19,7 @@ class FakeClientAppRepository implements ClientAppRepository {
   SupportInfo? support;
   List<String> pending;
   bool draft;
+  bool pilotOnly;
   int termsVersion = 1;
   final accepted = <(int, int)>[];
 
@@ -37,6 +39,7 @@ class FakeClientAppRepository implements ClientAppRepository {
       title: 'Términos de uso',
       content: '# Términos de uso\n\n- Debes ser mayor de 18 años.',
       draft: draft,
+      pilotOnly: pilotOnly,
     ),
     LegalDocument(
       type: 'privacy',
@@ -44,6 +47,7 @@ class FakeClientAppRepository implements ClientAppRepository {
       title: 'Política de privacidad',
       content: '# Política de privacidad\n\nQué datos recolectamos.',
       draft: draft,
+      pilotOnly: pilotOnly,
     ),
   ];
 

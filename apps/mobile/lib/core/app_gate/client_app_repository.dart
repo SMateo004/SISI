@@ -57,6 +57,7 @@ class LegalDocument {
     required this.title,
     required this.content,
     required this.draft,
+    this.pilotOnly = false,
   });
 
   factory LegalDocument.fromJson(Map<String, dynamic> json) => LegalDocument(
@@ -65,6 +66,7 @@ class LegalDocument {
     title: json['title'] as String,
     content: json['contentMd'] as String,
     draft: json['draft'] == true,
+    pilotOnly: json['pilotOnly'] == true,
   );
 
   /// `terms` o `privacy`.
@@ -75,6 +77,9 @@ class LegalDocument {
 
   /// Sigue pendiente de revisión legal: la app lo muestra con un aviso.
   final bool draft;
+
+  /// Versión v0 que solo vale para el piloto cerrado con invitación.
+  final bool pilotOnly;
 }
 
 /// Configuración de la app, textos legales y su aceptación.

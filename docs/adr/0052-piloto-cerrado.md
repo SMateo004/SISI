@@ -9,7 +9,7 @@ El piloto en Santa Cruz arranca con un grupo controlado de trabajadores y emplea
 
 ## Decisión
 - **Lista por ciudad:**
-  - flag `pilot.closed` de la ciudad (apagado en el seed) y tabla `pilot_allowlist`;
+  - flag `pilot.closed` de la ciudad (apagado en el seed) y tabla `pilot_allowlist`. En producción, con los textos legales v0 vigentes, el seed lo enciende y no se puede apagar (ADR-0051);
   - con el flag encendido, `POST /auth/otp/request` responde 403 `PILOT_NOT_ALLOWED` a un número sin cuenta y fuera de la lista, **sin enviar el SMS**; la verificación repite el control;
   - las cuentas existentes siguen entrando, aunque se las quite de la lista.
 - **"Pronto en tu zona":** la app lo muestra con el nombre de la ciudad. `POST /pilot/interest` (público, 10/h por IP) guarda teléfono, qué quiere hacer y barrio, uno por número.

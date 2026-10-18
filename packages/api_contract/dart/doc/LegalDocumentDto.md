@@ -14,6 +14,7 @@ Name | Type | Description | Notes
 **contentMd** | **String** | Texto en Markdown | 
 **publishedAt** | [**DateTime**](DateTime.md) |  | 
 **draft** | **bool** | Sigue pendiente de revisión legal (borrador) | 
+**pilotOnly** | **bool** | Versión v0 que solo vale para el piloto cerrado con invitación | 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

@@ -8737,6 +8737,10 @@
           "draft": {
             "type": "boolean",
             "description": "Sigue pendiente de revisión legal (borrador)"
+          },
+          "pilotOnly": {
+            "type": "boolean",
+            "description": "Versión v0 que solo vale para el piloto cerrado con invitación"
           }
         },
         "required": [
@@ -8745,7 +8749,8 @@
           "title",
           "contentMd",
           "publishedAt",
-          "draft"
+          "draft",
+          "pilotOnly"
         ]
       },
       "AcceptLegalDto": {

@@ -47,7 +47,28 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Versión 1'), findsOneWidget);
       expect(find.textContaining('mayor de 18'), findsOneWidget);
+      expect(find.byKey(const Key('legal-pilot-banner')), findsNothing);
     });
+
+    testWidgets(
+      'los textos v0 avisan que son del piloto cerrado con invitación',
+      (tester) async {
+        final app = FakeClientAppRepository(
+          legalPending: ['terms', 'privacy'],
+          draft: false,
+          pilotOnly: true,
+        );
+        await pumpSisiApp(tester, storedTokens: testTokens, clientApp: app);
+        expect(find.byKey(const Key('legal-pilot-banner')), findsOneWidget);
+        expect(find.byKey(const Key('legal-draft-banner')), findsNothing);
+        expect(find.text('Versión 1 · Piloto cerrado'), findsNWidgets(2));
+
+        await tester.tap(find.byKey(const Key('legal-doc-privacy')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('legal-pilot-banner')), findsOneWidget);
+        expect(find.textContaining('usuarios invitados'), findsOneWidget);
+      },
+    );
   });
 
   group('Versión mínima (ADR-0054)', () {

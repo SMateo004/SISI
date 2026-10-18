@@ -2,6 +2,9 @@ import type { AuditHook } from '../audit/admin-audit.service';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import type { Redis } from 'ioredis';
 import { ApiError } from '../common/errors/api-error';
+import { ConfigService } from '@nestjs/config';
+import type { AppConfigService } from '../config/app-config';
+import { PILOT_FLAG, pilotOnlyTextsActive } from '../legal/pilot-texts';
 import { PrismaService } from '../prisma/prisma.service';
 import { REDIS_CLIENT } from '../redis/redis.constants';
 
@@ -39,6 +42,7 @@ export class FeatureFlagsService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
+    @Inject(ConfigService) private readonly config: AppConfigService,
   ) {}
 
   async isEnabled(key: string, cityId?: string | null): Promise<boolean> {
@@ -65,6 +69,20 @@ export class FeatureFlagsService {
         HttpStatus.BAD_REQUEST,
         'FLAG_KEY_INVALID',
         'La key debe tener de 2 a 64 caracteres: minúsculas, números, punto, guion o guion bajo.',
+      );
+    }
+    // Los textos v0 del piloto valen solo con el piloto cerrado (ADR-0051): en producción no se
+    // apaga mientras sean los vigentes.
+    if (
+      key === PILOT_FLAG &&
+      !input.enabled &&
+      this.config.get('APP_ENV', { infer: true }) === 'production' &&
+      (await pilotOnlyTextsActive(this.prisma))
+    ) {
+      throw new ApiError(
+        HttpStatus.CONFLICT,
+        'PILOT_TEXTS_ACTIVE',
+        'Los textos legales vigentes son los del piloto cerrado: el piloto no se puede abrir hasta publicar los definitivos.',
       );
     }
     if (input.cityId) {

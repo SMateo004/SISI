@@ -6,6 +6,7 @@ import { CITIES } from './seed-data/cities';
 import { FEATURE_FLAGS } from './seed-data/feature-flags';
 import { MODERATION_TERMS } from './seed-data/moderation-terms';
 import { isDraft, readLegalSources } from '../src/legal/legal-source';
+import { PILOT_FLAG, pilotOnlyTextsActive } from '../src/legal/pilot-texts';
 
 /**
  * Datos de referencia. Idempotente: solo crea lo que falta y nunca pisa cambios
@@ -78,10 +79,11 @@ async function main(): Promise<void> {
             version: doc.version,
             title: doc.title,
             contentMd: doc.contentMd,
+            pilotOnly: doc.pilotOnly,
           },
         });
         console.log(`Texto legal publicado: ${doc.type} v${String(doc.version)}`);
-      } else if (existing.contentMd !== doc.contentMd) {
+      } else if (existing.contentMd !== doc.contentMd || existing.pilotOnly !== doc.pilotOnly) {
         if (!isDraft(existing.contentMd)) {
           throw new Error(
             `${doc.file}: la versión ${String(doc.version)} ya está publicada como final. Para cambiarla, sube la versión.`,
@@ -89,9 +91,31 @@ async function main(): Promise<void> {
         }
         await prisma.legalDocument.update({
           where: { id: existing.id },
-          data: { title: doc.title, contentMd: doc.contentMd },
+          data: { title: doc.title, contentMd: doc.contentMd, pilotOnly: doc.pilotOnly },
         });
         console.log(`Borrador legal actualizado: ${doc.type} v${String(doc.version)}`);
+      }
+    }
+
+    // Textos v0 del piloto cerrado (ADR-0051): en producción solo valen con la lista del piloto
+    // activa, así que el seed enciende pilot.closed en la ciudad por defecto (nunca lo apaga).
+    // La API además no arranca si quedara apagado.
+    if (process.env.APP_ENV === 'production' && (await pilotOnlyTextsActive(prisma))) {
+      const slug = process.env.DEFAULT_CITY_SLUG ?? 'santa-cruz';
+      const cityId = citiesBySlug.get(slug);
+      if (!cityId) throw new Error(`La ciudad ${slug} no existe`);
+      const { count } = await prisma.featureFlag.updateMany({
+        where: { key: PILOT_FLAG, cityId, enabled: false },
+        data: { enabled: true },
+      });
+      const exists = await prisma.featureFlag.findFirst({ where: { key: PILOT_FLAG, cityId } });
+      if (!exists) {
+        await prisma.featureFlag.create({ data: { key: PILOT_FLAG, cityId, enabled: true } });
+      }
+      if (count > 0 || !exists) {
+        console.log(
+          `Piloto cerrado encendido en ${slug}: los textos vigentes son los v0 del piloto.`,
+        );
       }
     }
   } finally {

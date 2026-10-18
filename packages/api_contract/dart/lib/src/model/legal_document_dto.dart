@@ -31,6 +31,8 @@ class LegalDocumentDto {
     required  this.publishedAt,
 
     required  this.draft,
+
+    required  this.pilotOnly,
   });
 
   @JsonKey(
@@ -107,6 +109,19 @@ class LegalDocumentDto {
 
 
 
+      /// Versión v0 que solo vale para el piloto cerrado con invitación
+  @JsonKey(
+    
+    name: r'pilotOnly',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final bool pilotOnly;
+
+
+
 
 
     @override
@@ -116,7 +131,8 @@ class LegalDocumentDto {
       other.title == title &&
       other.contentMd == contentMd &&
       other.publishedAt == publishedAt &&
-      other.draft == draft;
+      other.draft == draft &&
+      other.pilotOnly == pilotOnly;
 
     @override
     int get hashCode =>
@@ -125,7 +141,8 @@ class LegalDocumentDto {
         title.hashCode +
         contentMd.hashCode +
         publishedAt.hashCode +
-        draft.hashCode;
+        draft.hashCode +
+        pilotOnly.hashCode;
 
   factory LegalDocumentDto.fromJson(Map<String, dynamic> json) => _$LegalDocumentDtoFromJson(json);
 

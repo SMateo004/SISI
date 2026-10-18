@@ -6,17 +6,21 @@ export const LEGAL_DRAFT_MARKER = 'PENDIENTE DE REVISIÓN LEGAL';
 
 export type LegalType = 'terms' | 'privacy';
 
+/** `stage: piloto-cerrado` en el encabezado: texto "v0" que solo vale con el piloto cerrado. */
+export const PILOT_STAGE = 'piloto-cerrado';
+
 export interface LegalSource {
   file: string;
   type: LegalType;
   version: number;
   title: string;
   contentMd: string;
+  pilotOnly: boolean;
 }
 
 export const isDraft = (content: string): boolean => content.includes(LEGAL_DRAFT_MARKER);
 
-/** Lee un texto legal con su encabezado (type, version, title). */
+/** Lee un texto legal con su encabezado (type, version, title y, opcional, stage). */
 export function parseLegalFile(file: string, raw: string): LegalSource {
   const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/.exec(raw);
   if (!match) throw new Error(`${file}: falta el encabezado --- type/version/title ---`);
@@ -34,7 +38,16 @@ export function parseLegalFile(file: string, raw: string): LegalSource {
   if (!Number.isInteger(version) || version < 1)
     throw new Error(`${file}: version debe ser un entero ≥ 1`);
   if (!header.title) throw new Error(`${file}: falta title`);
-  return { file, type, version, title: header.title, contentMd: (match[2] ?? '').trim() };
+  if (header.stage !== undefined && header.stage !== PILOT_STAGE)
+    throw new Error(`${file}: stage solo puede ser ${PILOT_STAGE} (o no ir)`);
+  return {
+    file,
+    type,
+    version,
+    title: header.title,
+    contentMd: (match[2] ?? '').trim(),
+    pilotOnly: header.stage === PILOT_STAGE,
+  };
 }
 
 /** Todos los textos de backend/legal (la fuente de verdad; el seed los carga en la base). */

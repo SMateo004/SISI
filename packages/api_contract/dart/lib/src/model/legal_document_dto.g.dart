@@ -19,6 +19,8 @@ abstract class _$LegalDocumentDtoCWProxy {
 
   LegalDocumentDto draft(bool draft);
 
+  LegalDocumentDto pilotOnly(bool pilotOnly);
+
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `LegalDocumentDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -32,6 +34,7 @@ abstract class _$LegalDocumentDtoCWProxy {
     String contentMd,
     DateTime publishedAt,
     bool draft,
+    bool pilotOnly,
   });
 }
 
@@ -61,6 +64,9 @@ class _$LegalDocumentDtoCWProxyImpl implements _$LegalDocumentDtoCWProxy {
   LegalDocumentDto draft(bool draft) => this(draft: draft);
 
   @override
+  LegalDocumentDto pilotOnly(bool pilotOnly) => this(pilotOnly: pilotOnly);
+
+  @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `LegalDocumentDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -74,6 +80,7 @@ class _$LegalDocumentDtoCWProxyImpl implements _$LegalDocumentDtoCWProxy {
     Object? contentMd = const $CopyWithPlaceholder(),
     Object? publishedAt = const $CopyWithPlaceholder(),
     Object? draft = const $CopyWithPlaceholder(),
+    Object? pilotOnly = const $CopyWithPlaceholder(),
   }) {
     return LegalDocumentDto(
       type: type == const $CopyWithPlaceholder()
@@ -100,6 +107,10 @@ class _$LegalDocumentDtoCWProxyImpl implements _$LegalDocumentDtoCWProxy {
           ? _value.draft
           // ignore: cast_nullable_to_non_nullable
           : draft as bool,
+      pilotOnly: pilotOnly == const $CopyWithPlaceholder()
+          ? _value.pilotOnly
+          // ignore: cast_nullable_to_non_nullable
+          : pilotOnly as bool,
     );
   }
 }
@@ -125,6 +136,7 @@ LegalDocumentDto _$LegalDocumentDtoFromJson(Map<String, dynamic> json) =>
           'contentMd',
           'publishedAt',
           'draft',
+          'pilotOnly',
         ],
       );
       final val = LegalDocumentDto(
@@ -140,6 +152,7 @@ LegalDocumentDto _$LegalDocumentDtoFromJson(Map<String, dynamic> json) =>
           (v) => DateTime.parse(v as String),
         ),
         draft: $checkedConvert('draft', (v) => v as bool),
+        pilotOnly: $checkedConvert('pilotOnly', (v) => v as bool),
       );
       return val;
     });
@@ -152,6 +165,7 @@ Map<String, dynamic> _$LegalDocumentDtoToJson(LegalDocumentDto instance) =>
       'contentMd': instance.contentMd,
       'publishedAt': instance.publishedAt.toIso8601String(),
       'draft': instance.draft,
+      'pilotOnly': instance.pilotOnly,
     };
 
 const _$LegalDocumentDtoTypeEnumEnumMap = {

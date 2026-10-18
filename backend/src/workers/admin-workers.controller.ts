@@ -7,7 +7,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { Roles } from '../auth/decorators/auth.decorators';
+import { Admin } from '../common/admin/admin-permissions';
 import { ApiErrorBody } from '../common/errors/api-error';
 import { DocumentUrlDto } from './dto/worker.dto';
 import { WorkersService } from './workers.service';
@@ -15,7 +15,7 @@ import { WorkersService } from './workers.service';
 /** Endpoints de administración de trabajadores. La revisión completa llega en la Fase 6. */
 @ApiTags('admin')
 @ApiBearerAuth()
-@Roles('admin')
+@Admin('verificaciones')
 @ApiForbiddenResponse({ type: ApiErrorBody, description: 'FORBIDDEN: solo administradores' })
 @Controller('admin/workers')
 export class AdminWorkersController {

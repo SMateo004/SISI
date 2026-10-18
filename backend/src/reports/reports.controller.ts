@@ -10,7 +10,8 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { type AuthenticatedUser, CurrentUser, Roles } from '../auth/decorators/auth.decorators';
+import { type AuthenticatedUser, CurrentUser } from '../auth/decorators/auth.decorators';
+import { Admin } from '../common/admin/admin-permissions';
 import { ApiErrorBody } from '../common/errors/api-error';
 import {
   AdminReportDto,
@@ -57,7 +58,7 @@ export class ReportsController {
 /** Revisión de reportes (mínimo; la consola llega en la Fase 6). */
 @ApiTags('admin')
 @ApiBearerAuth()
-@Roles('admin')
+@Admin('moderacion')
 @ApiForbiddenResponse({ type: ApiErrorBody, description: 'FORBIDDEN: solo administradores' })
 @Controller('admin/reports')
 export class AdminReportsController {

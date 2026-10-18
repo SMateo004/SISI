@@ -20,7 +20,8 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { type AuthenticatedUser, CurrentUser, Roles } from '../auth/decorators/auth.decorators';
+import { type AuthenticatedUser, CurrentUser } from '../auth/decorators/auth.decorators';
+import { Admin } from '../common/admin/admin-permissions';
 import { ApiErrorBody } from '../common/errors/api-error';
 import { requireIdempotencyKey } from '../common/idempotency/idempotency';
 import { PresignedUploadDto } from '../storage/dto/upload.dto';
@@ -56,7 +57,7 @@ const IDEMPOTENCY_HEADER = {
  */
 @ApiTags('admin')
 @ApiBearerAuth()
-@Roles('admin')
+@Admin('cobros')
 @ApiForbiddenResponse({
   type: ApiErrorBody,
   description: 'FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)',

@@ -1,3 +1,4 @@
+import { Admin } from '../common/admin/admin-permissions';
 import {
   Body,
   Controller,
@@ -27,7 +28,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { IsBoolean, IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
-import { type AuthenticatedUser, CurrentUser, Roles } from '../auth/decorators/auth.decorators';
+import { type AuthenticatedUser, CurrentUser } from '../auth/decorators/auth.decorators';
 import { ApiError, ApiErrorBody } from '../common/errors/api-error';
 import type { ModerationTerm } from '../generated/prisma/client';
 import { Prisma } from '../generated/prisma/client';
@@ -96,7 +97,7 @@ const toDto = (t: ModerationTerm): ModerationTermDto => ({
 
 @ApiTags('admin')
 @ApiBearerAuth()
-@Roles('admin')
+@Admin('moderacion')
 @ApiForbiddenResponse({ type: ApiErrorBody, description: 'FORBIDDEN: solo administradores' })
 @Controller('admin/moderation-terms')
 export class ModerationTermsController {

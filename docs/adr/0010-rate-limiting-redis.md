@@ -23,3 +23,6 @@ Para agregar un límite en una fase nueva: variable en `env.schema.ts`, polític
 
 ## Consecuencias
 Ventanas fijas: permiten hasta el doble en el borde entre ventanas. Es aceptable para estos usos; si hiciera falta precisión se cambia el Lua a ventana deslizante sin tocar a quienes lo usan. Los valores iniciales son propuesta (docs/pendientes.md).
+
+## Actualización (Fase 6)
+Las rutas del panel tienen límites **por admin** (`AdminGuard`, ADR-0040): lecturas, escrituras y exportaciones. Detrás del proxy de Vercel todos los admins comparten IP, así que un límite por IP no serviría.

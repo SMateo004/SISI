@@ -10,7 +10,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { IsBoolean, IsOptional, IsString, IsUUID, MaxLength, ValidateIf } from 'class-validator';
-import { type AuthenticatedUser, CurrentUser, Roles } from '../auth/decorators/auth.decorators';
+import { type AuthenticatedUser, CurrentUser } from '../auth/decorators/auth.decorators';
+import { Admin } from '../common/admin/admin-permissions';
 import { ApiErrorBody } from '../common/errors/api-error';
 import { FeatureFlagsService } from './feature-flags.service';
 
@@ -55,7 +56,7 @@ const toDto = (f: {
 
 @ApiTags('admin')
 @ApiBearerAuth()
-@Roles('admin')
+@Admin('configuracion')
 @ApiForbiddenResponse({ type: ApiErrorBody, description: 'FORBIDDEN: solo administradores' })
 @Controller('admin/feature-flags')
 export class FeatureFlagsController {

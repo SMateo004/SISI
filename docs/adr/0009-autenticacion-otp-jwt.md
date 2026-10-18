@@ -34,3 +34,6 @@ R1.1 identifica cada cuenta por su teléfono. El doc 02 pide OTP por SMS/WhatsAp
 - El rol viaja en el token: un cambio de rol se aplica en el siguiente refresh (≤ 15 min).
 - Rotar `JWT_SECRET` invalida los accesos vigentes y los OTP pendientes. Rotar `JWT_REFRESH_SECRET` cierra todas las sesiones.
 - La app debe hacer un solo refresh a la vez (si no, la segunda rotación parece una reutilización): lo resuelve el interceptor de dio (ver ADR-0014).
+
+## Actualización (Fase 6)
+El panel admin tiene una sesión propia (ADR-0040): `aud=admin`, acceso de 10 min, máximo de 8 h desde el login, y refresh solo en una cookie httpOnly. Las sesiones de la app y del panel no se cruzan.

@@ -25,7 +25,8 @@ import {
   ApiTags,
   ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
-import { type AuthenticatedUser, CurrentUser, Roles } from '../auth/decorators/auth.decorators';
+import { type AuthenticatedUser, CurrentUser } from '../auth/decorators/auth.decorators';
+import { Admin } from '../common/admin/admin-permissions';
 import { ApiErrorBody } from '../common/errors/api-error';
 import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 import { ConfirmUploadDto, PresignedUploadDto, UploadRequestDto } from '../storage/dto/upload.dto';
@@ -165,7 +166,7 @@ export class RequestsController {
 
 @ApiTags('admin')
 @ApiBearerAuth()
-@Roles('admin')
+@Admin('moderacion')
 @ApiForbiddenResponse({ type: ApiErrorBody, description: 'FORBIDDEN: solo administradores' })
 @Controller('admin/requests')
 export class AdminRequestsController {

@@ -7,7 +7,8 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { type AuthenticatedUser, CurrentUser, Roles } from '../auth/decorators/auth.decorators';
+import { type AuthenticatedUser, CurrentUser } from '../auth/decorators/auth.decorators';
+import { Admin } from '../common/admin/admin-permissions';
 import { ApiErrorBody } from '../common/errors/api-error';
 import { AdminDisputedJobDto, ResolveDisputeDto } from './dto/job.dto';
 import { JobsService } from './jobs.service';
@@ -15,7 +16,7 @@ import { JobsService } from './jobs.service';
 /** Disputas de trabajos (mínimo; la consola completa llega en la Fase 6). */
 @ApiTags('admin')
 @ApiBearerAuth()
-@Roles('admin')
+@Admin('moderacion')
 @ApiForbiddenResponse({ type: ApiErrorBody, description: 'FORBIDDEN: solo administradores' })
 @Controller('admin/jobs')
 export class AdminJobsController {

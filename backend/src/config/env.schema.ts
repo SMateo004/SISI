@@ -76,6 +76,10 @@ export const envSchema = z
     RATE_OTP_IP_PER_HOUR: positiveInt(20),
     RATE_OTP_VERIFY_IP_PER_15MIN: positiveInt(30),
     RATE_AUTH_IP_PER_MIN: positiveInt(30),
+    /** Panel admin, por admin (ADR-0040): lecturas, escrituras y exportaciones CSV. */
+    RATE_ADMIN_READ_PER_MIN: positiveInt(300),
+    RATE_ADMIN_WRITE_PER_MIN: positiveInt(60),
+    RATE_ADMIN_EXPORT_PER_HOUR: positiveInt(10),
 
     // Almacenamiento S3 (ADR-0012)
     STORAGE_ENDPOINT: z.preprocess(emptyAsUndefined, z.url().optional()),

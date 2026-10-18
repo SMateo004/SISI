@@ -7,7 +7,8 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { type AuthenticatedUser, CurrentUser, Roles } from '../auth/decorators/auth.decorators';
+import { type AuthenticatedUser, CurrentUser } from '../auth/decorators/auth.decorators';
+import { Admin } from '../common/admin/admin-permissions';
 import { ApiErrorBody } from '../common/errors/api-error';
 import { UsersService } from '../users/users.service';
 import { AdminCategoriesService } from './admin-categories.service';
@@ -44,7 +45,7 @@ export class CategoriesController {
 
 @ApiTags('admin')
 @ApiBearerAuth()
-@Roles('admin')
+@Admin('catalogo')
 @ApiForbiddenResponse({ type: ApiErrorBody, description: 'FORBIDDEN: solo administradores' })
 @Controller('admin/categories')
 export class AdminCategoriesController {

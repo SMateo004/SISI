@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
+import { AdminGuard } from './common/admin/admin.guard';
 import { BillingModule } from './billing/billing.module';
 import { ChatModule } from './chat/chat.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -63,6 +64,8 @@ import { WorkersModule } from './workers/workers.module';
     { provide: APP_GUARD, useExisting: RateLimitGuard },
     { provide: APP_GUARD, useExisting: JwtAuthGuard },
     { provide: APP_GUARD, useExisting: RolesGuard },
+    // Permiso del área y límites por admin en las rutas del panel (ADR-0040).
+    { provide: APP_GUARD, useClass: AdminGuard },
     { provide: APP_FILTER, useClass: RateLimitedFilter },
   ],
 })

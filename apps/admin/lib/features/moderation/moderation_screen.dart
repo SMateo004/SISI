@@ -347,8 +347,14 @@ class _ReportsState extends ConsumerState<_Reports> {
             ),
             ServerColumn(
               'Nota',
-              (r) => Text(
-                r.noteHeld ? '(retenida) ${r.note ?? ''}' : r.note ?? '—',
+              // Ancho fijo: una nota larga no empuja los botones fuera de la pantalla.
+              (r) => SizedBox(
+                width: 220,
+                child: Text(
+                  r.noteHeld ? '(retenida) ${r.note ?? ''}' : r.note ?? '—',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
             ServerColumn(

@@ -79,3 +79,9 @@ export class PaymentSubmissionDto {
   @ApiProperty({ description: 'URL temporal del comprobante' }) receiptUrl!: string;
   @ApiProperty({ type: String, format: 'date-time' }) createdAt!: string;
 }
+
+/** Comprobante en el panel: con quién lo envió. */
+export class AdminPaymentSubmissionDto extends PaymentSubmissionDto {
+  @ApiProperty({ type: String, nullable: true }) workerName!: string | null;
+  @ApiProperty() workerPhone!: string;
+}

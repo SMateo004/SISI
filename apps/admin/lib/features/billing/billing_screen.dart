@@ -218,7 +218,7 @@ class _Overdue extends ConsumerWidget {
 }
 
 final submissionsProvider = FutureProvider.autoDispose
-    .family<List<PaymentSubmissionDto>, String>((ref, status) async {
+    .family<List<AdminPaymentSubmissionDto>, String>((ref, status) async {
       final res = await ref
           .watch(adminApiProvider)
           .adminBillingControllerSubmissions(status: status);
@@ -235,7 +235,7 @@ class _Submissions extends ConsumerStatefulWidget {
 class _SubmissionsState extends ConsumerState<_Submissions> {
   String _status = 'pendiente';
 
-  Future<void> _register(PaymentSubmissionDto s) async {
+  Future<void> _register(AdminPaymentSubmissionDto s) async {
     final result = await registerPaymentFlow(
       context,
       ref,
@@ -252,7 +252,7 @@ class _SubmissionsState extends ConsumerState<_Submissions> {
     }
   }
 
-  Future<void> _reject(PaymentSubmissionDto s) async {
+  Future<void> _reject(AdminPaymentSubmissionDto s) async {
     final ok = await confirmAction<bool>(
       context,
       title: 'Rechazar comprobante',
@@ -314,6 +314,12 @@ class _SubmissionsState extends ConsumerState<_Submissions> {
                               Text(
                                 '${formatDateTime(s.createdAt)} · ${s.declaredAmountBs == null ? 'sin monto' : formatBs(s.declaredAmountBs!)}',
                               ),
+                              Text(
+                                s.workerName == null
+                                    ? s.workerPhone
+                                    : '${s.workerName} · ${s.workerPhone}',
+                                style: Theme.of(context).textTheme.titleSmall,
+                              ),
                               if (s.note != null) Text(s.note!),
                               if (s.reviewNote != null)
                                 Text('Rechazo: ${s.reviewNote}'),
@@ -325,7 +331,10 @@ class _SubmissionsState extends ConsumerState<_Submissions> {
                                 errorBuilder: (_, _, _) =>
                                     const Text('No se pudo cargar la imagen.'),
                               ),
-                              Row(
+                              // Wrap: en una tarjeta angosta los botones bajan de línea.
+                              Wrap(
+                                spacing: 8,
+                                crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   TextButton(
                                     onPressed: () => context.go(
@@ -333,7 +342,6 @@ class _SubmissionsState extends ConsumerState<_Submissions> {
                                     ),
                                     child: const Text('Ver cobros'),
                                   ),
-                                  const Spacer(),
                                   if (s.status.value == 'pendiente') ...[
                                     TextButton(
                                       key: Key('submission-reject-${s.id}'),

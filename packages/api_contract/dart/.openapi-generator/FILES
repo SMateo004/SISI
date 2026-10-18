@@ -21,6 +21,7 @@ doc/AdminJobPartyDto.md
 doc/AdminJobsControllerResolve200Response.md
 doc/AdminLedgerEntryDto.md
 doc/AdminOfferEventDto.md
+doc/AdminPaymentSubmissionDto.md
 doc/AdminPeriodDto.md
 doc/AdminReportDto.md
 doc/AdminReportPageDto.md
@@ -229,6 +230,7 @@ lib/src/model/admin_job_party_dto.dart
 lib/src/model/admin_jobs_controller_resolve200_response.dart
 lib/src/model/admin_ledger_entry_dto.dart
 lib/src/model/admin_offer_event_dto.dart
+lib/src/model/admin_payment_submission_dto.dart
 lib/src/model/admin_period_dto.dart
 lib/src/model/admin_report_dto.dart
 lib/src/model/admin_report_page_dto.dart
@@ -382,3 +384,4 @@ lib/src/model/worker_document_status_dto.dart
 lib/src/model/worker_profile_dto.dart
 lib/src/model/worker_status_result_dto.dart
 lib/src/model/worker_summary_dto.dart
+test/admin_payment_submission_dto_test.dart

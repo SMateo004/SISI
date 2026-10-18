@@ -6049,7 +6049,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/PaymentSubmissionDto"
+                    "$ref": "#/components/schemas/AdminPaymentSubmissionDto"
                   }
                 }
               }
@@ -11943,6 +11943,88 @@
           "qrUrl"
         ]
       },
+      "AdminPaymentSubmissionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pendiente",
+              "registrado",
+              "rechazado"
+            ]
+          },
+          "declaredAmountBs": {
+            "type": "string",
+            "nullable": true,
+            "example": "29.90"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "reviewNote": {
+            "type": "string",
+            "nullable": true,
+            "description": "Motivo si se rechazó"
+          },
+          "paymentId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "receiptUrl": {
+            "type": "string",
+            "description": "URL temporal del comprobante"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "workerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "workerPhone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "workerId",
+          "status",
+          "declaredAmountBs",
+          "note",
+          "reviewNote",
+          "paymentId",
+          "receiptUrl",
+          "createdAt",
+          "workerName",
+          "workerPhone"
+        ]
+      },
+      "RejectSubmissionDto": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "example": "El comprobante no se lee.",
+            "minLength": 3,
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "note"
+        ]
+      },
       "PaymentSubmissionDto": {
         "type": "object",
         "properties": {
@@ -12000,20 +12082,6 @@
           "paymentId",
           "receiptUrl",
           "createdAt"
-        ]
-      },
-      "RejectSubmissionDto": {
-        "type": "object",
-        "properties": {
-          "note": {
-            "type": "string",
-            "example": "El comprobante no se lee.",
-            "minLength": 3,
-            "maxLength": 300
-          }
-        },
-        "required": [
-          "note"
         ]
       },
       "CreateSubmissionDto": {

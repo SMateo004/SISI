@@ -216,6 +216,7 @@ Class | Method | HTTP request | Description
  - [AdminJobsControllerResolve200Response](doc/AdminJobsControllerResolve200Response.md)
  - [AdminLedgerEntryDto](doc/AdminLedgerEntryDto.md)
  - [AdminOfferEventDto](doc/AdminOfferEventDto.md)
+ - [AdminPaymentSubmissionDto](doc/AdminPaymentSubmissionDto.md)
  - [AdminPeriodDto](doc/AdminPeriodDto.md)
  - [AdminReportDto](doc/AdminReportDto.md)
  - [AdminReportPageDto](doc/AdminReportPageDto.md)

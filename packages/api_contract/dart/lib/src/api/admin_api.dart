@@ -18,6 +18,7 @@ import 'package:sisi_api/src/model/admin_held_message_dto.dart';
 import 'package:sisi_api/src/model/admin_held_message_page_dto.dart';
 import 'package:sisi_api/src/model/admin_job_detail_dto.dart';
 import 'package:sisi_api/src/model/admin_jobs_controller_resolve200_response.dart';
+import 'package:sisi_api/src/model/admin_payment_submission_dto.dart';
 import 'package:sisi_api/src/model/admin_report_page_dto.dart';
 import 'package:sisi_api/src/model/admin_request_page_dto.dart';
 import 'package:sisi_api/src/model/admin_worker_billing_dto.dart';
@@ -1425,9 +1426,9 @@ _responseData = rawData == null ? null : deserialize<QrResultDto, QrResultDto>(r
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future] containing a [Response] with a [List<PaymentSubmissionDto>] as data
+  /// Returns a [Future] containing a [Response] with a [List<AdminPaymentSubmissionDto>] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<List<PaymentSubmissionDto>>> adminBillingControllerSubmissions({ 
+  Future<Response<List<AdminPaymentSubmissionDto>>> adminBillingControllerSubmissions({ 
     String? status = 'pendiente',
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -1468,11 +1469,11 @@ _responseData = rawData == null ? null : deserialize<QrResultDto, QrResultDto>(r
       onReceiveProgress: onReceiveProgress,
     );
 
-    List<PaymentSubmissionDto>? _responseData;
+    List<AdminPaymentSubmissionDto>? _responseData;
 
     try {
 final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<List<PaymentSubmissionDto>, PaymentSubmissionDto>(rawData, 'List<PaymentSubmissionDto>', growable: true);
+_responseData = rawData == null ? null : deserialize<List<AdminPaymentSubmissionDto>, AdminPaymentSubmissionDto>(rawData, 'List<AdminPaymentSubmissionDto>', growable: true);
 
     } catch (error, stackTrace) {
       throw DioException(
@@ -1484,7 +1485,7 @@ _responseData = rawData == null ? null : deserialize<List<PaymentSubmissionDto>,
       );
     }
 
-    return Response<List<PaymentSubmissionDto>>(
+    return Response<List<AdminPaymentSubmissionDto>>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

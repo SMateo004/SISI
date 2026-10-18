@@ -71,7 +71,7 @@ Future<PaymentResultDto?> registerPaymentFlow(
   BuildContext context,
   WidgetRef ref, {
   required String workerId,
-  PaymentSubmissionDto? submission,
+  AdminPaymentSubmissionDto? submission,
 }) async {
   final form = await showDialog<_PaymentForm>(
     context: context,

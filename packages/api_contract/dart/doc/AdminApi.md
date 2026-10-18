@@ -722,7 +722,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **adminBillingControllerSubmissions**
-> List<PaymentSubmissionDto> adminBillingControllerSubmissions(status)
+> List<AdminPaymentSubmissionDto> adminBillingControllerSubmissions(status)
 
 Comprobantes enviados por los trabajadores (por defecto, pendientes)
 
@@ -749,7 +749,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**List&lt;PaymentSubmissionDto&gt;**](PaymentSubmissionDto.md)
+[**List&lt;AdminPaymentSubmissionDto&gt;**](AdminPaymentSubmissionDto.md)
 
 ### Authorization
 

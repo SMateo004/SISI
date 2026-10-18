@@ -48,6 +48,7 @@ import {
 import {
   FileUploadDto,
   ListSubmissionsQuery,
+  AdminPaymentSubmissionDto,
   PaymentSubmissionDto,
   QrResultDto,
   RejectSubmissionDto,
@@ -262,8 +263,8 @@ export class AdminBillingController {
 
   @Get('submissions')
   @ApiOperation({ summary: 'Comprobantes enviados por los trabajadores (por defecto, pendientes)' })
-  @ApiOkResponse({ type: [PaymentSubmissionDto] })
-  submissions(@Query() q: ListSubmissionsQuery): Promise<PaymentSubmissionDto[]> {
+  @ApiOkResponse({ type: [AdminPaymentSubmissionDto] })
+  submissions(@Query() q: ListSubmissionsQuery): Promise<AdminPaymentSubmissionDto[]> {
     return this.files.listSubmissions(q.status ?? 'pendiente');
   }
 

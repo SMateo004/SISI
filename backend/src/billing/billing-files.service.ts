@@ -16,7 +16,7 @@ import {
   newObjectKey,
   STORAGE_PREFIX,
 } from '../storage/upload-policy';
-import type { PaymentSubmissionDto } from './dto/billing-files.dto';
+import type { AdminPaymentSubmissionDto, PaymentSubmissionDto } from './dto/billing-files.dto';
 
 const QR_SETTING = 'billing.payment_qr';
 
@@ -114,13 +114,25 @@ export class BillingFilesService {
 
   async listSubmissions(
     status: 'pendiente' | 'registrado' | 'rechazado',
-  ): Promise<PaymentSubmissionDto[]> {
+  ): Promise<AdminPaymentSubmissionDto[]> {
     const rows = await this.prisma.paymentSubmission.findMany({
       where: { status },
       orderBy: { createdAt: 'asc' },
       take: 100,
     });
-    return Promise.all(rows.map((r) => this.toDto(r)));
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: [...new Set(rows.map((r) => r.workerId))] } },
+      select: { id: true, name: true, phone: true },
+    });
+    const byId = new Map(users.map((u) => [u.id, u]));
+    return Promise.all(
+      rows.map(async (r) =>
+        Object.assign(await this.toDto(r), {
+          workerName: byId.get(r.workerId)?.name ?? null,
+          workerPhone: byId.get(r.workerId)?.phone ?? '',
+        }),
+      ),
+    );
   }
 
   async rejectSubmission(

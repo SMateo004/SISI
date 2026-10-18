@@ -57,8 +57,10 @@ export class JobEventsHandlers implements OnModuleInit {
       }
 
       const worker = shortName(job.worker.name);
-      if (job.status === 'terminado' && payload.from !== 'terminado') {
-        // Recordatorio de calificar para las dos partes (ADR-0032).
+      // Por el estado del evento, no el actual: si el worker procesa tarde varios eventos del
+      // mismo trabajo, todos verían "terminado" y el recordatorio saldría una vez por evento.
+      if (payload.to === 'terminado' && payload.from !== 'terminado') {
+        // Recordatorio de calificar para las dos partes (ADR-0032), uno por trabajo.
         for (const [party, counterpart, toWorker] of [
           [job.employerId, worker, false],
           [job.workerId, shortName(job.employer.name, 'el cliente'), true],
@@ -68,7 +70,7 @@ export class JobEventsHandlers implements OnModuleInit {
             cityId: job.cityId,
             type: 'review_request',
             data: { jobId: job.id, counterpartShortName: counterpart, toWorker },
-            dedupeKey: `${outboxId}:${party}:review`,
+            dedupeKey: `review:${job.id}:${party}`,
           });
         }
       }

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/login_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
+import '../../features/moderation/dispute_screen.dart';
+import '../../features/moderation/moderation_screen.dart';
 import '../../features/verifications/verification_detail_screen.dart';
 import '../../features/verifications/verifications_screen.dart';
 import '../auth/session.dart';
@@ -66,6 +68,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 ),
               ),
             ],
+          ),
+          GoRoute(
+            path: '/moderacion',
+            redirect: (_, _) => '/moderacion/retenidas',
+          ),
+          GoRoute(
+            path: '/moderacion/disputas/:jobId',
+            builder: (_, s) => DisputeScreen(jobId: s.pathParameters['jobId']!),
+          ),
+          GoRoute(
+            path: '/moderacion/:tab',
+            builder: (_, s) => ModerationScreen(tab: s.pathParameters['tab']!),
           ),
         ],
       ),

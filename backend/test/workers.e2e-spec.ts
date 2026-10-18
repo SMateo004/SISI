@@ -10,7 +10,14 @@ import {
   type WorkerNotifier,
 } from '../src/workers/worker.ports';
 import { WorkerStatusService } from '../src/workers/worker-status.service';
-import { bearer, createCategory, createTestApp, login, type TestApp } from './utils/test-app';
+import {
+  bearer,
+  createCategory,
+  createTestApp,
+  login,
+  loginAsAdmin,
+  type TestApp,
+} from './utils/test-app';
 import { fakeJpeg, putPresigned } from './utils/upload';
 
 type DocType = 'ci_front' | 'ci_back' | 'selfie';
@@ -352,9 +359,7 @@ describe('Trabajador: upgrade, documentos e interruptor (e2e)', () => {
       await request(server()).get(url).expect(401);
 
       // Admin: enlace firmado que funciona y vence.
-      const admin = await login(t);
-      await t.prisma.user.update({ where: { id: admin.user.id }, data: { role: 'admin' } });
-      const adminToken = await reloginAsAdmin(admin);
+      const adminToken = (await loginAsAdmin(t)).accessToken;
       const signed = (
         await request(server())
           .get(url)
@@ -387,14 +392,4 @@ describe('Trabajador: upgrade, documentos e interruptor (e2e)', () => {
       expect(res.body).toMatchObject({ code: 'UPLOAD_KEY_FORBIDDEN' });
     });
   });
-
-  /** El rol va en el token: tras hacerse admin se emite un token nuevo por refresh. */
-  async function reloginAsAdmin(session: LoginResponseDto): Promise<string> {
-    const res = await request(server())
-      .post('/auth/refresh')
-      .set('X-Forwarded-For', '10.250.0.1')
-      .send({ refreshToken: session.refreshToken })
-      .expect(200);
-    return (res.body as { accessToken: string }).accessToken;
-  }
 });

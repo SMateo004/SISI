@@ -9,6 +9,7 @@ import { AppModule } from '../../src/app.module';
 import { setupApp } from '../../src/app.setup';
 import type { LoginResponseDto } from '../../src/auth/dto/auth.dto';
 import { OTP_PROVIDER, type OtpProvider } from '../../src/auth/otp/otp-provider';
+import { TokenService } from '../../src/auth/tokens/token.service';
 import { PrismaService } from '../../src/prisma/prisma.service';
 import { REDIS_CLIENT } from '../../src/redis/redis.constants';
 import { WorkerModule } from '../../src/worker/worker.module';
@@ -107,8 +108,18 @@ export async function createCategory(
   });
 }
 
-/** Sesión con rol admin: el rol viaja en el token, así que se renueva tras asignarlo. */
-export async function loginAsAdmin(t: TestApp): Promise<LoginResponseDto> {
+export type AdminSession = LoginResponseDto & {
+  /** Token de la app de la misma cuenta (rutas de usuario: un admin también puede ser trabajador). */
+  appAccessToken: string;
+};
+
+/**
+ * Cuenta con rol admin. `accessToken` es de una sesión del panel (`aud=admin`, ADR-0040), la
+ * única que entra a /admin; `appAccessToken` es la de la app. El rol viaja en el token, así
+ * que la de la app se renueva tras asignarlo. El login del panel por HTTP (cookie) se prueba
+ * en admin-auth.e2e-spec.ts.
+ */
+export async function loginAsAdmin(t: TestApp): Promise<AdminSession> {
   const session = await login(t);
   await t.prisma.user.update({ where: { id: session.user.id }, data: { role: 'admin' } });
   const res = await request(t.app.getHttpServer())
@@ -117,10 +128,15 @@ export async function loginAsAdmin(t: TestApp): Promise<LoginResponseDto> {
     .send({ refreshToken: session.refreshToken })
     .expect(200);
   const tokens = res.body as { accessToken: string; refreshToken: string };
-  session.accessToken = tokens.accessToken;
-  session.refreshToken = tokens.refreshToken;
+  const admin = await t.app
+    .get(TokenService)
+    .issue({ id: session.user.id, role: 'admin' }, 'admin');
   session.user.role = 'admin';
-  return session;
+  return Object.assign(session, {
+    accessToken: admin.accessToken,
+    refreshToken: tokens.refreshToken,
+    appAccessToken: tokens.accessToken,
+  });
 }
 
 export const bearer = (token: string): [string, string] => ['Authorization', `Bearer ${token}`];

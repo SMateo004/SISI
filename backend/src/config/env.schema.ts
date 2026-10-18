@@ -50,6 +50,11 @@ export const envSchema = z
     JWT_ACCESS_TTL_SEC: positiveInt(900),
     /** Propuesta: 30 días (docs/pendientes.md). */
     JWT_REFRESH_TTL_SEC: positiveInt(2_592_000),
+    /** Sesión del panel admin (ADR-0040): acceso de 10 min y 8 h como máximo desde el login. */
+    JWT_ADMIN_ACCESS_TTL_SEC: positiveInt(600),
+    JWT_ADMIN_SESSION_MAX_SEC: positiveInt(28_800),
+    /** Ruta de la cookie del refresh admin, tal como la ve el navegador (detrás del proxy /api). */
+    ADMIN_COOKIE_PATH: z.string().startsWith('/').default('/api/auth/admin'),
 
     // OTP (ADR-0009, ADR-0011)
     OTP_PROVIDER: z.enum(['console', 'bird']).default('console'),

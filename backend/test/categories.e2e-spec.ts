@@ -115,7 +115,7 @@ describe('Categorías por ciudad (e2e)', () => {
         (
           await request(server())
             .get('/categories')
-            .set(...bearer(admin.accessToken))
+            .set(...bearer(admin.appAccessToken))
         ).body as CategoryDto[]
       ).find((c) => c.id === category.id);
       expect(listed).toMatchObject({ priceMinBs: '120.00', priceMaxBs: '310.50' });

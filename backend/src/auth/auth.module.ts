@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import type { AppConfigService } from '../config/app-config';
 import { UsersModule } from '../users/users.module';
 import { UsersService } from '../users/users.service';
+import { AdminAuthController } from './admin-auth.controller';
 import { AuthController } from './auth.controller';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
@@ -33,7 +34,7 @@ import {
       }),
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, AdminAuthController],
   providers: [
     OtpService,
     TokenService,

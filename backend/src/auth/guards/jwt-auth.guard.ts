@@ -2,11 +2,12 @@ import { type CanActivate, type ExecutionContext, HttpStatus, Injectable } from 
 import { Reflector } from '@nestjs/core';
 import { ApiError } from '../../common/errors/api-error';
 import { type AuthenticatedRequest, IS_PUBLIC_KEY } from '../decorators/auth.decorators';
-import { type Role, TokenService } from '../tokens/token.service';
+import { type Audience, type Role, TokenService } from '../tokens/token.service';
 
 export interface VerifiedAccess {
   id: string;
   role: Role;
+  aud: Audience;
   /** Vencimiento del token de acceso (ms Unix), si lo trae. */
   expiresAt?: number;
 }
@@ -27,6 +28,7 @@ export async function authenticateAccessToken(
     return {
       id: payload.sub,
       role: payload.role,
+      aud: payload.aud ?? 'app',
       ...(payload.exp !== undefined ? { expiresAt: payload.exp * 1000 } : {}),
     };
   } catch {
@@ -61,7 +63,7 @@ export class JwtAuthGuard implements CanActivate {
       this.tokens,
       scheme === 'Bearer' ? token : undefined,
     );
-    req.user = { id: user.id, role: user.role };
+    req.user = { id: user.id, role: user.role, aud: user.aud };
     return true;
   }
 }

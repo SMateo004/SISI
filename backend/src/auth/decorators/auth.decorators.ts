@@ -1,5 +1,5 @@
 import { createParamDecorator, type ExecutionContext, SetMetadata } from '@nestjs/common';
-import type { Role, TokenSubject } from '../tokens/token.service';
+import type { Audience, Role, TokenSubject } from '../tokens/token.service';
 
 export const IS_PUBLIC_KEY = 'sisi:is-public';
 export const ROLES_KEY = 'sisi:roles';
@@ -10,7 +10,10 @@ export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 /** Restringe el endpoint a uno o más roles (p. ej. @Roles('admin')). */
 export const Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles);
 
-export type AuthenticatedUser = TokenSubject;
+export type AuthenticatedUser = TokenSubject & {
+  /** Sesión de la app o del panel admin (ADR-0040). */
+  aud?: Audience;
+};
 
 export interface AuthenticatedRequest {
   user?: AuthenticatedUser;

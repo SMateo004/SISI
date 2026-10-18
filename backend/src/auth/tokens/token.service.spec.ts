@@ -38,8 +38,11 @@ const ENV: Record<string, unknown> = {
   JWT_ACCESS_TTL_SEC: 900,
   JWT_REFRESH_TTL_SEC: 2_592_000,
   JWT_REFRESH_SECRET: 'refresh-secreto-de-pruebas-32-caracteres',
+  JWT_ADMIN_ACCESS_TTL_SEC: 600,
+  JWT_ADMIN_SESSION_MAX_SEC: 28_800,
 };
 const USER: TokenSubject = { id: '11111111-1111-4111-8111-111111111111', role: 'user' };
+const ADMIN: TokenSubject = { id: '22222222-2222-4222-8222-222222222222', role: 'admin' };
 
 function setup() {
   const jwt = new JwtService({
@@ -47,7 +50,10 @@ function setup() {
     signOptions: { algorithm: 'HS256' },
   });
   const repo = new MemoryRefreshRepo();
-  const subjects = new Map<string, TokenSubject>([[USER.id, USER]]);
+  const subjects = new Map<string, TokenSubject>([
+    [USER.id, USER],
+    [ADMIN.id, ADMIN],
+  ]);
   const service = new TokenService(
     jwt,
     { get: (key: string) => ENV[key] } as unknown as AppConfigService,
@@ -166,6 +172,61 @@ describe('TokenService', () => {
     subjects.delete(USER.id);
     await expect(service.rotate(tokens.refreshToken)).rejects.toMatchObject({
       code: 'SESSION_INVALID',
+    });
+  });
+
+  describe('sesión del panel admin (ADR-0040)', () => {
+    it('acceso de 10 min con aud=admin y refresh de 8 h', async () => {
+      const { service, jwt } = setup();
+      const tokens = await service.issue(ADMIN, 'admin');
+      expect(tokens.expiresIn).toBe(600);
+      expect(tokens.refreshExpiresIn).toBeGreaterThan(28_790);
+      expect(tokens.refreshExpiresIn).toBeLessThanOrEqual(28_800);
+      expect(jwt.decode<{ aud: string }>(tokens.accessToken).aud).toBe('admin');
+      expect((await service.verifyAccess(tokens.accessToken)).aud).toBe('admin');
+    });
+
+    it('no emite una sesión admin para una cuenta sin rol admin', async () => {
+      const { service } = setup();
+      await expect(service.issue(USER, 'admin')).rejects.toThrow();
+    });
+
+    it('el refresh admin no se extiende al rotar y nunca da un acceso más largo que la sesión', async () => {
+      const { service, repo, jwt } = setup();
+      const first = await service.issue(ADMIN, 'admin');
+      const firstRow = repo.rows.get(jwt.decode<{ jti: string }>(first.refreshToken).jti);
+      const second = await service.rotate(first.refreshToken, 'admin');
+      const secondRow = repo.rows.get(jwt.decode<{ jti: string }>(second.refreshToken).jti);
+      expect(secondRow?.expiresAt).toEqual(firstRow?.expiresAt);
+
+      // Faltando 2 minutos, el acceso dura 2 minutos y no 10.
+      if (secondRow) secondRow.expiresAt = new Date(Date.now() + 120_000);
+      const third = await service.rotate(second.refreshToken, 'admin');
+      expect(third.expiresIn).toBeLessThanOrEqual(120);
+      expect(third.refreshExpiresIn).toBeLessThanOrEqual(120);
+    });
+
+    it('un refresh de la app no rota como admin ni al revés', async () => {
+      const { service } = setup();
+      const app = await service.issue(ADMIN);
+      await expect(service.rotate(app.refreshToken, 'admin')).rejects.toMatchObject({
+        code: 'SESSION_INVALID',
+      });
+      const admin = await service.issue(ADMIN, 'admin');
+      await expect(service.rotate(admin.refreshToken)).rejects.toMatchObject({
+        code: 'SESSION_INVALID',
+      });
+    });
+
+    it('si la cuenta perdió el rol admin, revoca la sesión del panel', async () => {
+      const { service, subjects, repo, jwt } = setup();
+      const tokens = await service.issue(ADMIN, 'admin');
+      subjects.set(ADMIN.id, { ...ADMIN, role: 'user' });
+      await expect(service.rotate(tokens.refreshToken, 'admin')).rejects.toMatchObject({
+        code: 'SESSION_INVALID',
+      });
+      const row = repo.rows.get(jwt.decode<{ jti: string }>(tokens.refreshToken).jti);
+      expect(row?.revokedAt).not.toBeNull();
     });
   });
 });

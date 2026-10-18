@@ -50,6 +50,28 @@ export class TokensDto {
   refreshExpiresIn!: number;
 }
 
+/** Sesión del panel admin (ADR-0040): el refresh va solo en la cookie httpOnly. */
+export class AdminSessionDto {
+  @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
+  accessToken!: string;
+
+  @ApiProperty({ example: 'Bearer', enum: ['Bearer'] })
+  tokenType!: 'Bearer';
+
+  @ApiProperty({ example: 600, description: 'Vida del token de acceso, en segundos' })
+  expiresIn!: number;
+
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    description: 'Fin de la sesión (8 h desde el login); después hay que volver a ingresar',
+  })
+  sessionExpiresAt!: string;
+
+  @ApiProperty({ type: UserDto })
+  user!: UserDto;
+}
+
 export class LoginResponseDto extends TokensDto {
   @ApiProperty({ type: UserDto })
   user!: UserDto;

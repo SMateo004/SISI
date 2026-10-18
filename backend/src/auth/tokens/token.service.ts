@@ -12,6 +12,12 @@ import {
 
 export type Role = 'user' | 'admin';
 
+/**
+ * Para qué cliente es la sesión (ADR-0040). `admin` solo sirve en rutas @Roles('admin') y una
+ * sesión `app` nunca entra a ellas. Los tokens anteriores, sin `aud`, son de la app.
+ */
+export type Audience = 'app' | 'admin';
+
 export interface TokenSubject {
   id: string;
   role: Role;
@@ -21,6 +27,7 @@ export interface AccessPayload {
   sub: string;
   role: Role;
   typ: 'access';
+  aud?: Audience;
   /** Vencimiento (segundos Unix), lo agrega la firma. El socket se corta a esa hora. */
   exp?: number;
 }
@@ -33,6 +40,7 @@ interface RefreshPayload {
   fam: string;
   jti: string;
   typ: 'refresh';
+  aud?: Audience;
 }
 
 export interface IssuedTokens {
@@ -47,6 +55,10 @@ export interface IssuedTokens {
 /** Carga el rol vigente del usuario al rotar (o null si la cuenta ya no existe). */
 export const TOKEN_SUBJECT_LOADER = Symbol('TOKEN_SUBJECT_LOADER');
 export type TokenSubjectLoader = (userId: string) => Promise<TokenSubject | null>;
+
+/** Segundos enteros (al menos 1) hasta `date`, redondeados (unos ms de cálculo no restan uno). */
+const secondsUntil = (date: Date): number =>
+  Math.max(1, Math.round((date.getTime() - Date.now()) / 1000));
 
 const sha256 = (value: string): string => createHash('sha256').update(value).digest('hex');
 
@@ -67,6 +79,8 @@ export class TokenService {
   private readonly accessTtl: number;
   private readonly refreshTtl: number;
   private readonly refreshSecret: string;
+  private readonly adminAccessTtl: number;
+  private readonly adminSessionMax: number;
 
   constructor(
     private readonly jwt: JwtService,
@@ -77,18 +91,34 @@ export class TokenService {
     this.accessTtl = config.get('JWT_ACCESS_TTL_SEC', { infer: true });
     this.refreshTtl = config.get('JWT_REFRESH_TTL_SEC', { infer: true });
     this.refreshSecret = config.get('JWT_REFRESH_SECRET', { infer: true });
+    this.adminAccessTtl = config.get('JWT_ADMIN_ACCESS_TTL_SEC', { infer: true });
+    this.adminSessionMax = config.get('JWT_ADMIN_SESSION_MAX_SEC', { infer: true });
   }
 
-  /** Inicia una sesión nueva (familia nueva). */
-  async issue(subject: TokenSubject): Promise<IssuedTokens> {
+  /**
+   * Inicia una sesión nueva (familia nueva). Una sesión admin vence a las
+   * JWT_ADMIN_SESSION_MAX_SEC del login, aunque se renueve.
+   */
+  async issue(subject: TokenSubject, audience: Audience = 'app'): Promise<IssuedTokens> {
+    if (audience === 'admin' && subject.role !== 'admin') {
+      throw new Error('Sesión admin para una cuenta sin rol admin');
+    }
     const familyId = randomUUID();
-    const { token, record } = await this.newRefresh(subject.id, familyId);
+    const expiresAt = new Date(
+      Date.now() + (audience === 'admin' ? this.adminSessionMax : this.refreshTtl) * 1000,
+    );
+    const { token, record } = await this.newRefresh(subject.id, familyId, audience, expiresAt);
     await this.repo.create(record);
-    return this.pair(subject, token);
+    return this.pair(subject, token, audience, expiresAt);
   }
 
-  async rotate(refreshToken: string): Promise<IssuedTokens & { subject: TokenSubject }> {
+  /** Rota el refresh. `audience` es la del endpoint: un refresh de otra sesión no sirve. */
+  async rotate(
+    refreshToken: string,
+    audience: Audience = 'app',
+  ): Promise<IssuedTokens & { subject: TokenSubject }> {
     const payload = await this.verifyRefresh(refreshToken, false);
+    if ((payload.aud ?? 'app') !== audience) throw sessionError('SESSION_INVALID');
     const stored = await this.repo.findById(payload.jti);
     if (
       stored?.tokenHash !== sha256(refreshToken) ||
@@ -105,19 +135,28 @@ export class TokenService {
     if (stored.expiresAt.getTime() <= Date.now()) throw sessionError('SESSION_EXPIRED');
 
     const subject = await this.loadSubject(stored.userId);
-    if (!subject) {
+    // Una cuenta que dejó de ser admin pierde la sesión del panel en el siguiente refresh.
+    if (!subject || (audience === 'admin' && subject.role !== 'admin')) {
       await this.repo.revokeFamily(stored.familyId);
       throw sessionError('SESSION_INVALID');
     }
 
-    const { token, record } = await this.newRefresh(subject.id, stored.familyId);
+    // La sesión admin no se extiende: el reemplazo vence cuando vencía el original.
+    const expiresAt =
+      audience === 'admin' ? stored.expiresAt : new Date(Date.now() + this.refreshTtl * 1000);
+    const { token, record } = await this.newRefresh(
+      subject.id,
+      stored.familyId,
+      audience,
+      expiresAt,
+    );
     const rotated = await this.repo.rotate(stored.id, record);
     if (!rotated) {
       // Otro request usó este refresh en paralelo: se trata como reutilización.
       await this.revokeForReuse(stored.familyId, stored.userId);
       throw sessionError('SESSION_REUSED');
     }
-    return { ...(await this.pair(subject, token)), subject };
+    return { ...(await this.pair(subject, token, audience, expiresAt)), subject };
   }
 
   /** Cierra la sesión: revoca la familia. Idempotente; un token inválido no da error. */
@@ -159,34 +198,52 @@ export class TokenService {
   private async newRefresh(
     userId: string,
     familyId: string,
+    audience: Audience,
+    expiresAt: Date,
   ): Promise<{ token: string; record: NewRefreshToken }> {
     const jti = randomUUID();
-    const payload: RefreshPayload = { sub: userId, fam: familyId, jti, typ: 'refresh' };
+    const payload: RefreshPayload = {
+      sub: userId,
+      fam: familyId,
+      jti,
+      typ: 'refresh',
+      ...(audience === 'admin' ? { aud: audience } : {}),
+    };
     const token = await this.jwt.signAsync(payload, {
       secret: this.refreshSecret,
-      expiresIn: this.refreshTtl,
+      expiresIn: secondsUntil(expiresAt),
     });
     return {
       token,
-      record: {
-        id: jti,
-        userId,
-        familyId,
-        tokenHash: sha256(token),
-        expiresAt: new Date(Date.now() + this.refreshTtl * 1000),
-      },
+      record: { id: jti, userId, familyId, tokenHash: sha256(token), expiresAt },
     };
   }
 
-  private async pair(subject: TokenSubject, refreshToken: string): Promise<IssuedTokens> {
-    const payload: AccessPayload = { sub: subject.id, role: subject.role, typ: 'access' };
-    const accessToken = await this.jwt.signAsync(payload, { expiresIn: this.accessTtl });
+  private async pair(
+    subject: TokenSubject,
+    refreshToken: string,
+    audience: Audience,
+    refreshExpiresAt: Date,
+  ): Promise<IssuedTokens> {
+    const payload: AccessPayload = {
+      sub: subject.id,
+      role: subject.role,
+      typ: 'access',
+      ...(audience === 'admin' ? { aud: audience } : {}),
+    };
+    const refreshLeft = secondsUntil(refreshExpiresAt);
+    // El acceso nunca dura más que la sesión que lo respalda.
+    const accessTtl = Math.min(
+      audience === 'admin' ? this.adminAccessTtl : this.accessTtl,
+      refreshLeft,
+    );
+    const accessToken = await this.jwt.signAsync(payload, { expiresIn: accessTtl });
     return {
       accessToken,
       refreshToken,
       tokenType: 'Bearer',
-      expiresIn: this.accessTtl,
-      refreshExpiresIn: this.refreshTtl,
+      expiresIn: accessTtl,
+      refreshExpiresIn: refreshLeft,
     };
   }
 

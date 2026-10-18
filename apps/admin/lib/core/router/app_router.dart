@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/login_screen.dart';
+import '../../features/billing/billing_screen.dart';
+import '../../features/billing/worker_billing_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/moderation/dispute_screen.dart';
 import '../../features/moderation/moderation_screen.dart';
@@ -80,6 +82,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/moderacion/:tab',
             builder: (_, s) => ModerationScreen(tab: s.pathParameters['tab']!),
+          ),
+          GoRoute(path: '/cobros', redirect: (_, _) => '/cobros/periodos'),
+          GoRoute(
+            path: '/cobros/trabajador/:workerId',
+            builder: (_, s) =>
+                WorkerBillingScreen(workerId: s.pathParameters['workerId']!),
+          ),
+          GoRoute(
+            path: '/cobros/:tab',
+            builder: (_, s) => BillingScreen(tab: s.pathParameters['tab']!),
           ),
         ],
       ),

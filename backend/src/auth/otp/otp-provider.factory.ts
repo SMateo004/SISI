@@ -20,7 +20,7 @@ export function createOtpProvider(env: OtpEnv): OtpProvider {
         'OTP_PROVIDER=console no está permitido con APP_ENV=production. Configura OTP_PROVIDER=bird.',
       );
     }
-    return new ConsoleOtpProvider();
+    return new ConsoleOtpProvider(env.APP_ENV);
   }
 
   if (!env.OTP_PROVIDER_KEY || !env.OTP_SENDER) {

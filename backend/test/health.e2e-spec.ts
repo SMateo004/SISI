@@ -31,4 +31,11 @@ describe('GET /health (e2e)', () => {
     expect(body.checks.postgis.version).toMatch(/^\d+\.\d+/);
     expect(body.checks.redis.status).toBe('up');
   });
+
+  it('GET /version responde la versión del package.json y el ambiente', async () => {
+    const res = await request(app.getHttpServer()).get('/version').expect(200);
+    const body = res.body as { version: string; sha: string | null; env: string };
+    expect(body.version).toMatch(/^\d+\.\d+\.\d+/);
+    expect(body.env).toBe('test');
+  });
 });

@@ -25,6 +25,43 @@ const commaList = z
       .filter((item) => item.length > 0),
   );
 
+/** Vida máxima de una URL firmada en producción (ADR-0047). */
+export const PRODUCTION_MAX_SIGNED_URL_SEC = 900;
+
+const SIGNED_URL_TTLS = [
+  'UPLOAD_URL_TTL_SEC',
+  'DOCUMENT_URL_TTL_SEC',
+  'RECEIPT_URL_TTL_SEC',
+  'AVATAR_URL_TTL_SEC',
+  'REQUEST_PHOTO_URL_TTL_SEC',
+] as const;
+
+/**
+ * Arranque estricto con APP_ENV=production (ADR-0047), común a api, worker y cron. Lo que
+ * solo usa la API (CORS, almacenamiento, OTP) se valida donde se construye.
+ */
+function productionChecks(
+  env: { SENTRY_DSN?: string } & Record<(typeof SIGNED_URL_TTLS)[number], number>,
+  ctx: z.RefinementCtx,
+): void {
+  if (env.SENTRY_DSN === undefined) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['SENTRY_DSN'],
+      message: 'Obligatorio con APP_ENV=production (errores y alertas, ADR-0048)',
+    });
+  }
+  for (const key of SIGNED_URL_TTLS) {
+    if (env[key] > PRODUCTION_MAX_SIGNED_URL_SEC) {
+      ctx.addIssue({
+        code: 'custom',
+        path: [key],
+        message: `Con APP_ENV=production una URL firmada vive a lo sumo ${String(PRODUCTION_MAX_SIGNED_URL_SEC)} s`,
+      });
+    }
+  }
+}
+
 /**
  * Variables de entorno del backend (doc 02 §11, ADR-0002).
  * Las de servicios externos son opcionales aquí; cada módulo que las usa
@@ -206,6 +243,8 @@ export const envSchema = z
     MAPS_API_KEY: optionalString,
     RATE_GEOCODE_IP_PER_MIN: positiveInt(60),
     SENTRY_DSN: z.preprocess(emptyAsUndefined, z.url().optional()),
+    /** Commit desplegado; Render lo define solo (RENDER_GIT_COMMIT). Se ve en GET /version. */
+    RENDER_GIT_COMMIT: optionalString,
 
     CORS_ORIGINS: commaList,
     TZ_DEFAULT: z
@@ -223,6 +262,7 @@ export const envSchema = z
         message: 'Obligatorio cuando NODE_ENV=production (staging o production)',
       });
     }
+    if (env.APP_ENV === 'production') productionChecks(env, ctx);
   })
   .transform((env) => ({
     ...env,

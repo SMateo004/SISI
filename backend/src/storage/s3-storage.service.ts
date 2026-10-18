@@ -13,6 +13,7 @@ import { type PresignedUpload, StorageService, type StoredObject } from './stora
 
 export type StorageEnv = Pick<
   Env,
+  | 'APP_ENV'
   | 'STORAGE_ENDPOINT'
   | 'STORAGE_REGION'
   | 'STORAGE_FORCE_PATH_STYLE'
@@ -33,6 +34,10 @@ export class S3StorageService extends StorageService {
     ).filter((key) => !env[key]);
     if (missing.length > 0) {
       throw new Error(`Falta configurar el almacenamiento: ${missing.join(', ')}`);
+    }
+    // Producción: R2 por https, nunca un endpoint local o sin cifrar (ADR-0047).
+    if (env.APP_ENV === 'production' && !env.STORAGE_ENDPOINT?.startsWith('https://')) {
+      throw new Error('Con APP_ENV=production STORAGE_ENDPOINT debe ser https.');
     }
     this.bucket = env.STORAGE_BUCKET ?? '';
     this.client = new S3Client({

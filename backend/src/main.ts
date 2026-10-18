@@ -8,11 +8,17 @@ import type { AppConfigService } from './config/app-config';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   setupApp(app);
-  setupSwagger(app);
+  const config = app.get<AppConfigService>(ConfigService);
+  // Swagger no se publica en producción (ADR-0047); el contrato sale de packages/api_contract.
+  const swagger = config.get('APP_ENV', { infer: true }) !== 'production';
+  if (swagger) setupSwagger(app);
 
-  const port = app.get<AppConfigService>(ConfigService).get('PORT', { infer: true });
+  const port = config.get('PORT', { infer: true });
   await app.listen(port, '0.0.0.0');
-  Logger.log(`API escuchando en el puerto ${port} (Swagger en /docs)`, 'Bootstrap');
+  Logger.log(
+    `API escuchando en el puerto ${String(port)}${swagger ? ' (Swagger en /docs)' : ''}`,
+    'Bootstrap',
+  );
 }
 
 void bootstrap();

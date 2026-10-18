@@ -192,6 +192,8 @@ describe('createOtpProvider', () => {
     expect(() =>
       createOtpProvider({ ...base, APP_ENV: 'production', OTP_PROVIDER: 'console' }),
     ).toThrow(/no está permitido/);
+    // Ni construyéndolo a mano (ADR-0047).
+    expect(() => new ConsoleOtpProvider('production')).toThrow(/imposible/);
   });
 
   it('exige clave y remitente para Bird', () => {

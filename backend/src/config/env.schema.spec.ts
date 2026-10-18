@@ -57,4 +57,38 @@ describe('validateEnv', () => {
     const env = validateEnv({ ...base, NODE_ENV: 'production', APP_ENV: 'staging' });
     expect(env.APP_ENV).toBe('staging');
   });
+
+  describe('APP_ENV=production (ADR-0047)', () => {
+    const prod = {
+      ...base,
+      NODE_ENV: 'production',
+      APP_ENV: 'production',
+      SENTRY_DSN: 'https://abc@o1.ingest.sentry.io/1',
+      AVATAR_URL_TTL_SEC: '900',
+      REQUEST_PHOTO_URL_TTL_SEC: '900',
+    };
+
+    it('arranca con Sentry y URLs firmadas cortas', () => {
+      expect(validateEnv(prod).APP_ENV).toBe('production');
+    });
+
+    it('exige SENTRY_DSN', () => {
+      expect(() => validateEnv({ ...prod, SENTRY_DSN: '' })).toThrow(/SENTRY_DSN/);
+    });
+
+    it('rechaza URLs firmadas de más de 15 minutos', () => {
+      expect(() => validateEnv({ ...prod, AVATAR_URL_TTL_SEC: '3600' })).toThrow(
+        /AVATAR_URL_TTL_SEC/,
+      );
+      expect(() => validateEnv({ ...prod, DOCUMENT_URL_TTL_SEC: '901' })).toThrow(
+        /DOCUMENT_URL_TTL_SEC/,
+      );
+    });
+
+    it('staging no exige lo de producción', () => {
+      expect(() =>
+        validateEnv({ ...base, NODE_ENV: 'production', APP_ENV: 'staging' }),
+      ).not.toThrow();
+    });
+  });
 });

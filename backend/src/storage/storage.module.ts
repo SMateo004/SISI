@@ -13,6 +13,7 @@ import { StorageService } from './storage.service';
       inject: [ConfigService],
       useFactory: (config: AppConfigService) =>
         new S3StorageService({
+          APP_ENV: config.get('APP_ENV', { infer: true }),
           STORAGE_ENDPOINT: config.get('STORAGE_ENDPOINT', { infer: true }),
           STORAGE_REGION: config.get('STORAGE_REGION', { infer: true }),
           STORAGE_FORCE_PATH_STYLE: config.get('STORAGE_FORCE_PATH_STYLE', { infer: true }),

@@ -21,10 +21,27 @@ function firstMessage(errors: ValidationError[]): string {
   return 'Los datos enviados no son válidos.';
 }
 
+/**
+ * En producción el CORS es estricto (ADR-0047): al menos un origen, todos https y sin
+ * comodines. Sin esto la API no arranca.
+ */
+export function assertProductionCors(origins: readonly string[]): void {
+  if (origins.length === 0) {
+    throw new Error('CORS_ORIGINS es obligatorio con APP_ENV=production.');
+  }
+  const invalid = origins.filter((o) => o.includes('*') || !/^https:\/\/[^/]+$/.test(o));
+  if (invalid.length > 0) {
+    throw new Error(
+      `CORS_ORIGINS solo admite orígenes https sin comodines ni rutas: ${invalid.join(', ')}`,
+    );
+  }
+}
+
 /** Configuración HTTP común a main.ts y a los tests e2e. */
 export function setupApp(app: INestApplication): void {
   const config = app.get<AppConfigService>(ConfigService);
   const origins = config.get('CORS_ORIGINS', { infer: true });
+  if (config.get('APP_ENV', { infer: true }) === 'production') assertProductionCors(origins);
 
   // Render (y cualquier proxy delante) envía la IP real en X-Forwarded-For: necesaria para los límites por IP.
   (app as NestExpressApplication).set('trust proxy', 1);

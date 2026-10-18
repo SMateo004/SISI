@@ -1,6 +1,5 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import type { AppConfigService } from '../config/app-config';
+import { AppSettingsService } from '../settings/app-settings.service';
+import { Injectable, Logger } from '@nestjs/common';
 import type { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -13,13 +12,14 @@ import { PrismaService } from '../prisma/prisma.service';
 @Injectable()
 export class ReviewPublisher {
   private readonly logger = new Logger('ReviewPublisher');
-  readonly windowMs: number;
-
   constructor(
     private readonly prisma: PrismaService,
-    @Inject(ConfigService) config: AppConfigService,
-  ) {
-    this.windowMs = config.get('REVIEW_WINDOW_MS', { infer: true });
+    private readonly settings: AppSettingsService,
+  ) {}
+
+  /** Plazo vigente para calificar (panel o entorno, ADR-0043). */
+  get windowMs(): number {
+    return this.settings.value('REVIEW_WINDOW_MS');
   }
 
   /** Publica las calificaciones pendientes del trabajo y actualiza los promedios. */

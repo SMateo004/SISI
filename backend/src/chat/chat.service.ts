@@ -1,3 +1,4 @@
+import { AppSettingsService } from '../settings/app-settings.service';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AdminAuditService } from '../audit/admin-audit.service';
@@ -41,7 +42,10 @@ interface ChatJob {
  */
 @Injectable()
 export class ChatService {
-  private readonly openAfterMs: number;
+  /** Ventana vigente del chat (panel o entorno, ADR-0043). */
+  private get openAfterMs(): number {
+    return this.settings.value('JOB_CHAT_OPEN_AFTER_MS');
+  }
 
   constructor(
     private readonly prisma: PrismaService,
@@ -49,10 +53,9 @@ export class ChatService {
     private readonly outbox: OutboxService,
     private readonly rateLimits: RateLimitStore,
     private readonly audit: AdminAuditService,
+    private readonly settings: AppSettingsService,
     @Inject(ConfigService) private readonly config: AppConfigService,
-  ) {
-    this.openAfterMs = config.get('JOB_CHAT_OPEN_AFTER_MS', { infer: true });
-  }
+  ) {}
 
   async send(userId: string, jobId: string, rawBody: string): Promise<SentMessageDto> {
     const body = rawBody.trim();

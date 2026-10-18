@@ -1,6 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import type { AppConfigService } from '../config/app-config';
+import { AppSettingsService } from '../settings/app-settings.service';
+import { Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client';
 import type { DebtCapPolicy } from '../matching/debt-cap.policy';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -14,14 +13,15 @@ import { capTransition } from './billing.rules';
  */
 @Injectable()
 export class DebtCapService implements DebtCapPolicy {
-  readonly cap: Prisma.Decimal;
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
-    @Inject(ConfigService) config: AppConfigService,
-  ) {
-    this.cap = new Prisma.Decimal(config.get('BILLING_DEBT_CAP_BS', { infer: true }));
+    private readonly settings: AppSettingsService,
+  ) {}
+
+  /** Tope vigente (panel o entorno, ADR-0043). */
+  get cap(): Prisma.Decimal {
+    return new Prisma.Decimal(this.settings.value('BILLING_DEBT_CAP_BS'));
   }
 
   /** Trabajadores del lote que superan el tope (una sola consulta). */

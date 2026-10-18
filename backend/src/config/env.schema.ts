@@ -146,6 +146,8 @@ export const envSchema = z
       .default('150.00'),
     /** Candado del cron de cobros en Redis (ms). */
     BILLING_LOCK_TTL_MS: positiveInt(600_000),
+    /** Cada cuánto cada proceso revisa si cambiaron los parámetros del panel (ADR-0043). */
+    SETTINGS_REFRESH_MS: positiveInt(15_000),
     /** Presencia de un socket en Redis (se renueva con un latido; ADR-0031). */
     PRESENCE_TTL_MS: positiveInt(60_000),
     OUTBOX_CLEANUP_MS: positiveInt(86_400_000),

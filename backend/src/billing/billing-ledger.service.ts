@@ -1,6 +1,5 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import type { AppConfigService } from '../config/app-config';
+import { AppSettingsService } from '../settings/app-settings.service';
+import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client';
 import { OutboxService } from '../outbox/outbox.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -39,20 +38,20 @@ export interface CommissionInput {
 @Injectable()
 export class BillingLedgerService {
   private readonly logger = new Logger('BillingLedger');
-  private readonly dueAfterDays: number;
-  private readonly reminderHour: number;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly outbox: OutboxService,
-    @Inject(ConfigService) config: AppConfigService,
-  ) {
-    this.dueAfterDays = config.get('BILLING_DUE_AFTER_DAYS', { infer: true });
-    this.reminderHour = config.get('BILLING_REMINDER_HOUR', { infer: true });
-  }
+    private readonly settings: AppSettingsService,
+  ) {}
 
+  /** Plazo y hora de avisos vigentes (panel o entorno, ADR-0043). */
   calendar(timeZone: string): BillingCalendar {
-    return { timeZone, dueAfterDays: this.dueAfterDays, reminderHour: this.reminderHour };
+    return {
+      timeZone,
+      dueAfterDays: this.settings.value('BILLING_DUE_AFTER_DAYS'),
+      reminderHour: this.settings.value('BILLING_REMINDER_HOUR'),
+    };
   }
 
   /**

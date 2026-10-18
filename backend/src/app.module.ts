@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AdminUsersModule } from './admin-users/admin-users.module';
 import { AuditModule } from './audit/audit.module';
+import { SettingsAdminModule } from './settings/settings-admin.module';
+import { SettingsModule } from './settings/settings.module';
 import { ModerationAdminModule } from './moderation/moderation-admin.module';
 import { VerificationsModule } from './verifications/verifications.module';
 import { AuthModule } from './auth/auth.module';
@@ -44,6 +46,9 @@ import { WorkersModule } from './workers/workers.module';
     RateLimitModule,
     // Auditoría del panel (global, ADR-0041).
     AuditModule,
+    // Parámetros de negocio (global, ADR-0043).
+    SettingsModule,
+    SettingsAdminModule,
     StorageModule,
     FeatureFlagsModule,
     HealthModule,

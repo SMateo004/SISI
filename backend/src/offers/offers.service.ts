@@ -1,3 +1,4 @@
+import { AppSettingsService } from '../settings/app-settings.service';
 import { closeActiveOffers, recordOfferEvent } from './offer-events';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -50,7 +51,10 @@ const offersClosed = (): ApiError =>
 export class OffersService {
   private readonly speeds: Record<TransportMode, number>;
   private readonly routeFactor: number;
-  private readonly maxFactor: number;
+  /** Contraoferta máxima vigente (panel o entorno, ADR-0043). */
+  private get maxFactor(): number {
+    return this.settings.value('OFFER_COUNTER_MAX_FACTOR');
+  }
 
   constructor(
     private readonly prisma: PrismaService,
@@ -63,10 +67,10 @@ export class OffersService {
     @Inject(DEBT_CAP_POLICY) private readonly debt: DebtCapPolicy,
     @Inject(MATCHING_CONFIG) private readonly matching: MatchingConfig,
     @Inject(ConfigService) private readonly config: AppConfigService,
+    private readonly settings: AppSettingsService,
   ) {
     this.speeds = parseSpeeds(config.get('ETA_SPEEDS_KMH', { infer: true }));
     this.routeFactor = config.get('ETA_ROUTE_FACTOR', { infer: true });
-    this.maxFactor = config.get('OFFER_COUNTER_MAX_FACTOR', { infer: true });
   }
 
   // ---- Trabajador ----
@@ -420,7 +424,7 @@ export class OffersService {
     }
     const visibleUntil = contactVisibleUntil(
       job,
-      this.config.get('JOB_CONTACT_VISIBLE_AFTER_MS', { infer: true }),
+      this.settings.value('JOB_CONTACT_VISIBLE_AFTER_MS'),
     );
     if (visibleUntil && visibleUntil.getTime() <= Date.now()) {
       throw new ApiError(

@@ -1,3 +1,4 @@
+import { AppSettingsService } from '../settings/app-settings.service';
 import { closeActiveOffers } from '../offers/offer-events';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -93,12 +94,14 @@ export class RequestsService {
     private readonly rateLimits: RateLimitStore,
     private readonly outbox: OutboxService,
     private readonly audit: AdminAuditService,
+    private readonly settings: AppSettingsService,
     @Inject(ConfigService) private readonly config: AppConfigService,
-  ) {
-    this.totalRings = parseRings(config.get('MATCHING_RINGS', { infer: true })).length;
-  }
+  ) {}
 
-  private readonly totalRings: number;
+  /** Anillos vigentes (panel o entorno, ADR-0043). */
+  private get totalRings(): number {
+    return parseRings(this.settings.value('MATCHING_RINGS')).length;
+  }
 
   /** Crea el borrador (R3.1). Advierte si el precio está bajo el mínimo (R3.2). */
   async create(userId: string, dto: CreateRequestDto): Promise<CreatedRequestDto> {

@@ -1,3 +1,4 @@
+import { SettingsModule } from '../settings/settings.module';
 import { Module } from '@nestjs/common';
 import { BillingCoreModule } from '../billing/billing-core.module';
 import { AppConfigModule } from '../config/config.module';
@@ -10,6 +11,14 @@ import { RedisModule } from '../redis/redis.module';
  * Postgres y en el outbox; los avisos y bloqueos los hace el worker.
  */
 @Module({
-  imports: [AppConfigModule, PrismaModule, RedisModule, OutboxModule, BillingCoreModule],
+  imports: [
+    AppConfigModule,
+    PrismaModule,
+    RedisModule,
+    OutboxModule,
+    // Plazo y hora de avisos desde el panel (ADR-0043).
+    SettingsModule,
+    BillingCoreModule,
+  ],
 })
 export class BillingCronModule {}

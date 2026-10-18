@@ -1,6 +1,5 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import type { AppConfigService } from '../config/app-config';
+import { AppSettingsService } from '../settings/app-settings.service';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JobTransitionError } from './job-status.machine';
 import { JobStatusService } from './job-status.service';
@@ -14,14 +13,15 @@ import { JobStatusService } from './job-status.service';
 @Injectable()
 export class JobAutoConfirmService {
   private readonly logger = new Logger('JobAutoConfirm');
-  readonly delayMs: number;
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly status: JobStatusService,
-    @Inject(ConfigService) config: AppConfigService,
-  ) {
-    this.delayMs = config.get('JOB_AUTOCONFIRM_MS', { infer: true });
+    private readonly settings: AppSettingsService,
+  ) {}
+
+  /** Plazo vigente de la autoconfirmación (panel o entorno, ADR-0043). */
+  get delayMs(): number {
+    return this.settings.value('JOB_AUTOCONFIRM_MS');
   }
 
   async confirmIfDue(jobId: string): Promise<'confirmed' | 'skipped' | 'not_due'> {

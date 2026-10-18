@@ -1,6 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import type { AppConfigService } from '../config/app-config';
+import { AppSettingsService } from '../settings/app-settings.service';
+import { Injectable } from '@nestjs/common';
 import { ModerationService } from '../moderation/moderation.service';
 import type { Prisma } from '../generated/prisma/client';
 import { shortName } from '../offers/offer.rules';
@@ -27,17 +26,19 @@ const iso = (d: Date | null): string | null => d?.toISOString() ?? null;
 /** Trabajos para las dos partes (R6, ADR-0029). Los cambios pasan por JobStatusService. */
 @Injectable()
 export class JobsService {
-  private readonly autoConfirmMs: number;
-  private readonly reviewWindowMs: number;
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly status: JobStatusService,
     private readonly moderation: ModerationService,
-    @Inject(ConfigService) config: AppConfigService,
-  ) {
-    this.autoConfirmMs = config.get('JOB_AUTOCONFIRM_MS', { infer: true });
-    this.reviewWindowMs = config.get('REVIEW_WINDOW_MS', { infer: true });
+    private readonly settings: AppSettingsService,
+  ) {}
+
+  private get autoConfirmMs(): number {
+    return this.settings.value('JOB_AUTOCONFIRM_MS');
+  }
+
+  private get reviewWindowMs(): number {
+    return this.settings.value('REVIEW_WINDOW_MS');
   }
 
   /** Una acción de una de las partes; su rol sale del trabajo (403 si no le toca). */

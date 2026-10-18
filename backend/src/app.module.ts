@@ -13,7 +13,7 @@ import { BillingModule } from './billing/billing.module';
 import { ChatModule } from './chat/chat.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
-import { RateLimitGuard } from './common/rate-limit/rate-limit.guard';
+import { RateLimitGuard, UserRateLimitGuard } from './common/rate-limit/rate-limit.guard';
 import { RateLimitModule } from './common/rate-limit/rate-limit.module';
 import { RateLimitedFilter } from './common/rate-limit/rate-limited.filter';
 import { SisiThrottlerGuard } from './common/rate-limit/sisi-throttler.guard';
@@ -80,6 +80,8 @@ import { WorkersModule } from './workers/workers.module';
     { provide: APP_GUARD, useExisting: RateLimitGuard },
     { provide: APP_GUARD, useExisting: JwtAuthGuard },
     { provide: APP_GUARD, useExisting: RolesGuard },
+    // Límites por usuario (@RateLimit con per: 'user'), ya con la sesión resuelta (ADR-0047).
+    { provide: APP_GUARD, useExisting: UserRateLimitGuard },
     // Permiso del área y límites por admin en las rutas del panel (ADR-0040).
     { provide: APP_GUARD, useClass: AdminGuard },
     { provide: APP_FILTER, useClass: RateLimitedFilter },

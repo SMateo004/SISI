@@ -2,7 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import type { AppConfigService } from '../../config/app-config';
-import { RateLimitGuard } from './rate-limit.guard';
+import { RateLimitGuard, UserRateLimitGuard } from './rate-limit.guard';
 import { RateLimitStore } from './rate-limit.store';
 import { RedisThrottlerStorage } from './redis-throttler.storage';
 
@@ -38,7 +38,7 @@ class RateLimitStorageModule {}
       }),
     }),
   ],
-  providers: [RateLimitGuard],
-  exports: [RateLimitStorageModule, RateLimitGuard, ThrottlerModule],
+  providers: [RateLimitGuard, UserRateLimitGuard],
+  exports: [RateLimitStorageModule, RateLimitGuard, UserRateLimitGuard, ThrottlerModule],
 })
 export class RateLimitModule {}

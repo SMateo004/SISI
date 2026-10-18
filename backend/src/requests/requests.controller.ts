@@ -72,6 +72,7 @@ export class RequestsController {
   }
 
   @Post(':id/photos/upload-url')
+  @RateLimit('uploadUrlUser')
   @ApiOperation({ summary: 'URL prefirmada para subir una foto (máx. 4, solo en borrador)' })
   @ApiCreatedResponse({ type: PresignedUploadDto })
   @ApiBadRequestResponse({

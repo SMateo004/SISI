@@ -13,6 +13,7 @@ import { ApiErrorBody } from '../common/errors/api-error';
 import { PresignedUploadDto } from '../storage/dto/upload.dto';
 import { BillingFilesService } from './billing-files.service';
 import { CreateSubmissionDto, FileUploadDto, PaymentSubmissionDto } from './dto/billing-files.dto';
+import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 
 /** Cobros del trabajador (R7.4, R8). Solo sus propios datos. */
 @ApiTags('ganancias')
@@ -24,6 +25,7 @@ export class BillingMeController {
   constructor(private readonly files: BillingFilesService) {}
 
   @Post('submissions/upload-url')
+  @RateLimit('uploadUrlUser')
   @ApiOperation({ summary: 'URL para subir la foto de mi comprobante de pago' })
   @ApiCreatedResponse({ type: PresignedUploadDto })
   submissionUploadUrl(

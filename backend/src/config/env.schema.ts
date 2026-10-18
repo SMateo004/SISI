@@ -113,6 +113,10 @@ export const envSchema = z
     RATE_OTP_IP_PER_HOUR: positiveInt(20),
     RATE_OTP_VERIFY_IP_PER_15MIN: positiveInt(30),
     RATE_AUTH_IP_PER_MIN: positiveInt(30),
+    /** Por usuario (ADR-0047): reportes, URLs de subida y registros de dispositivo. */
+    RATE_REPORT_PER_HOUR: positiveInt(10),
+    RATE_UPLOAD_URL_PER_HOUR: positiveInt(60),
+    RATE_DEVICE_PER_HOUR: positiveInt(20),
     /** Panel admin, por admin (ADR-0040): lecturas, escrituras y exportaciones CSV. */
     RATE_ADMIN_READ_PER_MIN: positiveInt(300),
     RATE_ADMIN_WRITE_PER_MIN: positiveInt(60),

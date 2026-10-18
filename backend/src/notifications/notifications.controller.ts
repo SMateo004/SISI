@@ -29,6 +29,7 @@ import {
   RegisterDeviceDto,
   UnreadCountDto,
 } from './dto/notification.dto';
+import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 
 const PAGE = 20;
 
@@ -40,6 +41,7 @@ export class NotificationsController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Post('devices')
+  @RateLimit('deviceUser')
   @HttpCode(204)
   @ApiOperation({
     summary: 'Registrar el token de push (FCM) de este dispositivo',

@@ -23,6 +23,7 @@ import {
   ResolveReportResultDto,
 } from './dto/report.dto';
 import { ReportsService } from './reports.service';
+import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 
 /** Reportes (R9.3, ADR-0033). */
 @ApiTags('reportes')
@@ -33,6 +34,7 @@ export class ReportsController {
   constructor(private readonly reports: ReportsService) {}
 
   @Post()
+  @RateLimit('reportUser')
   @ApiOperation({
     summary: 'Reportar una solicitud, un perfil, un mensaje o un trabajo',
     description:

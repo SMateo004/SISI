@@ -1,18 +1,23 @@
 import type { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { AppConfigService } from '../../config/app-config';
-import { RateLimitGuard } from './rate-limit.guard';
+import { RateLimitGuard, UserRateLimitGuard } from './rate-limit.guard';
+import { RATE_LIMIT_POLICIES } from './rate-limit.policies';
 import type { RateLimitStore } from './rate-limit.store';
 import { RateLimitedException } from './rate-limited.exception';
 import { RedisThrottlerStorage } from './redis-throttler.storage';
 
-const contextFor = (ip: string, policies: string[] | undefined): ExecutionContext => {
+const contextFor = (
+  ip: string,
+  policies: string[] | undefined,
+  user?: { id: string },
+): ExecutionContext => {
   const handler = (): void => undefined;
   if (policies) Reflect.defineMetadata('sisi:rate-limit', policies, handler);
   return {
     getHandler: () => handler,
     getClass: () => Object,
-    switchToHttp: () => ({ getRequest: () => ({ ip }) }),
+    switchToHttp: () => ({ getRequest: () => ({ ip, user }) }),
   } as unknown as ExecutionContext;
 };
 
@@ -60,6 +65,48 @@ describe('RateLimitGuard', () => {
     await expect(guard.canActivate(contextFor('1.1.1.1', ['otpRequestIp']))).rejects.toMatchObject({
       retryAfterSec: 120,
     });
+  });
+});
+
+describe('UserRateLimitGuard (ADR-0047)', () => {
+  const config = { get: jest.fn((key: string) => ({ RATE_REPORT_PER_HOUR: 10 })[key]) };
+  const store = { consume: jest.fn() };
+  const ipGuard = new RateLimitGuard(
+    new Reflector(),
+    store as unknown as RateLimitStore,
+    config as unknown as AppConfigService,
+  );
+  const userGuard = new UserRateLimitGuard(
+    new Reflector(),
+    store as unknown as RateLimitStore,
+    config as unknown as AppConfigService,
+  );
+
+  beforeEach(() => {
+    store.consume.mockReset();
+    store.consume.mockResolvedValue({ allowed: true });
+  });
+
+  it('cuenta por usuario y no por IP', async () => {
+    const ctx = contextFor('1.1.1.1', ['reportUser'], { id: 'u1' });
+    await ipGuard.canActivate(ctx);
+    expect(store.consume).not.toHaveBeenCalled();
+    await userGuard.canActivate(ctx);
+    expect(store.consume).toHaveBeenCalledWith([
+      { key: 'reportUser:user:u1', limit: 10, windowSec: 3600 },
+    ]);
+  });
+
+  it('sin sesión no aplica (la ruta pública la cuida el límite por IP)', async () => {
+    await userGuard.canActivate(contextFor('1.1.1.1', ['reportUser']));
+    expect(store.consume).not.toHaveBeenCalled();
+  });
+
+  it('las políticas revisadas tienen su variable y su alcance', () => {
+    expect(RATE_LIMIT_POLICIES.reportUser).toMatchObject({ per: 'user', windowSec: 3600 });
+    expect(RATE_LIMIT_POLICIES.uploadUrlUser).toMatchObject({ per: 'user', windowSec: 3600 });
+    expect(RATE_LIMIT_POLICIES.deviceUser).toMatchObject({ per: 'user', windowSec: 3600 });
+    expect(RATE_LIMIT_POLICIES.otpRequestIp).not.toHaveProperty('per');
   });
 });
 

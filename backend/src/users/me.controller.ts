@@ -26,6 +26,7 @@ import { UpdateMeDto } from './dto/update-me.dto';
 import { UserDto } from './dto/user.dto';
 import { UserPresenter } from './user.presenter';
 import { UsersService } from './users.service';
+import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 
 @ApiTags('me')
 @ApiBearerAuth()
@@ -59,6 +60,7 @@ export class MeController {
   }
 
   @Post('photo/upload-url')
+  @RateLimit('uploadUrlUser')
   @ApiOperation({
     summary: 'URL prefirmada para subir mi foto de perfil',
     description:

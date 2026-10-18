@@ -27,6 +27,7 @@ import {
 } from './dto/worker.dto';
 import { ModeService } from './mode.service';
 import { WorkersService } from './workers.service';
+import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 
 export class SwitchModeDto {
   @ApiProperty({ enum: ['employer', 'worker'], example: 'worker' })
@@ -94,6 +95,7 @@ export class WorkerMeController {
   }
 
   @Post('worker/documents/upload-url')
+  @RateLimit('uploadUrlUser')
   @ApiOperation({
     summary: 'URL prefirmada para subir un documento (CI anverso, reverso o selfie)',
     description: 'Válida 5 minutos. Luego confirmar con PUT /me/worker/documents/{type}.',

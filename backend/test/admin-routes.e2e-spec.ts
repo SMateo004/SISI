@@ -1,81 +1,15 @@
 import { randomUUID } from 'node:crypto';
-import { RequestMethod } from '@nestjs/common';
-import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
-import { DiscoveryService, MetadataScanner, ModulesContainer, Reflector } from '@nestjs/core';
 import request from 'supertest';
-import { ROLES_KEY } from '../src/auth/decorators/auth.decorators';
-import { ADMIN_PERMISSION_KEY, ADMIN_PERMISSIONS } from '../src/common/admin/admin-permissions';
+import { ADMIN_PERMISSIONS } from '../src/common/admin/admin-permissions';
+import { type RegisteredRoute, registeredRoutes } from './utils/routes';
 import { bearer, createTestApp, login, loginAsAdmin, type TestApp } from './utils/test-app';
 import { uniqueIp } from './utils/unique';
 
-interface AdminRoute {
-  method: string;
-  path: string;
-  roles: string[] | undefined;
-  permission: string | undefined;
-}
+type AdminRoute = RegisteredRoute;
 
-const METHODS: Partial<Record<RequestMethod, string>> = {
-  [RequestMethod.GET]: 'get',
-  [RequestMethod.POST]: 'post',
-  [RequestMethod.PUT]: 'put',
-  [RequestMethod.PATCH]: 'patch',
-  [RequestMethod.DELETE]: 'delete',
-};
-
-const join = (...parts: string[]): string =>
-  `/${parts
-    .flatMap((p) => p.split('/'))
-    .filter(Boolean)
-    .join('/')}`;
-
-/**
- * Todas las rutas /admin que Nest registró, leídas de los metadatos de los controladores
- * (así una ruta nueva entra sola al barrido).
- */
-function adminRoutes(t: TestApp): AdminRoute[] {
-  const discovery = new DiscoveryService(t.app.get(ModulesContainer));
-  const scanner = new MetadataScanner();
-  const reflector = new Reflector();
-  const routes: AdminRoute[] = [];
-  for (const wrapper of discovery.getControllers()) {
-    const instance = wrapper.instance as object | undefined;
-    const metatype = wrapper.metatype as (abstract new (...args: never[]) => unknown) | null;
-    if (!instance || !metatype) continue;
-    const prefixes = [
-      reflector.get<string | string[] | undefined>(PATH_METADATA, metatype) ?? '',
-    ].flat();
-    const proto = Object.getPrototypeOf(instance) as Record<string, unknown>;
-    for (const name of scanner.getAllMethodNames(proto)) {
-      const handler = proto[name] as (...args: unknown[]) => unknown;
-      const method = reflector.get<RequestMethod | undefined>(METHOD_METADATA, handler);
-      const verb = method === undefined ? undefined : METHODS[method];
-      if (!verb) continue;
-      const paths = [
-        reflector.get<string | string[] | undefined>(PATH_METADATA, handler) ?? '',
-      ].flat();
-      for (const prefix of prefixes) {
-        for (const path of paths) {
-          const full = join(prefix, path);
-          if (!full.startsWith('/admin')) continue;
-          routes.push({
-            method: verb,
-            path: full,
-            roles: reflector.getAllAndOverride<string[] | undefined>(ROLES_KEY, [
-              handler,
-              metatype,
-            ]),
-            permission: reflector.getAllAndOverride<string | undefined>(ADMIN_PERMISSION_KEY, [
-              handler,
-              metatype,
-            ]),
-          });
-        }
-      }
-    }
-  }
-  return routes;
-}
+/** Las rutas /admin registradas en Nest (una ruta nueva entra sola al barrido). */
+const adminRoutes = (t: TestApp): AdminRoute[] =>
+  registeredRoutes(t).filter((r) => r.path.startsWith('/admin'));
 
 /** Parámetros de ruta con valores válidos de forma (uuid), para pasar los pipes. */
 const concrete = (path: string): string => path.replace(/:[A-Za-z]+/g, () => randomUUID());

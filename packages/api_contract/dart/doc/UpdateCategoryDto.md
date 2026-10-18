@@ -15,6 +15,7 @@ Name | Type | Description | Notes
 **commissionPct** | **String** |  | [optional] 
 **active** | **bool** |  | [optional] 
 **extraRequirements** | **List&lt;String&gt;** | Requisitos extra de verificación (claves en minúsculas, R2.2) | [optional] 
+**reason** | **String** | Motivo (queda en la auditoría) | [optional] 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

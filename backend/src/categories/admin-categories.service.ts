@@ -115,6 +115,7 @@ export class AdminCategoriesService {
         targetType: 'category',
         targetId: row.id,
         after: snapshot(row),
+        reason: dto.reason ?? null,
       });
       return row;
     });
@@ -152,6 +153,7 @@ export class AdminCategoriesService {
         targetId: id,
         before: snapshot(current),
         after: snapshot(row),
+        reason: dto.reason ?? null,
       });
       return { row, commissionChanged: !current.commissionPct.equals(row.commissionPct) };
     });
@@ -193,6 +195,7 @@ export class AdminCategoriesService {
         targetId: id,
         before: before ?? null,
         after: after ?? null,
+        reason: dto.reason ?? null,
         cityId,
       });
       const pct = (cc: typeof before) => (cc?.commissionPct ?? current.commissionPct).toFixed(2);

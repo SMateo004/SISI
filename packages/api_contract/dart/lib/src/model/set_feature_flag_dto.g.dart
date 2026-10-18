@@ -13,13 +13,20 @@ abstract class _$SetFeatureFlagDtoCWProxy {
 
   SetFeatureFlagDto description(String? description);
 
+  SetFeatureFlagDto reason(String? reason);
+
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `SetFeatureFlagDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
   /// ```dart
   /// SetFeatureFlagDto(...).copyWith(id: 12, name: "My name")
   /// ````
-  SetFeatureFlagDto call({bool enabled, String? cityId, String? description});
+  SetFeatureFlagDto call({
+    bool enabled,
+    String? cityId,
+    String? description,
+    String? reason,
+  });
 }
 
 /// Proxy class for `copyWith` functionality. This is a callable class and can be used as follows: `instanceOfSetFeatureFlagDto.copyWith(...)`. Additionally contains functions for specific fields e.g. `instanceOfSetFeatureFlagDto.copyWith.fieldName(...)`
@@ -39,6 +46,9 @@ class _$SetFeatureFlagDtoCWProxyImpl implements _$SetFeatureFlagDtoCWProxy {
       this(description: description);
 
   @override
+  SetFeatureFlagDto reason(String? reason) => this(reason: reason);
+
+  @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `SetFeatureFlagDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -49,6 +59,7 @@ class _$SetFeatureFlagDtoCWProxyImpl implements _$SetFeatureFlagDtoCWProxy {
     Object? enabled = const $CopyWithPlaceholder(),
     Object? cityId = const $CopyWithPlaceholder(),
     Object? description = const $CopyWithPlaceholder(),
+    Object? reason = const $CopyWithPlaceholder(),
   }) {
     return SetFeatureFlagDto(
       enabled: enabled == const $CopyWithPlaceholder()
@@ -63,6 +74,10 @@ class _$SetFeatureFlagDtoCWProxyImpl implements _$SetFeatureFlagDtoCWProxy {
           ? _value.description
           // ignore: cast_nullable_to_non_nullable
           : description as String?,
+      reason: reason == const $CopyWithPlaceholder()
+          ? _value.reason
+          // ignore: cast_nullable_to_non_nullable
+          : reason as String?,
     );
   }
 }
@@ -85,6 +100,7 @@ SetFeatureFlagDto _$SetFeatureFlagDtoFromJson(Map<String, dynamic> json) =>
         enabled: $checkedConvert('enabled', (v) => v as bool),
         cityId: $checkedConvert('cityId', (v) => v as String?),
         description: $checkedConvert('description', (v) => v as String?),
+        reason: $checkedConvert('reason', (v) => v as String?),
       );
       return val;
     });
@@ -94,4 +110,5 @@ Map<String, dynamic> _$SetFeatureFlagDtoToJson(SetFeatureFlagDto instance) =>
       'enabled': instance.enabled,
       'cityId': ?instance.cityId,
       'description': ?instance.description,
+      'reason': ?instance.reason,
     };

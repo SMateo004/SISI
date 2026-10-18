@@ -27,6 +27,8 @@ class UpsertCategoryCityDto {
      this.priceMaxBs,
 
      this.commissionPct,
+
+     this.reason,
   });
 
       /// Disponible en la ciudad
@@ -79,6 +81,19 @@ class UpsertCategoryCityDto {
 
 
 
+      /// Motivo (queda en la auditoría)
+  @JsonKey(
+    
+    name: r'reason',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final String? reason;
+
+
+
 
 
     @override
@@ -86,14 +101,16 @@ class UpsertCategoryCityDto {
       other.active == active &&
       other.priceMinBs == priceMinBs &&
       other.priceMaxBs == priceMaxBs &&
-      other.commissionPct == commissionPct;
+      other.commissionPct == commissionPct &&
+      other.reason == reason;
 
     @override
     int get hashCode =>
         active.hashCode +
         (priceMinBs == null ? 0 : priceMinBs.hashCode) +
         (priceMaxBs == null ? 0 : priceMaxBs.hashCode) +
-        (commissionPct == null ? 0 : commissionPct.hashCode);
+        (commissionPct == null ? 0 : commissionPct.hashCode) +
+        reason.hashCode;
 
   factory UpsertCategoryCityDto.fromJson(Map<String, dynamic> json) => _$UpsertCategoryCityDtoFromJson(json);
 

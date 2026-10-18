@@ -15,6 +15,8 @@ abstract class _$UpdateModerationTermDtoCWProxy {
 
   UpdateModerationTermDto note(String? note);
 
+  UpdateModerationTermDto reason(String? reason);
+
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `UpdateModerationTermDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -25,6 +27,7 @@ abstract class _$UpdateModerationTermDtoCWProxy {
     UpdateModerationTermDtoCategoryEnum? category,
     bool? active,
     String? note,
+    String? reason,
   });
 }
 
@@ -47,6 +50,9 @@ class _$UpdateModerationTermDtoCWProxyImpl
   UpdateModerationTermDto note(String? note) => this(note: note);
 
   @override
+  UpdateModerationTermDto reason(String? reason) => this(reason: reason);
+
+  @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `UpdateModerationTermDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -57,6 +63,7 @@ class _$UpdateModerationTermDtoCWProxyImpl
     Object? category = const $CopyWithPlaceholder(),
     Object? active = const $CopyWithPlaceholder(),
     Object? note = const $CopyWithPlaceholder(),
+    Object? reason = const $CopyWithPlaceholder(),
   }) {
     return UpdateModerationTermDto(
       category: category == const $CopyWithPlaceholder()
@@ -71,6 +78,10 @@ class _$UpdateModerationTermDtoCWProxyImpl
           ? _value.note
           // ignore: cast_nullable_to_non_nullable
           : note as String?,
+      reason: reason == const $CopyWithPlaceholder()
+          ? _value.reason
+          // ignore: cast_nullable_to_non_nullable
+          : reason as String?,
     );
   }
 }
@@ -97,6 +108,7 @@ UpdateModerationTermDto _$UpdateModerationTermDtoFromJson(
     ),
     active: $checkedConvert('active', (v) => v as bool?),
     note: $checkedConvert('note', (v) => v as String?),
+    reason: $checkedConvert('reason', (v) => v as String?),
   );
   return val;
 });
@@ -107,6 +119,7 @@ Map<String, dynamic> _$UpdateModerationTermDtoToJson(
   'category': ?_$UpdateModerationTermDtoCategoryEnumEnumMap[instance.category],
   'active': ?instance.active,
   'note': ?instance.note,
+  'reason': ?instance.reason,
 };
 
 const _$UpdateModerationTermDtoCategoryEnumEnumMap = {

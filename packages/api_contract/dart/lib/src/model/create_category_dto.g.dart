@@ -23,6 +23,8 @@ abstract class _$CreateCategoryDtoCWProxy {
 
   CreateCategoryDto cityIds(List<String>? cityIds);
 
+  CreateCategoryDto reason(String? reason);
+
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `CreateCategoryDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -38,6 +40,7 @@ abstract class _$CreateCategoryDtoCWProxy {
     String? commissionPct,
     List<String>? extraRequirements,
     List<String>? cityIds,
+    String? reason,
   });
 }
 
@@ -77,6 +80,9 @@ class _$CreateCategoryDtoCWProxyImpl implements _$CreateCategoryDtoCWProxy {
   CreateCategoryDto cityIds(List<String>? cityIds) => this(cityIds: cityIds);
 
   @override
+  CreateCategoryDto reason(String? reason) => this(reason: reason);
+
+  @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `CreateCategoryDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -92,6 +98,7 @@ class _$CreateCategoryDtoCWProxyImpl implements _$CreateCategoryDtoCWProxy {
     Object? commissionPct = const $CopyWithPlaceholder(),
     Object? extraRequirements = const $CopyWithPlaceholder(),
     Object? cityIds = const $CopyWithPlaceholder(),
+    Object? reason = const $CopyWithPlaceholder(),
   }) {
     return CreateCategoryDto(
       slug: slug == const $CopyWithPlaceholder()
@@ -126,6 +133,10 @@ class _$CreateCategoryDtoCWProxyImpl implements _$CreateCategoryDtoCWProxy {
           ? _value.cityIds
           // ignore: cast_nullable_to_non_nullable
           : cityIds as List<String>?,
+      reason: reason == const $CopyWithPlaceholder()
+          ? _value.reason
+          // ignore: cast_nullable_to_non_nullable
+          : reason as String?,
     );
   }
 }
@@ -162,6 +173,7 @@ CreateCategoryDto _$CreateCategoryDtoFromJson(Map<String, dynamic> json) =>
           'cityIds',
           (v) => (v as List<dynamic>?)?.map((e) => e as String).toList(),
         ),
+        reason: $checkedConvert('reason', (v) => v as String?),
       );
       return val;
     });
@@ -176,4 +188,5 @@ Map<String, dynamic> _$CreateCategoryDtoToJson(CreateCategoryDto instance) =>
       'commissionPct': ?instance.commissionPct,
       'extraRequirements': ?instance.extraRequirements,
       'cityIds': ?instance.cityIds,
+      'reason': ?instance.reason,
     };

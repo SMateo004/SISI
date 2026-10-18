@@ -58,6 +58,7 @@ export class FeatureFlagsService {
     input: { cityId: string | null; enabled: boolean; description?: string },
     actorId: string,
     audit?: AuditHook,
+    reason?: string,
   ): Promise<FeatureFlagRow> {
     if (!FLAG_KEY_PATTERN.test(key)) {
       throw new ApiError(
@@ -90,6 +91,7 @@ export class FeatureFlagsService {
         targetId: input.cityId ? `${key}@${input.cityId}` : key,
         before: before ? { enabled: before.enabled } : null,
         after: { enabled: input.enabled },
+        reason: reason ?? null,
         cityId: input.cityId,
       });
     });

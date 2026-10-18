@@ -27,6 +27,8 @@ class CreateModerationTermDto {
     required  this.category,
 
      this.note,
+
+     this.reason,
   });
 
       /// Palabra/frase (con * de prefijo) o regex
@@ -78,6 +80,19 @@ class CreateModerationTermDto {
 
 
 
+      /// Motivo (queda en la auditoría)
+  @JsonKey(
+    
+    name: r'reason',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final String? reason;
+
+
+
 
 
     @override
@@ -85,14 +100,16 @@ class CreateModerationTermDto {
       other.term == term &&
       other.kind == kind &&
       other.category == category &&
-      other.note == note;
+      other.note == note &&
+      other.reason == reason;
 
     @override
     int get hashCode =>
         term.hashCode +
         kind.hashCode +
         category.hashCode +
-        note.hashCode;
+        note.hashCode +
+        reason.hashCode;
 
   factory CreateModerationTermDto.fromJson(Map<String, dynamic> json) => _$CreateModerationTermDtoFromJson(json);
 

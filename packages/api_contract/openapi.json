@@ -7570,6 +7570,11 @@
           "description": {
             "type": "string",
             "example": "Pago dentro de la app (etapa 2)"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Pedido del equipo de operaciones",
+            "description": "Motivo (queda en la auditoría)"
           }
         },
         "required": [
@@ -8421,6 +8426,11 @@
             "items": {
               "type": "string"
             }
+          },
+          "reason": {
+            "type": "string",
+            "example": "Pedido del equipo de operaciones",
+            "description": "Motivo (queda en la auditoría)"
           }
         },
         "required": [
@@ -8467,6 +8477,11 @@
             "items": {
               "type": "string"
             }
+          },
+          "reason": {
+            "type": "string",
+            "example": "Pedido del equipo de operaciones",
+            "description": "Motivo (queda en la auditoría)"
           }
         }
       },
@@ -8493,6 +8508,11 @@
             "type": "string",
             "example": null,
             "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "example": "Pedido del equipo de operaciones",
+            "description": "Motivo (queda en la auditoría)"
           }
         },
         "required": [
@@ -8606,6 +8626,11 @@
           "note": {
             "type": "string",
             "example": "Agregado por reporte del 15/10"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Pedido del equipo de operaciones",
+            "description": "Motivo (queda en la auditoría)"
           }
         },
         "required": [
@@ -8706,6 +8731,11 @@
           },
           "note": {
             "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Pedido del equipo de operaciones",
+            "description": "Motivo (queda en la auditoría)"
           }
         }
       },

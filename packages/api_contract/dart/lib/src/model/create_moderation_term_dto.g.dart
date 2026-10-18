@@ -17,6 +17,8 @@ abstract class _$CreateModerationTermDtoCWProxy {
 
   CreateModerationTermDto note(String? note);
 
+  CreateModerationTermDto reason(String? reason);
+
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `CreateModerationTermDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -28,6 +30,7 @@ abstract class _$CreateModerationTermDtoCWProxy {
     CreateModerationTermDtoKindEnum kind,
     CreateModerationTermDtoCategoryEnum category,
     String? note,
+    String? reason,
   });
 }
 
@@ -54,6 +57,9 @@ class _$CreateModerationTermDtoCWProxyImpl
   CreateModerationTermDto note(String? note) => this(note: note);
 
   @override
+  CreateModerationTermDto reason(String? reason) => this(reason: reason);
+
+  @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `CreateModerationTermDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -65,6 +71,7 @@ class _$CreateModerationTermDtoCWProxyImpl
     Object? kind = const $CopyWithPlaceholder(),
     Object? category = const $CopyWithPlaceholder(),
     Object? note = const $CopyWithPlaceholder(),
+    Object? reason = const $CopyWithPlaceholder(),
   }) {
     return CreateModerationTermDto(
       term: term == const $CopyWithPlaceholder()
@@ -83,6 +90,10 @@ class _$CreateModerationTermDtoCWProxyImpl
           ? _value.note
           // ignore: cast_nullable_to_non_nullable
           : note as String?,
+      reason: reason == const $CopyWithPlaceholder()
+          ? _value.reason
+          // ignore: cast_nullable_to_non_nullable
+          : reason as String?,
     );
   }
 }
@@ -113,6 +124,7 @@ CreateModerationTermDto _$CreateModerationTermDtoFromJson(
       (v) => $enumDecode(_$CreateModerationTermDtoCategoryEnumEnumMap, v),
     ),
     note: $checkedConvert('note', (v) => v as String?),
+    reason: $checkedConvert('reason', (v) => v as String?),
   );
   return val;
 });
@@ -124,6 +136,7 @@ Map<String, dynamic> _$CreateModerationTermDtoToJson(
   'kind': _$CreateModerationTermDtoKindEnumEnumMap[instance.kind]!,
   'category': _$CreateModerationTermDtoCategoryEnumEnumMap[instance.category]!,
   'note': ?instance.note,
+  'reason': ?instance.reason,
 };
 
 const _$CreateModerationTermDtoKindEnumEnumMap = {

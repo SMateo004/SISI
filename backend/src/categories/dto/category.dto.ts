@@ -94,6 +94,15 @@ export class UpdateCategoryDto {
     message: 'Cada requisito es una clave en minúsculas (ej. certificado_electricista).',
   })
   extraRequirements?: string[];
+
+  @ApiPropertyOptional({
+    example: 'Pedido del equipo de operaciones',
+    description: 'Motivo (queda en la auditoría)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  reason?: string;
 }
 
 /** Categoría nueva (R2.2). Se crea en las ciudades indicadas (activas). */
@@ -149,6 +158,15 @@ export class CreateCategoryDto {
   @IsArray()
   @IsUUID('all', { each: true, message: 'Una ciudad no es válida.' })
   cityIds?: string[];
+
+  @ApiPropertyOptional({
+    example: 'Pedido del equipo de operaciones',
+    description: 'Motivo (queda en la auditoría)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  reason?: string;
 }
 
 export class UpsertCategoryCityDto {
@@ -178,6 +196,15 @@ export class UpsertCategoryCityDto {
   @ValidateIf((_, v) => v !== null)
   @Matches(PCT_PATTERN, { message: PCT_MESSAGE })
   commissionPct?: string | null;
+
+  @ApiPropertyOptional({
+    example: 'Pedido del equipo de operaciones',
+    description: 'Motivo (queda en la auditoría)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  reason?: string;
 }
 
 export class AdminCategoryCityDto {

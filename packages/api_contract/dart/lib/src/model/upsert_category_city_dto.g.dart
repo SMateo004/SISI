@@ -15,6 +15,8 @@ abstract class _$UpsertCategoryCityDtoCWProxy {
 
   UpsertCategoryCityDto commissionPct(String? commissionPct);
 
+  UpsertCategoryCityDto reason(String? reason);
+
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `UpsertCategoryCityDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -26,6 +28,7 @@ abstract class _$UpsertCategoryCityDtoCWProxy {
     String? priceMinBs,
     String? priceMaxBs,
     String? commissionPct,
+    String? reason,
   });
 }
 
@@ -52,6 +55,9 @@ class _$UpsertCategoryCityDtoCWProxyImpl
       this(commissionPct: commissionPct);
 
   @override
+  UpsertCategoryCityDto reason(String? reason) => this(reason: reason);
+
+  @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `UpsertCategoryCityDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -63,6 +69,7 @@ class _$UpsertCategoryCityDtoCWProxyImpl
     Object? priceMinBs = const $CopyWithPlaceholder(),
     Object? priceMaxBs = const $CopyWithPlaceholder(),
     Object? commissionPct = const $CopyWithPlaceholder(),
+    Object? reason = const $CopyWithPlaceholder(),
   }) {
     return UpsertCategoryCityDto(
       active: active == const $CopyWithPlaceholder()
@@ -81,6 +88,10 @@ class _$UpsertCategoryCityDtoCWProxyImpl
           ? _value.commissionPct
           // ignore: cast_nullable_to_non_nullable
           : commissionPct as String?,
+      reason: reason == const $CopyWithPlaceholder()
+          ? _value.reason
+          // ignore: cast_nullable_to_non_nullable
+          : reason as String?,
     );
   }
 }
@@ -105,6 +116,7 @@ UpsertCategoryCityDto _$UpsertCategoryCityDtoFromJson(
     priceMinBs: $checkedConvert('priceMinBs', (v) => v as String?),
     priceMaxBs: $checkedConvert('priceMaxBs', (v) => v as String?),
     commissionPct: $checkedConvert('commissionPct', (v) => v as String?),
+    reason: $checkedConvert('reason', (v) => v as String?),
   );
   return val;
 });
@@ -116,4 +128,5 @@ Map<String, dynamic> _$UpsertCategoryCityDtoToJson(
   'priceMinBs': ?instance.priceMinBs,
   'priceMaxBs': ?instance.priceMaxBs,
   'commissionPct': ?instance.commissionPct,
+  'reason': ?instance.reason,
 };

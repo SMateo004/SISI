@@ -33,6 +33,15 @@ export class CreateModerationTermDto {
   @IsString()
   @MaxLength(200)
   note?: string;
+
+  @ApiPropertyOptional({
+    example: 'Pedido del equipo de operaciones',
+    description: 'Motivo (queda en la auditoría)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  reason?: string;
 }
 
 export class UpdateModerationTermDto {
@@ -51,6 +60,15 @@ export class UpdateModerationTermDto {
   @IsString()
   @MaxLength(200)
   note?: string;
+
+  @ApiPropertyOptional({
+    example: 'Pedido del equipo de operaciones',
+    description: 'Motivo (queda en la auditoría)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  reason?: string;
 }
 
 export class ModerationTermDto {

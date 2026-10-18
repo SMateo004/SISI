@@ -25,6 +25,8 @@ class UpdateModerationTermDto {
      this.active,
 
      this.note,
+
+     this.reason,
   });
 
   @JsonKey(
@@ -63,19 +65,34 @@ class UpdateModerationTermDto {
 
 
 
+      /// Motivo (queda en la auditoría)
+  @JsonKey(
+    
+    name: r'reason',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final String? reason;
+
+
+
 
 
     @override
     bool operator ==(Object other) => identical(this, other) || other is UpdateModerationTermDto &&
       other.category == category &&
       other.active == active &&
-      other.note == note;
+      other.note == note &&
+      other.reason == reason;
 
     @override
     int get hashCode =>
         category.hashCode +
         active.hashCode +
-        note.hashCode;
+        note.hashCode +
+        reason.hashCode;
 
   factory UpdateModerationTermDto.fromJson(Map<String, dynamic> json) => _$UpdateModerationTermDtoFromJson(json);
 

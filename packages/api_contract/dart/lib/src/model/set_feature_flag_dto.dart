@@ -25,6 +25,8 @@ class SetFeatureFlagDto {
      this.cityId,
 
      this.description,
+
+     this.reason,
   });
 
   @JsonKey(
@@ -64,19 +66,34 @@ class SetFeatureFlagDto {
 
 
 
+      /// Motivo (queda en la auditoría)
+  @JsonKey(
+    
+    name: r'reason',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final String? reason;
+
+
+
 
 
     @override
     bool operator ==(Object other) => identical(this, other) || other is SetFeatureFlagDto &&
       other.enabled == enabled &&
       other.cityId == cityId &&
-      other.description == description;
+      other.description == description &&
+      other.reason == reason;
 
     @override
     int get hashCode =>
         enabled.hashCode +
         (cityId == null ? 0 : cityId.hashCode) +
-        description.hashCode;
+        description.hashCode +
+        reason.hashCode;
 
   factory SetFeatureFlagDto.fromJson(Map<String, dynamic> json) => _$SetFeatureFlagDtoFromJson(json);
 

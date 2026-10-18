@@ -72,7 +72,7 @@ export class ModerationTermsService {
           targetType: 'moderation_term',
           targetId: row.id,
           after: snapshot(row),
-          reason: dto.note ?? null,
+          reason: dto.reason ?? dto.note ?? null,
         });
         return row;
       });
@@ -113,9 +113,10 @@ export class ModerationTermsService {
   private async change(
     ctx: AdminContext,
     id: string,
-    data: UpdateModerationTermDto,
+    input: UpdateModerationTermDto,
     action: string,
   ): Promise<ModerationTermDto> {
+    const { reason, ...data } = input;
     const updated = await this.prisma.$transaction(async (tx) => {
       const before = await tx.moderationTerm.findUnique({ where: { id } });
       if (!before) throw notFound();
@@ -126,7 +127,7 @@ export class ModerationTermsService {
         targetId: id,
         before: snapshot(before),
         after: snapshot(after),
-        reason: data.note ?? null,
+        reason: reason ?? data.note ?? null,
       });
       return after;
     });

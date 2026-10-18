@@ -161,6 +161,7 @@ describe('Catálogo y flags en el panel (e2e)', () => {
     await call('put', `/admin/feature-flags/${key}`, {
       enabled: true,
       cityId: santaCruz.id,
+      reason: 'Piloto en Santa Cruz',
     }).expect(200);
     expect(await t.app.get(FeatureFlagsService).isEnabled(key, santaCruz.id)).toBe(true);
     const row = await expectAudited(t, {
@@ -169,6 +170,11 @@ describe('Catálogo y flags en el panel (e2e)', () => {
       targetId: `${key}@${santaCruz.id}`,
       adminId: admin.user.id,
     });
-    expect(row).toMatchObject({ before: null, after: { enabled: true }, cityId: santaCruz.id });
+    expect(row).toMatchObject({
+      before: null,
+      after: { enabled: true },
+      cityId: santaCruz.id,
+      reason: 'Piloto en Santa Cruz',
+    });
   });
 });

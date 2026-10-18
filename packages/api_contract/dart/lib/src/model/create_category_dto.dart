@@ -35,6 +35,8 @@ class CreateCategoryDto {
      this.extraRequirements,
 
      this.cityIds,
+
+     this.reason,
   });
 
       /// Identificador estable: no cambia después
@@ -137,6 +139,19 @@ class CreateCategoryDto {
 
 
 
+      /// Motivo (queda en la auditoría)
+  @JsonKey(
+    
+    name: r'reason',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final String? reason;
+
+
+
 
 
     @override
@@ -148,7 +163,8 @@ class CreateCategoryDto {
       other.priceMaxBs == priceMaxBs &&
       other.commissionPct == commissionPct &&
       other.extraRequirements == extraRequirements &&
-      other.cityIds == cityIds;
+      other.cityIds == cityIds &&
+      other.reason == reason;
 
     @override
     int get hashCode =>
@@ -159,7 +175,8 @@ class CreateCategoryDto {
         priceMaxBs.hashCode +
         commissionPct.hashCode +
         extraRequirements.hashCode +
-        cityIds.hashCode;
+        cityIds.hashCode +
+        reason.hashCode;
 
   factory CreateCategoryDto.fromJson(Map<String, dynamic> json) => _$CreateCategoryDtoFromJson(json);
 

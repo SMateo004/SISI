@@ -37,6 +37,15 @@ export class SetFeatureFlagDto {
   @IsString()
   @MaxLength(200)
   description?: string;
+
+  @ApiPropertyOptional({
+    example: 'Pedido del equipo de operaciones',
+    description: 'Motivo (queda en la auditoría)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  reason?: string;
 }
 
 export class FeatureFlagDto {
@@ -91,6 +100,7 @@ export class FeatureFlagsController {
         { cityId: dto.cityId ?? null, enabled: dto.enabled, description: dto.description },
         ctx.adminId,
         this.audit.hook(ctx),
+        dto.reason,
       ),
     );
   }

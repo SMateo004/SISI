@@ -33,6 +33,8 @@ class UpdateCategoryDto {
      this.active,
 
      this.extraRequirements,
+
+     this.reason,
   });
 
   @JsonKey(
@@ -120,6 +122,19 @@ class UpdateCategoryDto {
 
 
 
+      /// Motivo (queda en la auditoría)
+  @JsonKey(
+    
+    name: r'reason',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final String? reason;
+
+
+
 
 
     @override
@@ -130,7 +145,8 @@ class UpdateCategoryDto {
       other.priceMaxBs == priceMaxBs &&
       other.commissionPct == commissionPct &&
       other.active == active &&
-      other.extraRequirements == extraRequirements;
+      other.extraRequirements == extraRequirements &&
+      other.reason == reason;
 
     @override
     int get hashCode =>
@@ -140,7 +156,8 @@ class UpdateCategoryDto {
         priceMaxBs.hashCode +
         commissionPct.hashCode +
         active.hashCode +
-        extraRequirements.hashCode;
+        extraRequirements.hashCode +
+        reason.hashCode;
 
   factory UpdateCategoryDto.fromJson(Map<String, dynamic> json) => _$UpdateCategoryDtoFromJson(json);
 

@@ -84,6 +84,8 @@ export class RealtimeGateway
     // Primero, sin esperar nada: el cliente ya se considera conectado y un aviso a su
     // sala (o un socketsJoin) podría llegar mientras se consulta la base.
     void socket.join(rooms.user(user.id));
+    // El panel recibe las colas pendientes en vivo (ADR-0044).
+    if (user.role === 'admin' && user.aud === 'admin') void socket.join(rooms.admins);
     this.local.set(socket.id, user.id);
     await this.presence.touch([{ userId: user.id, socketId: socket.id }]);
     if (user.expiresAt !== undefined) {

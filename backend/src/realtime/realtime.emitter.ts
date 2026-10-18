@@ -37,6 +37,10 @@ export class RealtimeEmitter implements OnApplicationShutdown {
     this.emitter.to(userIds.map(rooms.user)).emit(event, payload);
   }
 
+  toAdmins<E extends RealtimeEventName>(event: E, payload: RealtimePayloads[E]): void {
+    this.emitter.to(rooms.admins).emit(event, payload);
+  }
+
   toRequest<E extends RealtimeEventName>(
     requestId: string,
     event: E,

@@ -148,6 +148,8 @@ export const envSchema = z
     BILLING_LOCK_TTL_MS: positiveInt(600_000),
     /** Cada cuánto cada proceso revisa si cambiaron los parámetros del panel (ADR-0043). */
     SETTINGS_REFRESH_MS: positiveInt(15_000),
+    /** Cada cuánto el worker revisa las colas del panel y avisa si cambiaron (ADR-0044). */
+    ADMIN_COUNTERS_EMIT_MS: positiveInt(10_000),
     /** Presencia de un socket en Redis (se renueva con un latido; ADR-0031). */
     PRESENCE_TTL_MS: positiveInt(60_000),
     OUTBOX_CLEANUP_MS: positiveInt(86_400_000),

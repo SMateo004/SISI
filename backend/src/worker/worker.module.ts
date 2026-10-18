@@ -1,4 +1,6 @@
 import { AuditModule } from '../audit/audit.module';
+import { AdminCountersPublisher } from '../dashboard/admin-counters.publisher';
+import { DashboardModule } from '../dashboard/dashboard.module';
 import { SettingsModule } from '../settings/settings.module';
 import { AccountNotificationsHandlers } from '../notifications/account-notifications.handlers';
 import { Module } from '@nestjs/common';
@@ -36,6 +38,7 @@ import { RequestStatusModule } from '../requests/request-status.module';
     // Los módulos compartidos con la API pueden auditar acciones del panel (ADR-0041).
     AuditModule,
     SettingsModule,
+    DashboardModule,
     FeatureFlagsModule,
     OutboxModule,
     OutboxRelayModule,
@@ -57,6 +60,7 @@ import { RequestStatusModule } from '../requests/request-status.module';
     ChatEventsHandlers,
     BillingEventsHandlers,
     AccountNotificationsHandlers,
+    AdminCountersPublisher,
   ],
 })
 export class WorkerModule {}

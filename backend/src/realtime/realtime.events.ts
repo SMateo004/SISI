@@ -17,6 +17,8 @@ export const RealtimeEvents = {
   billingDue: 'billing:due',
   accountBlocked: 'account:blocked',
   accountUnblocked: 'account:unblocked',
+  /** Panel admin (Fase 6, ADR-0044): colas pendientes, solo cuando cambian. */
+  adminCounters: 'admin:counters',
 } as const;
 
 export type RealtimeEventName = (typeof RealtimeEvents)[keyof typeof RealtimeEvents];
@@ -86,6 +88,16 @@ export interface RealtimePayloads {
   };
   /** Al trabajador: se levantó el bloqueo. No cambia de modo solo: usa el interruptor. */
   'account:unblocked': { status: string };
+  /** A las sesiones del panel: colas pendientes, solo cuando cambian (ADR-0044). */
+  'admin:counters': {
+    verifications: number;
+    heldRequests: number;
+    heldMessages: number;
+    reports: number;
+    disputes: number;
+    submissions: number;
+    at: string;
+  };
   'chat:message': {
     jobId: string;
     messageId: string;
@@ -98,4 +110,6 @@ export interface RealtimePayloads {
 export const rooms = {
   user: (userId: string): string => `user:${userId}`,
   request: (requestId: string): string => `request:${requestId}`,
+  /** Sesiones del panel (rol admin y aud=admin, ADR-0040). */
+  admins: 'admins',
 };

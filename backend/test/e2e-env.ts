@@ -17,6 +17,7 @@ export function applyE2eEnv(): void {
   // Colas propias de los e2e y tiempos en milisegundos (ADR-0028).
   process.env.QUEUE_PREFIX = 'bull-e2e';
   process.env.OUTBOX_POLL_MS = '50';
+  process.env.ADMIN_COUNTERS_EMIT_MS = '300';
   // El reconciliador se dispara a mano en los tests (runOnce).
   process.env.MATCHING_RECONCILE_MS = '3600000';
   process.env.LOCATION_SWEEP_MS = '3600000';

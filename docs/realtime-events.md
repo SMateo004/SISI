@@ -152,3 +152,20 @@ Para: el trabajador. Se levantó el bloqueo (por ejemplo, al registrarse su pago
 ```json
 { "status": "aprobado" }
 ```
+
+## Panel admin (Fase 6)
+
+### `admin:counters`
+Para: las sesiones del panel (sala `admins`; solo tokens con rol admin y `aud=admin`, ADR-0040). Son las colas pendientes del menú. El worker las cuenta cada `ADMIN_COUNTERS_EMIT_MS` (10 s) y emite **solo si cambiaron** (ADR-0044). Al conectar, el panel pide `GET /admin/counters` y lo repite cada 60 s como respaldo.
+
+```json
+{
+  "verifications": 3,
+  "heldRequests": 1,
+  "heldMessages": 0,
+  "reports": 2,
+  "disputes": 1,
+  "submissions": 4,
+  "at": "2026-10-19T14:05:10.000Z"
+}
+```

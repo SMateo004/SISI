@@ -52,3 +52,55 @@ export class DashboardDto {
   @ApiProperty({ description: 'Disponibles con ubicación reciente' }) workersAvailableNow!: number;
   @ApiProperty({ type: CountersDto }) queues!: CountersDto;
 }
+
+export class PilotFunnelDto {
+  @ApiProperty({ description: 'Solicitudes publicadas (sin borradores)' }) created!: number;
+  @ApiProperty({ description: 'Con al menos una oferta' }) withOffer!: number;
+  @ApiProperty({ description: 'Asignadas (trabajo creado)' }) assigned!: number;
+  @ApiProperty({ description: 'Trabajo terminado' }) completed!: number;
+  @ApiProperty({ description: 'Terminado y con la comisión ya cobrada (periodo pagado)' })
+  commissionCollected!: number;
+}
+
+export class PilotWeekDto {
+  @ApiProperty({ example: '2026-11-02', description: 'Lunes de la semana (hora local)' })
+  weekStart!: string;
+  @ApiProperty({ description: 'Trabajadores que ofertaron esa semana' }) activeWorkers!: number;
+  @ApiProperty({ description: 'Empleadores que publicaron esa semana' }) activeEmployers!: number;
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description: '% de los trabajadores activos la semana anterior que volvieron',
+  })
+  workerRetentionPct!: number | null;
+  @ApiProperty({ type: Number, nullable: true }) employerRetentionPct!: number | null;
+}
+
+export class PilotMetricsDto {
+  @ApiProperty({ format: 'uuid' }) cityId!: string;
+  @ApiProperty() cityName!: string;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: '2026-11-02',
+    description: 'Inicio del piloto (parámetro PILOT_STARTED_AT); sin él, las últimas 8 semanas',
+  })
+  startedAt!: string | null;
+  @ApiProperty({ type: String, format: 'date-time' }) from!: string;
+  @ApiProperty({ type: String, format: 'date-time' }) to!: string;
+  @ApiProperty({ type: PilotFunnelDto }) funnel!: PilotFunnelDto;
+  @ApiProperty({ type: Number, nullable: true }) avgFirstOfferSec!: number | null;
+  @ApiProperty({ type: Number, nullable: true }) expirationRatePct!: number | null;
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description: 'Comisión cobrada sobre generada, en el rango',
+  })
+  collectionRatePct!: number | null;
+  @ApiProperty({
+    type: PilotWeekDto,
+    isArray: true,
+    description: 'Hasta 8 semanas, la última es la actual',
+  })
+  weekly!: PilotWeekDto[];
+}

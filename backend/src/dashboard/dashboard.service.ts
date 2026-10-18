@@ -5,7 +5,8 @@ import { ApiError } from '../common/errors/api-error';
 import type { AppConfigService } from '../config/app-config';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import type { CountersDto, DashboardDto } from './dto/dashboard.dto';
+import { AppSettingsService } from '../settings/app-settings.service';
+import type { CountersDto, DashboardDto, PilotMetricsDto } from './dto/dashboard.dto';
 
 export type DashboardRange = 'day' | 'week';
 
@@ -79,6 +80,43 @@ export function dashboardQueries(q: QueryInput): Record<string, Prisma.Sql> {
   };
 }
 
+/**
+ * Métricas del piloto (ADR-0052), acotadas por ciudad y rango sobre columnas indexadas como las
+ * del dashboard (el e2e también les corre EXPLAIN).
+ */
+export function pilotQueries(q: {
+  cityId: string;
+  from: Date;
+  to: Date;
+}): Record<string, Prisma.Sql> {
+  return {
+    funnel: Prisma.sql`
+      SELECT COUNT(*)::int AS created,
+             COUNT(*) FILTER (WHERE EXISTS (
+               SELECT 1 FROM offer_events e WHERE e.request_id = r.id AND e.kind = 'creada'
+             ))::int AS with_offer,
+             COUNT(j.id)::int AS assigned,
+             COUNT(j.id) FILTER (WHERE j.status = 'terminado')::int AS completed,
+             COUNT(j.id) FILTER (WHERE j.status = 'terminado' AND EXISTS (
+               SELECT 1 FROM ledger_entries l JOIN billing_periods p ON p.id = l.period_id
+               WHERE l.job_id = j.id AND l.type = 'comision' AND p.status = 'pagado'
+             ))::int AS collected,
+             COUNT(*) FILTER (WHERE r.status = 'expirada')::int AS expired
+      FROM service_requests r
+      LEFT JOIN jobs j ON j.request_id = r.id
+      WHERE r.city_id = ${q.cityId}::uuid AND r.created_at >= ${q.from} AND r.created_at < ${q.to}
+        AND r.status <> 'borrador'`,
+    activeWorkers: Prisma.sql`
+      SELECT DISTINCT worker_id AS id FROM offer_events
+      WHERE city_id = ${q.cityId}::uuid AND created_at >= ${q.from} AND created_at < ${q.to}
+        AND kind = 'creada'`,
+    activeEmployers: Prisma.sql`
+      SELECT DISTINCT employer_id AS id FROM service_requests
+      WHERE city_id = ${q.cityId}::uuid AND created_at >= ${q.from} AND created_at < ${q.to}
+        AND status <> 'borrador'`,
+  };
+}
+
 /** Colas pendientes del panel (todas las ciudades): conteos sobre índices por estado. */
 export const counterQueries: Record<keyof CountersDto, Prisma.Sql> = {
   verifications: Prisma.sql`SELECT COUNT(*)::int AS n FROM worker_profiles WHERE status = 'pendiente_revision'`,
@@ -93,6 +131,7 @@ export const counterQueries: Record<keyof CountersDto, Prisma.Sql> = {
 export class DashboardService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly settings: AppSettingsService,
     @Inject(ConfigService) private readonly config: AppConfigService,
   ) {}
 
@@ -148,6 +187,124 @@ export class DashboardService {
       overdueWorkers: overdue.workers,
       workersAvailableNow: available.n,
       queues,
+    };
+  }
+
+  /**
+   * Piloto (ADR-0052): embudo, primera oferta, expiración y cobro desde el inicio del piloto
+   * (parámetro PILOT_STARTED_AT, o las últimas 8 semanas) y la retención semanal de trabajadores
+   * y empleadores: de los activos de una semana, cuántos vuelven la siguiente.
+   */
+  async pilot(cityId: string | undefined, now: Date = new Date()): Promise<PilotMetricsDto> {
+    const city = cityId
+      ? await this.prisma.city.findUnique({ where: { id: cityId } })
+      : await this.prisma.city.findUnique({
+          where: { slug: this.config.get('DEFAULT_CITY_SLUG', { infer: true }) },
+        });
+    if (!city) throw new ApiError(HttpStatus.NOT_FOUND, 'CITY_NOT_FOUND', 'La ciudad no existe.');
+    const tz = city.timezone;
+    const week = rangeBounds('week', now, tz);
+    const started = this.settings.value('PILOT_STARTED_AT');
+    const from = started
+      ? fromLocal(
+          {
+            year: Number(started.slice(0, 4)),
+            month: Number(started.slice(5, 7)),
+            day: Number(started.slice(8, 10)),
+          },
+          tz,
+        )
+      : new Date(week.from.getTime() - 7 * 7 * 86_400_000);
+    const to = week.to;
+
+    const q = pilotQueries({ cityId: city.id, from, to });
+    const base = dashboardQueries({ cityId: city.id, from, to, freshSince: now });
+    const [funnel] = await this.prisma.$queryRaw<
+      {
+        created: number;
+        with_offer: number;
+        assigned: number;
+        completed: number;
+        collected: number;
+        expired: number;
+      }[]
+    >(q.funnel ?? Prisma.empty);
+    const [first] = await this.prisma.$queryRaw<{ seconds: number | null }[]>(
+      base.firstOffer ?? Prisma.empty,
+    );
+    const [money] = await this.prisma.$queryRaw<{ generated: string; collected: string }[]>(
+      base.commission ?? Prisma.empty,
+    );
+
+    // Semanas (lunes a domingo, hora local) desde el inicio, hasta 8; la última es la actual.
+    const weeks: { from: Date; to: Date; start: string }[] = [];
+    const firstDay = toLocal(week.from, tz);
+    let start = { year: firstDay.year, month: firstDay.month, day: firstDay.day };
+    for (let i = 0; i < 8; i++) {
+      const wFrom = fromLocal(start, tz);
+      if (wFrom.getTime() + 7 * 86_400_000 <= from.getTime()) break;
+      const pad = (n: number) => String(n).padStart(2, '0');
+      weeks.unshift({
+        from: wFrom,
+        to: fromLocal(addDays(start, 7), tz),
+        start: `${String(start.year)}-${pad(start.month)}-${pad(start.day)}`,
+      });
+      start = addDays(start, -7);
+    }
+    const ids = async (sql: Prisma.Sql | undefined) =>
+      new Set(
+        (await this.prisma.$queryRaw<{ id: string }[]>(sql ?? Prisma.empty)).map((r) => r.id),
+      );
+    const pct = (part: number, whole: number) =>
+      whole === 0 ? null : Math.round((part / whole) * 1000) / 10;
+    const retained = (prev: Set<string> | null, cur: Set<string>) =>
+      prev === null ? null : pct([...prev].filter((id) => cur.has(id)).length, prev.size);
+
+    const weekly: PilotMetricsDto['weekly'] = [];
+    let prevWorkers: Set<string> | null = null;
+    let prevEmployers: Set<string> | null = null;
+    for (const w of weeks) {
+      const wq = pilotQueries({ cityId: city.id, from: w.from, to: w.to });
+      const workers = await ids(wq.activeWorkers);
+      const employers = await ids(wq.activeEmployers);
+      weekly.push({
+        weekStart: w.start,
+        activeWorkers: workers.size,
+        activeEmployers: employers.size,
+        workerRetentionPct: retained(prevWorkers, workers),
+        employerRetentionPct: retained(prevEmployers, employers),
+      });
+      prevWorkers = workers;
+      prevEmployers = employers;
+    }
+
+    const generated = Number(money?.generated ?? 0);
+    const collected = Number(money?.collected ?? 0);
+    const f = funnel ?? {
+      created: 0,
+      with_offer: 0,
+      assigned: 0,
+      completed: 0,
+      collected: 0,
+      expired: 0,
+    };
+    return {
+      cityId: city.id,
+      cityName: city.name,
+      startedAt: started === '' ? null : started,
+      from: from.toISOString(),
+      to: to.toISOString(),
+      funnel: {
+        created: f.created,
+        withOffer: f.with_offer,
+        assigned: f.assigned,
+        completed: f.completed,
+        commissionCollected: f.collected,
+      },
+      avgFirstOfferSec: first?.seconds == null ? null : Math.round(first.seconds),
+      expirationRatePct: pct(f.expired, f.created),
+      collectionRatePct: generated === 0 ? null : Math.round((collected / generated) * 1000) / 10,
+      weekly,
     };
   }
 

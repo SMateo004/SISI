@@ -2,7 +2,7 @@ import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Admin } from '../common/admin/admin-permissions';
 import { DashboardService } from './dashboard.service';
-import { CountersDto, DashboardDto, DashboardQueryDto } from './dto/dashboard.dto';
+import { CountersDto, DashboardDto, DashboardQueryDto, PilotMetricsDto } from './dto/dashboard.dto';
 
 @ApiTags('admin')
 @Admin('dashboard')
@@ -19,6 +19,17 @@ export class DashboardController {
   @ApiOkResponse({ type: DashboardDto })
   get(@Query() query: DashboardQueryDto): Promise<DashboardDto> {
     return this.dashboard.dashboard(query.range ?? 'day', query.cityId);
+  }
+
+  @Get('dashboard/pilot')
+  @ApiOperation({
+    summary: 'Métricas del piloto (ADR-0052)',
+    description:
+      'Embudo (creada → con oferta → asignada → terminada → comisión cobrada), primera oferta, expiración, tasa de cobro y retención semanal de trabajadores y empleadores, desde el inicio del piloto.',
+  })
+  @ApiOkResponse({ type: PilotMetricsDto })
+  pilot(@Query() query: DashboardQueryDto): Promise<PilotMetricsDto> {
+    return this.dashboard.pilot(query.cityId);
   }
 
   @Get('counters')

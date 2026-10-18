@@ -659,6 +659,8 @@ model OfferEvent {
 
   @@index([offerId, id])
   @@index([requestId, createdAt])
+  /// Trabajadores activos por semana (métricas del piloto, ADR-0052).
+  @@index([cityId, createdAt])
   @@map("offer_events")
 }
 

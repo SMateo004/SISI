@@ -361,7 +361,7 @@ Es idempotente (ADR-0036): correrlo de más no duplica nada.
 ### Alertas (ADR-0048)
 **En Sentry:**
 - **Proyectos:** `sisi-backend`, `sisi-mobile` y `sisi-admin`.
-- **Reglas de alerta** hacia el canal elegido (propuesta: email del equipo):
+- **Reglas de alerta** por **email** al equipo (canal aprobado; acción "Send a notification to Team"):
   - Backend, "A new issue is created" con el tag `alert` (outbox, colas, OTP y push del `OpsMonitor`);
   - Backend, "Number of events > 10 in 5 min" (5xx);
   - Mobile y admin: issues nuevas.
@@ -371,9 +371,11 @@ Es idempotente (ADR-0036): correrlo de más no duplica nada.
 
 | Opción | Costo | Frecuencia | Avisa por |
 | --- | --- | --- | --- |
-| UptimeRobot (propuesta) | Gratis | 5 min | Email, Slack, webhook |
+| UptimeRobot (propuesta, por email) | Gratis | 5 min | Email, Slack, webhook |
 | Better Stack | Gratis | 3 min; 30 s pago | Email, Slack, página de estado |
 | Sentry Uptime | En el plan de Sentry | 1 min | Las mismas reglas de Sentry |
+
+**Render:** Account → Notifications → email en "Deploy failed" y "Service unhealthy" de los servicios de producción.
 
 **Simulacro (solo staging):**
 - `npm run dev:tools -- ops-drill outbox` (o `otp`, `push`); esperar la alerta (≤ 1 min más la regla); `ops-drill clear` lo deshace.
@@ -407,12 +409,22 @@ Es idempotente (ADR-0036): correrlo de más no duplica nada.
 ### Piloto cerrado (ADR-0052)
 1. **Zona:** Panel → Catálogo → Ciudades → Zona. Pegar el GeoJSON del área (dibujado en geojson.io), probar puntos de los bordes y guardar con motivo.
 2. **Números:** Panel → Configuración → Piloto: pegar los números invitados (uno por línea).
-3. **Cerrar el piloto:** Configuración → Feature flags → `pilot.closed` (Santa Cruz) → encender.
+3. **Cerrar el piloto:** Configuración → Feature flags → `pilot.closed` (Santa Cruz) → encender. Con los textos v0 vigentes, en producción el seed ya lo encendió y no se puede apagar (sección siguiente).
 4. **Inicio del piloto:** Parámetros → "Inicio del piloto" (AAAA-MM-DD), para las métricas del dashboard.
 5. **Soporte:** Parámetros → "WhatsApp de soporte".
 6. **Seguimiento:**
    - Dashboard → Piloto, una vez por semana;
    - Configuración → Piloto → Interés: exportar el CSV para medir la demanda.
+
+### Textos v0 del piloto (ADR-0051)
+Los textos de `backend/legal/` son la versión v0 del piloto cerrado (`stage: piloto-cerrado`).
+1. **Revisarlos y aprobarlos:** completar o quitar los `[COMPLETAR: …]` y **borrar la primera línea** ("VERSIÓN v0 PARA TU REVISIÓN — PENDIENTE DE REVISIÓN LEGAL"). Sin esa línea, `node tools/check-legal.mjs` pasa y avisa que son textos del piloto.
+2. **Mientras sean los vigentes, en producción:**
+   - el seed de cada deploy enciende `pilot.closed` en la ciudad por defecto. Cargar la lista de números antes del primer deploy: con el flag encendido, solo los invitados crean cuenta;
+   - la API no arranca si `pilot.closed` quedara apagado ("Producción no arranca con los textos v0 del piloto…"): encenderlo con SQL revisado o volver a correr el seed;
+   - el panel responde 409 `PILOT_TEXTS_ACTIVE` si se intenta apagarlo.
+3. **Abrir el piloto:** publicar los textos definitivos como `version: 2` sin `stage` (todos los aceptan de nuevo). Recién entonces se puede apagar `pilot.closed`.
+4. **Un texto v0 ya publicado como final no se edita:** un cambio exige subir la versión (el seed falla si no).
 
 ### Actualización obligatoria (ADR-0054)
 Si una versión de la app tiene un error grave:

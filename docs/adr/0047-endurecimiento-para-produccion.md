@@ -50,4 +50,4 @@ Antes de abrir a usuarios reales hacía falta revisar cuatro frentes:
 - Un error de configuración se ve al arrancar, no con usuarios.
 - Una ruta nueva con parámetro hace fallar el e2e de IDOR hasta que se le agregue su caso.
 - La CSP real se exige recién después de verla en staging.
-- **Pendiente:** el arreglo de la vulnerabilidad del CLI de Prisma es subir a 7.10.1, que trae scripts de instalación nuevos y espera aprobación (`docs/seguridad/dependencias.md`).
+- **Prisma 7.10.1** (aprobado el 2026-10-18): sus scripts de instalación están en `allowScripts` y `audit-excepciones.json` quedó vacío. `npm audit` de producción, sin vulnerabilidades.

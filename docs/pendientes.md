@@ -29,10 +29,12 @@ Aprobadas el 2026-10-14. Hay que reflejarlas en el documento 01 en la sección i
 - [ ] **Dominio propio:** sin él, producción usa `.onrender.com` y `.vercel.app` (ADR-0039).
 - [ ] **Rangos de precio confirmados:** hoy son los provisionales de la Fase 2.
 - [ ] **Términos de moderación revisados** con alguien de Santa Cruz.
-- [ ] **Textos legales finales:** términos, privacidad y eliminación de datos.
-  - Reemplazan los borradores de `backend/legal/`.
-  - **Sin ellos no se construyen la API de producción ni el AAB de producción** (ADR-0051).
-  - Si quieres el humo y la pista interna antes, una versión "v0 piloto cerrado" sin marcadores, revisada por ti, los destraba.
+- [ ] **Textos legales v0 del piloto cerrado: esperan tu revisión** (aprobado el 2026-10-18 prepararlos).
+  - Están en `backend/legal/` con `stage: piloto-cerrado` y dicen que es un piloto cerrado con usuarios invitados.
+  - Tienen `[COMPLETAR: …]` (razón social, NIT, domicilio, transferencia internacional, plazos y derechos): complétalos o déjalos como texto.
+  - **Para aprobarlos:** borra la primera línea ("VERSIÓN v0 PARA TU REVISIÓN — PENDIENTE DE REVISIÓN LEGAL"). Hasta entonces `check-legal` falla y producción no arranca (runbook, "Textos v0 del piloto").
+  - Mientras sean los vigentes, producción exige `pilot.closed` encendido: el seed lo enciende, la API no arranca sin él y el panel no deja apagarlo (ADR-0051).
+- [ ] **Textos legales definitivos** (revisión de un abogado): términos, privacidad y eliminación de datos, como versión 2 sin `stage`. Recién con ellos se puede abrir el piloto.
 - [ ] **QR real de la empresa:** Panel → Cobros → QR.
 - [ ] **Cuentas de producción:**
   - Bird, con el remitente habilitado en Bolivia;
@@ -44,21 +46,21 @@ Aprobadas el 2026-10-14. Hay que reflejarlas en el documento 01 en la sección i
   - Google Play Console;
   - GitHub Environments `production` y `production-approval` (runbook, "Producción").
 - [ ] **WhatsApp Business de soporte:** Panel → Parámetros.
-- [ ] **Canal de alertas:** propuesta email del equipo (más un webhook de Slack opcional), para Sentry y el monitor externo.
+- [x] **Canal de alertas: email** (aprobado el 2026-10-18). Configurar la dirección del equipo en Sentry, Render y el monitor externo (runbook, "Alertas").
 - [ ] **Polígono de la zona del piloto:** Panel → Catálogo → Ciudades → Zona.
 - [ ] **Staging:** sigue bloqueado por los pasos manuales de la Fase 6. Lo necesitan la prueba de carga, el simulacro de alertas y la validación de la CSP.
 
-## Decisiones del Paso 0 de la Fase 7 (esperan tu respuesta)
-La tabla completa de valores en propuesta está en el reporte de la Fase 7. Estas son las recomendaciones que cambian algo. **No se aplicó ninguna en producción:**
-- [ ] **Anillos:** `2:5,5:15,10:15` (anillos 2 y 3 de 10 a 15 trabajadores; el 1 lo fija R4.2). Es parámetro del panel.
-- [ ] **Búsqueda mínima:** 5 min (hoy 3). Es parámetro del panel.
-- [ ] **Códigos OTP por IP:** 60 por hora (hoy 20), por el CGNAT de las operadoras. Variable `RATE_OTP_IP_PER_HOUR`.
-- [ ] **Nombre obligatorio para trabajar:** cambio de regla; hoy "Trabajador" si no hay nombre.
-- [ ] **Plazo operativo de una disputa:** 48 h (solo runbook, sin código).
+## Decisiones del Paso 0 de la Fase 7
+Aprobadas el 2026-10-18 y aplicadas como valores por defecto (el panel puede cambiarlas). El resto del Paso 0 queda con los valores actuales hasta nuevo aviso:
+- [x] **Anillos:** `2:5,5:15,10:15` (anillos 2 y 3 con 15 trabajadores; el 1 lo fija R4.2).
+- [x] **Búsqueda mínima:** 5 min.
+- [x] **Códigos OTP por IP:** 60 por hora, por el CGNAT (`RATE_OTP_IP_PER_HOUR`).
+- [x] **Nombre obligatorio para trabajar:** R1.3 ampliada en el doc 01.
+- [ ] **Plazo operativo de una disputa:** 48 h (solo runbook, sin código). Sigue en propuesta.
 - [x] **URLs firmadas de 15 min en producción:** `render.yaml` (ADR-0047). La foto de perfil y las de las solicitudes pasan de 1 h a 15 min.
 
 ## Propuestas de la Fase 7 por validar
-- [ ] **Retención (ADR-0050).** Apagada (`RETENTION_ENABLED=false`) hasta aprobar estos plazos:
+- [ ] **Retención (ADR-0050).** **Sigue apagada** (`RETENTION_ENABLED=false`) hasta que definas los plazos (decisión del 2026-10-18). Los propuestos:
 
   | Dato | Plazo propuesto |
   | --- | --- |
@@ -86,7 +88,9 @@ La tabla completa de valores en propuesta está en el reporte de la Fase 7. Esta
   - cron: 2 h.
 - [ ] **CSP de las apps web:** sale en `Report-Only`. Validarla en staging (consola del navegador) y encender `CSP_ENFORCE=true`.
 - [ ] **Versionado:** el primer piloto es la `0.9.0`; la `1.0.0`, la apertura pública.
-- [ ] **Prisma 7.10.1:** arregla 4 vulnerabilidades altas del CLI (no de la API), pero trae scripts de instalación nuevos (`prisma` preinstall, `@prisma/engines` postinstall). **Necesito tu aprobación** para agregarlos a `allowScripts` (`docs/seguridad/dependencias.md`). La excepción vence el 2026-11-30.
+- [x] **Prisma 7.10.1:** scripts de instalación aprobados el 2026-10-18 y agregados a `allowScripts`. `npm audit` de producción sin vulnerabilidades y sin excepciones.
+- [ ] **AAB y Play Console:** no se genera el AAB ni se crea nada en Play Console hasta confirmar el nombre comercial y el identificador del paquete.
+- [ ] **`main` y `v0.9.0`:** recién cuando staging esté validado con la prueba de carga y el simulacro de alertas.
 - [ ] **Primer admin en producción:** SQL revisado por dos personas y anotado en el runbook ("Producción → Primer admin").
 
 ## Después del piloto

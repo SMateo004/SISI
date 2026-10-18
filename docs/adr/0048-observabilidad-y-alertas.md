@@ -17,7 +17,7 @@
 - **Logs JSON** en staging y producción: una línea por mensaje con `service`, `env`, `release`, `context`, `requestId` y `userId`.
   - `X-Request-Id` entra o se genera, y vuelve en la respuesta. Se guarda en `outbox_events.request_id`, así los handlers del worker loguean con el id de la petición que originó el evento.
   - En local, el formato de Nest.
-- **Alertas.** Cada una llega a Sentry con un fingerprint estable (una issue por tipo), y una regla de Sentry avisa por el canal elegido (propuesta: email).
+- **Alertas.** Cada una llega a Sentry con un fingerprint estable (una issue por tipo), y una regla de Sentry avisa por **email** (canal aprobado el 2026-10-18; Slack u otro, más adelante).
 
   | Alerta | Cómo se detecta |
   | --- | --- |

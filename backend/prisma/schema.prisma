@@ -91,6 +91,10 @@ model User {
   adminAuditEntries      AdminAuditLog[]     @relation("AdminAuditLogAdmin")
 
   @@index([cityId])
+  // Búsqueda del panel por nombre o teléfono con ILIKE (pg_trgm, Fase 6) y listado por alta.
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_name_trgm_idx")
+  @@index([phone(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_phone_trgm_idx")
+  @@index([createdAt, id])
   @@map("users")
 }
 

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { AdminUsersModule } from './admin-users/admin-users.module';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { AdminGuard } from './common/admin/admin.guard';
@@ -58,6 +59,7 @@ import { WorkersModule } from './workers/workers.module';
     ReviewsModule,
     ReportsModule,
     BillingModule,
+    AdminUsersModule,
     RealtimeModule,
     RealtimeEmitterModule,
   ],

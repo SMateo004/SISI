@@ -9,7 +9,12 @@ import {
   WORKER_NOTIFIER,
   type WorkerNotifier,
 } from './worker.ports';
-import { forcesEmployerMode, nextWorkerStatus, type WorkerEvent } from './worker-status.machine';
+import {
+  forcesEmployerMode,
+  nextWorkerStatus,
+  type WorkerEvent,
+  type WorkerStatus,
+} from './worker-status.machine';
 
 /** LIFT_SUSPENSION llega sin hasOverdueDebt: lo resuelve el servicio consultando billing. */
 export type WorkerEventInput =
@@ -40,8 +45,14 @@ export class WorkerStatusService {
     userId: string,
     input: WorkerEventInput,
     actorId: string | null,
-    /** Cambios extra que deben quedar en la misma transacción (p. ej. datos del upgrade). */
-    alsoInTransaction?: (tx: Prisma.TransactionClient) => Promise<void>,
+    /**
+     * Cambios extra que deben quedar en la misma transacción (p. ej. datos del upgrade o la
+     * fila de auditoría del panel, ADR-0041). Recibe la transición ya validada.
+     */
+    alsoInTransaction?: (
+      tx: Prisma.TransactionClient,
+      transition: { from: WorkerStatus; to: WorkerStatus },
+    ) => Promise<void>,
   ): Promise<StatusChange> {
     const event: WorkerEvent =
       input.type === 'LIFT_SUSPENSION'
@@ -54,7 +65,7 @@ export class WorkerStatusService {
         (await tx.workerProfile.create({ data: { userId } }));
       const next = nextWorkerStatus(current.status, event);
       const now = new Date();
-      if (alsoInTransaction) await alsoInTransaction(tx);
+      if (alsoInTransaction) await alsoInTransaction(tx, { from: current.status, to: next });
 
       const { count } = await tx.workerProfile.updateMany({
         where: { userId, status: current.status },

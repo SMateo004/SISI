@@ -1,0 +1,9 @@
+# Falsos positivos revisados (Fase 7, ADR-0047): valores de prueba, no secretos.
+# Formato de gitleaks: <commit>:<archivo>:<regla>:<línea>.
+eca6869f5d74ff9451d320d9731d8888aad92d42:backend/test/notifications.e2e-spec.ts:generic-api-key:95
+eca6869f5d74ff9451d320d9731d8888aad92d42:backend/test/notifications.e2e-spec.ts:generic-api-key:96
+eca6869f5d74ff9451d320d9731d8888aad92d42:backend/test/notifications.e2e-spec.ts:generic-api-key:127
+24fac2e82cbca988ffa0360866d9eba087539918:backend/src/auth/otp/otp.spec.ts:generic-api-key:206
+24fac2e82cbca988ffa0360866d9eba087539918:backend/src/auth/otp/otp.spec.ts:generic-api-key:217
+24fac2e82cbca988ffa0360866d9eba087539918:backend/src/auth/otp/otp.spec.ts:generic-api-key:238
+669c0483c87431610c416fb1933b557b0ced2633:backend/.env.example:generic-api-key:12

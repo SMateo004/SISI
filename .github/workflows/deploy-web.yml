@@ -112,6 +112,10 @@ jobs:
           'self.FIREBASE_CONFIG='+JSON.stringify({apiKey:e.FIREBASE_API_KEY,appId:e.FIREBASE_APP_ID,
           messagingSenderId:e.FIREBASE_SENDER_ID,projectId:e.FIREBASE_PROJECT_ID})+';')"
 
+      # Ningún secreto de servidor en lo que se publica (ADR-0047).
+      - name: Build sin secretos
+        run: node ../../tools/scan-web-build.mjs build/web
+
       # Página pública de eliminación de cuenta (Google Play, ADR-0049): /eliminar-cuenta.
       - name: API de la página de eliminación de cuenta
         if: matrix.project == 'app-web'

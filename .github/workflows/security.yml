@@ -1,0 +1,48 @@
+name: security
+
+# Revisión de seguridad continua (ADR-0047):
+#   - gitleaks sobre TODO el historial de git (no solo el último commit);
+#   - npm audit de producción: falla con una vulnerabilidad alta o crítica sin excepción
+#     documentada en docs/seguridad/audit-excepciones.json (o con una excepción vencida).
+# También cada lunes, para enterarse de vulnerabilidades nuevas sin esperar un cambio.
+
+on:
+  push:
+    branches: [main, develop, "feature/**"]
+  pull_request:
+  schedule:
+    - cron: "0 12 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: Secretos en el historial (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        run: >-
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.28.0
+          git /repo --log-opts="--all" --redact --gitleaks-ignore-path /repo/.gitleaksignore
+
+  audit:
+    name: npm audit (producción)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Auditoría con excepciones documentadas
+        run: node tools/audit-check.mjs

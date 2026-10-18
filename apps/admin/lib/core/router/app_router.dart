@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/login_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
+import '../../features/verifications/verification_detail_screen.dart';
+import '../../features/verifications/verifications_screen.dart';
 import '../auth/session.dart';
 import '../widgets/admin_shell.dart';
 
@@ -52,6 +54,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutes.home,
             builder: (_, _) => const DashboardScreen(),
+          ),
+          GoRoute(
+            path: '/verificaciones',
+            builder: (_, _) => const VerificationsScreen(),
+            routes: [
+              GoRoute(
+                path: ':userId',
+                builder: (_, s) => VerificationDetailScreen(
+                  userId: s.pathParameters['userId']!,
+                ),
+              ),
+            ],
           ),
         ],
       ),

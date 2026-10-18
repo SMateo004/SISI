@@ -1,26 +1,28 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import {
-  ApiBearerAuth,
   ApiConflictResponse,
-  ApiForbiddenResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { type AuthenticatedUser, CurrentUser } from '../auth/decorators/auth.decorators';
+import { AdminCtx, type AdminContext } from '../audit/admin-context';
 import { Admin } from '../common/admin/admin-permissions';
 import { ApiErrorBody } from '../common/errors/api-error';
+import { AdminJobsService } from './admin-jobs.service';
+import { AdminJobDetailDto } from './dto/admin-job.dto';
 import { AdminDisputedJobDto, ResolveDisputeDto } from './dto/job.dto';
 import { JobsService } from './jobs.service';
 
-/** Disputas de trabajos (mínimo; la consola completa llega en la Fase 6). */
+/** Disputas de trabajos (R6, ADR-0029): lista, detalle y resolución. */
 @ApiTags('admin')
-@ApiBearerAuth()
 @Admin('moderacion')
-@ApiForbiddenResponse({ type: ApiErrorBody, description: 'FORBIDDEN: solo administradores' })
 @Controller('admin/jobs')
 export class AdminJobsController {
-  constructor(private readonly jobs: JobsService) {}
+  constructor(
+    private readonly jobs: JobsService,
+    private readonly adminJobs: AdminJobsService,
+  ) {}
 
   @Get('disputed')
   @ApiOperation({ summary: 'Trabajos con un problema reportado, sin resolver' })
@@ -29,20 +31,32 @@ export class AdminJobsController {
     return this.jobs.disputed();
   }
 
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Detalle de un trabajo para revisar una disputa',
+    description:
+      'Partes, solicitud, montos, línea de tiempo (job_events), todo el chat (incluido lo retenido) y las ofertas con su historial (offer_events).',
+  })
+  @ApiOkResponse({ type: AdminJobDetailDto })
+  @ApiNotFoundResponse({ type: ApiErrorBody, description: 'JOB_NOT_FOUND' })
+  detail(@Param('id', ParseUUIDPipe) id: string): Promise<AdminJobDetailDto> {
+    return this.adminJobs.detail(id);
+  }
+
   @Post(':id/resolve')
   @HttpCode(200)
   @ApiOperation({
     summary: 'Resolver una disputa',
     description:
-      'confirm → terminado con comisión (job.completed); cancel → cancelado sin comisión. La nota queda en el historial.',
+      'confirm → terminado con comisión (job.completed); cancel → cancelado sin comisión. La nota queda en el historial y en la auditoría.',
   })
   @ApiOkResponse({ schema: { properties: { status: { type: 'string', example: 'terminado' } } } })
   @ApiConflictResponse({ type: ApiErrorBody, description: 'JOB_TRANSITION_NOT_ALLOWED' })
   resolve(
-    @CurrentUser() current: AuthenticatedUser,
+    @AdminCtx() ctx: AdminContext,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ResolveDisputeDto,
   ): Promise<{ status: string }> {
-    return this.jobs.resolveDispute(current.id, id, dto.decision, dto.note.trim());
+    return this.adminJobs.resolve(ctx, id, dto.decision, dto.note.trim());
   }
 }

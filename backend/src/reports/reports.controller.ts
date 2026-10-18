@@ -11,10 +11,11 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { type AuthenticatedUser, CurrentUser } from '../auth/decorators/auth.decorators';
+import { AdminCtx, type AdminContext } from '../audit/admin-context';
 import { Admin } from '../common/admin/admin-permissions';
 import { ApiErrorBody } from '../common/errors/api-error';
 import {
-  AdminReportDto,
+  AdminReportPageDto,
   CreateReportDto,
   ListReportsQuery,
   ReportDto,
@@ -66,9 +67,9 @@ export class AdminReportsController {
 
   @Get()
   @ApiOperation({ summary: 'Reportes por estado (por defecto, pendientes)' })
-  @ApiOkResponse({ type: [AdminReportDto] })
-  list(@Query() q: ListReportsQuery): Promise<AdminReportDto[]> {
-    return this.reports.list(q.status);
+  @ApiOkResponse({ type: AdminReportPageDto })
+  list(@Query() q: ListReportsQuery): Promise<AdminReportPageDto> {
+    return this.reports.list(q.status, q.cursor);
   }
 
   @Post(':id/resolve')
@@ -82,10 +83,10 @@ export class AdminReportsController {
   @ApiNotFoundResponse({ type: ApiErrorBody, description: 'REPORT_NOT_FOUND' })
   @ApiConflictResponse({ type: ApiErrorBody, description: 'REPORT_ALREADY_RESOLVED' })
   resolve(
-    @CurrentUser() current: AuthenticatedUser,
+    @AdminCtx() ctx: AdminContext,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ResolveReportDto,
   ): Promise<ResolveReportResultDto> {
-    return this.reports.resolve(current.id, id, dto.valid, dto.resolution.trim());
+    return this.reports.resolve(ctx, id, dto.valid, dto.resolution.trim());
   }
 }

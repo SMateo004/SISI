@@ -1,3 +1,5 @@
+import { AdminAuditService } from '../audit/admin-audit.service';
+import type { AdminContext } from '../audit/admin-context';
 import { assertNotSelf } from '../common/admin/self-review';
 import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -7,13 +9,20 @@ import type { Report } from '../generated/prisma/client';
 import { ModerationService } from '../moderation/moderation.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { WorkerStatusService } from '../workers/worker-status.service';
-import type { AdminReportDto, ReportDto, ResolveReportResultDto } from './dto/report.dto';
+import type {
+  AdminReportDto,
+  AdminReportPageDto,
+  ReportDto,
+  ResolveReportResultDto,
+} from './dto/report.dto';
 import {
   type ReportReasonValue,
   type ReportTargetValue,
   type SuspensionDecision,
   suspensionDecision,
 } from './report.rules';
+
+const ADMIN_PAGE = 25;
 
 const targetNotFound = (): ApiError =>
   new ApiError(
@@ -37,6 +46,7 @@ export class ReportsService {
     private readonly prisma: PrismaService,
     private readonly moderation: ModerationService,
     private readonly workerStatus: WorkerStatusService,
+    private readonly audit: AdminAuditService,
     @Inject(ConfigService) config: AppConfigService,
   ) {
     this.threshold = config.get('REPORTS_SUSPEND_THRESHOLD', { infer: true });
@@ -90,23 +100,35 @@ export class ReportsService {
 
   // ---- Admin ----
 
+  /** Por estado, del más antiguo al más nuevo (el que más espera, primero), 25 por página. */
   async list(
     status: 'pendiente' | 'valido' | 'descartado' = 'pendiente',
-  ): Promise<AdminReportDto[]> {
+    cursor?: string,
+  ): Promise<AdminReportPageDto> {
     const rows = await this.prisma.report.findMany({
       where: { status },
-      orderBy: { createdAt: 'asc' },
-      take: 100,
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: ADMIN_PAGE + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
-    return Promise.all(rows.map((r) => this.toAdminDto(r)));
+    const page = rows.slice(0, ADMIN_PAGE);
+    return {
+      items: await Promise.all(page.map((r) => this.toAdminDto(r))),
+      nextCursor: rows.length > ADMIN_PAGE ? (page.at(-1)?.id ?? null) : null,
+    };
   }
 
+  /**
+   * Marca un reporte válido o descartado. Desde el panel (`actor`), la decisión y lo que
+   * provoque (suspensión o marca, R9.3) quedan auditados en su transacción; dev-tools pasa null.
+   */
   async resolve(
-    adminId: string | null,
+    actor: AdminContext | null,
     reportId: string,
     valid: boolean,
     resolution: string,
   ): Promise<ResolveReportResultDto> {
+    const adminId = actor?.adminId ?? null;
     const current = await this.prisma.report.findUnique({
       where: { id: reportId },
       select: { reporterId: true, reportedUserId: true },
@@ -119,14 +141,30 @@ export class ReportsService {
       [current.reporterId, current.reportedUserId],
       'No puedes resolver un reporte en el que eres parte.',
     );
-    const { count } = await this.prisma.report.updateMany({
-      where: { id: reportId, status: 'pendiente' },
-      data: {
-        status: valid ? 'valido' : 'descartado',
-        resolution,
-        resolvedById: adminId,
-        resolvedAt: new Date(),
-      },
+    const count = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.report.updateMany({
+        where: { id: reportId, status: 'pendiente' },
+        data: {
+          status: valid ? 'valido' : 'descartado',
+          resolution,
+          resolvedById: adminId,
+          resolvedAt: new Date(),
+        },
+      });
+      if (updated.count > 0 && actor) {
+        await this.audit.record(tx, actor, {
+          action: valid ? 'report.valid' : 'report.dismiss',
+          targetType: 'report',
+          targetId: reportId,
+          before: { status: 'pendiente' },
+          after: {
+            status: valid ? 'valido' : 'descartado',
+            reportedUserId: current.reportedUserId,
+          },
+          reason: resolution,
+        });
+      }
+      return updated.count;
     });
     const report = await this.prisma.report.findUnique({ where: { id: reportId } });
     if (!report) {
@@ -139,7 +177,7 @@ export class ReportsService {
         'Este reporte ya fue resuelto.',
       );
     }
-    const outcome = valid ? await this.enforce(report.reportedUserId, adminId) : 'none';
+    const outcome = valid ? await this.enforce(report.reportedUserId, actor) : 'none';
     return { report: await this.toAdminDto(report), outcome };
   }
 
@@ -147,7 +185,8 @@ export class ReportsService {
    * Aplica R9.3 al reportado. Idempotente: si ya está suspendido o marcado, no hace nada,
    * así que se puede volver a correr (dev-tools) si una suspensión falló a medias.
    */
-  async enforce(userId: string, actorId: string | null): Promise<SuspensionDecision> {
+  async enforce(userId: string, actor: AdminContext | null): Promise<SuspensionDecision> {
+    const actorId = actor?.adminId ?? null;
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
       select: { moderationFlaggedAt: true, workerProfile: { select: { status: true } } },
@@ -158,16 +197,40 @@ export class ReportsService {
       workerStatus: user.workerProfile?.status ?? null,
       alreadyFlagged: user.moderationFlaggedAt !== null,
     });
+    const reason = `${this.threshold} reportes válidos (R9.3)`;
     if (decision === 'suspend') {
       await this.workerStatus.apply(
         userId,
-        { type: 'SUSPEND', reason: `${this.threshold} reportes válidos (R9.3)` },
+        { type: 'SUSPEND', reason },
         actorId,
+        actor
+          ? (tx, { from, to }) =>
+              this.audit.record(tx, actor, {
+                action: 'report.suspend',
+                targetType: 'worker',
+                targetId: userId,
+                before: { status: from },
+                after: { status: to },
+                reason,
+              })
+          : undefined,
       );
     } else if (decision === 'flag') {
-      await this.prisma.user.updateMany({
-        where: { id: userId, moderationFlaggedAt: null },
-        data: { moderationFlaggedAt: new Date() },
+      await this.prisma.$transaction(async (tx) => {
+        const { count } = await tx.user.updateMany({
+          where: { id: userId, moderationFlaggedAt: null },
+          data: { moderationFlaggedAt: new Date() },
+        });
+        if (count > 0 && actor) {
+          await this.audit.record(tx, actor, {
+            action: 'report.flag',
+            targetType: 'user',
+            targetId: userId,
+            before: { flagged: false },
+            after: { flagged: true },
+            reason,
+          });
+        }
       });
       this.logger.warn(
         `Usuario ${userId} marcado para revisión: ${this.threshold} reportes válidos`,
@@ -273,22 +336,71 @@ export class ReportsService {
   }
 
   private async toAdminDto(r: Report): Promise<AdminReportDto> {
-    const user = await this.prisma.user.findUniqueOrThrow({
-      where: { id: r.reportedUserId },
-      select: { moderationFlaggedAt: true, workerProfile: { select: { status: true } } },
-    });
+    const [user, reporter, target] = await Promise.all([
+      this.prisma.user.findUniqueOrThrow({
+        where: { id: r.reportedUserId },
+        select: {
+          name: true,
+          phone: true,
+          moderationFlaggedAt: true,
+          workerProfile: { select: { status: true } },
+        },
+      }),
+      this.prisma.user.findUniqueOrThrow({
+        where: { id: r.reporterId },
+        select: { name: true, phone: true },
+      }),
+      this.targetSummary(r.targetType, r.targetId),
+    ]);
     return Object.assign(toDto(r), {
       reporterId: r.reporterId,
+      reporterName: reporter.name,
+      reporterPhone: reporter.phone,
       note: r.note,
       noteHeld: r.noteHeld,
       resolution: r.resolution,
+      targetSummary: target,
       reportedUser: {
         id: r.reportedUserId,
+        name: user.name,
+        phone: user.phone,
         validReporters: await this.validReporters(r.reportedUserId),
         workerStatus: user.workerProfile?.status ?? null,
         flaggedAt: user.moderationFlaggedAt?.toISOString() ?? null,
       },
     });
+  }
+
+  /** Qué se reportó, en una línea, para decidir sin abrir otra pantalla. */
+  private async targetSummary(type: ReportTargetValue, id: string): Promise<string> {
+    const clip = (text: string) => (text.length > 160 ? `${text.slice(0, 157)}…` : text);
+    switch (type) {
+      case 'request': {
+        const r = await this.prisma.serviceRequest.findUnique({
+          where: { id },
+          select: { description: true },
+        });
+        return r ? clip(r.description) : 'Solicitud no encontrada';
+      }
+      case 'chat_message': {
+        const m = await this.prisma.chatMessage.findUnique({
+          where: { id },
+          select: { body: true },
+        });
+        return m ? clip(m.body) : 'Mensaje no encontrado';
+      }
+      case 'job': {
+        const j = await this.prisma.job.findUnique({
+          where: { id },
+          select: { status: true, request: { select: { category: { select: { name: true } } } } },
+        });
+        return j ? `Trabajo de ${j.request.category.name} (${j.status})` : 'Trabajo no encontrado';
+      }
+      case 'user': {
+        const u = await this.prisma.user.findUnique({ where: { id }, select: { name: true } });
+        return u ? `Perfil de ${u.name ?? 'usuario sin nombre'}` : 'Usuario no encontrado';
+      }
+    }
   }
 }
 

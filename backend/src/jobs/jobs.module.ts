@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ModerationModule } from '../moderation/moderation.module';
 import { ReviewPublisherModule } from '../reviews/reviews.module';
 import { AdminJobsController } from './admin-jobs.controller';
+import { AdminJobsService } from './admin-jobs.service';
 import { JobStatusModule } from './job-status.module';
 import { JobTrackingModule } from './job-tracking.module';
 import { JobsController } from './jobs.controller';
@@ -11,7 +12,7 @@ import { JobsService } from './jobs.service';
 @Module({
   imports: [JobStatusModule, ModerationModule, JobTrackingModule, ReviewPublisherModule],
   controllers: [JobsController, AdminJobsController],
-  providers: [JobsService],
+  providers: [JobsService, AdminJobsService],
   exports: [JobsService],
 })
 export class JobsModule {}

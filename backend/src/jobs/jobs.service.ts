@@ -1,4 +1,3 @@
-import { assertNotSelf } from '../common/admin/self-review';
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { AppConfigService } from '../config/app-config';
@@ -120,32 +119,6 @@ export class JobsService {
       disputedAt: job.disputedAt?.toISOString() ?? '',
       disputeNote: job.disputeNote,
     }));
-  }
-
-  /** El admin resuelve una disputa; la nota queda en job_events. */
-  async resolveDispute(
-    adminId: string,
-    jobId: string,
-    decision: 'confirm' | 'cancel',
-    note: string,
-  ): Promise<{ status: string }> {
-    const job = await this.prisma.job.findUnique({
-      where: { id: jobId },
-      select: { workerId: true, employerId: true },
-    });
-    if (!job) throw jobNotFound();
-    assertNotSelf(
-      adminId,
-      [job.workerId, job.employerId],
-      'No puedes resolver una disputa de un trabajo tuyo.',
-    );
-    const { to } = await this.status.apply(
-      jobId,
-      decision === 'confirm' ? 'RESOLVE_CONFIRM' : 'RESOLVE_CANCEL',
-      { role: 'admin', id: adminId },
-      { note },
-    );
-    return { status: to };
   }
 
   private async roleOf(userId: string, jobId: string): Promise<JobActorRole> {

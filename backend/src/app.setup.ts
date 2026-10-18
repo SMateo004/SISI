@@ -7,6 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
+import { securityHeaders } from './common/http/security-headers';
 import type { AppConfigService } from './config/app-config';
 import { RedisIoAdapter } from './realtime/redis-io.adapter';
 
@@ -41,10 +42,14 @@ export function assertProductionCors(origins: readonly string[]): void {
 export function setupApp(app: INestApplication): void {
   const config = app.get<AppConfigService>(ConfigService);
   const origins = config.get('CORS_ORIGINS', { infer: true });
-  if (config.get('APP_ENV', { infer: true }) === 'production') assertProductionCors(origins);
+  const appEnv = config.get('APP_ENV', { infer: true });
+  if (appEnv === 'production') assertProductionCors(origins);
 
+  const express = app as NestExpressApplication;
+  express.disable('x-powered-by');
+  express.use(securityHeaders({ https: appEnv === 'staging' || appEnv === 'production' }));
   // Render (y cualquier proxy delante) envía la IP real en X-Forwarded-For: necesaria para los límites por IP.
-  (app as NestExpressApplication).set('trust proxy', 1);
+  express.set('trust proxy', 1);
   // Solo dominios web conocidos (Vercel y localhost). Las apps nativas no envían Origin.
   app.enableCors({ origin: origins.length > 0 ? origins : false, credentials: true });
   app.useGlobalPipes(

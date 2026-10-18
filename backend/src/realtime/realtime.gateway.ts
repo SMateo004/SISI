@@ -87,10 +87,18 @@ export class RealtimeGateway
     // El panel recibe las colas pendientes en vivo (ADR-0044).
     if (user.role === 'admin' && user.aud === 'admin') void socket.join(rooms.admins);
     this.local.set(socket.id, user.id);
-    await this.presence.touch([{ userId: user.id, socketId: socket.id }]);
+    // El temporizador se arma antes de cualquier await: si el cliente se desconecta mientras
+    // tanto, handleDisconnect ya lo encuentra y lo limpia (antes quedaba vivo hasta 15 min).
     if (user.expiresAt !== undefined) {
       const ms = Math.max(user.expiresAt - Date.now(), 0);
       socket.data.expiryTimer = setTimeout(() => socket.disconnect(true), ms);
+      socket.data.expiryTimer.unref();
+    }
+    await this.presence.touch([{ userId: user.id, socketId: socket.id }]);
+    if (socket.disconnected) {
+      // Se fue durante el await: no dejar su presencia marcada.
+      await this.presence.leave(user.id, socket.id);
+      return;
     }
     const open = await this.prisma.serviceRequest.findMany({
       where: {

@@ -70,6 +70,6 @@ import {
         },
     },
   ],
-  exports: [TokenService, JwtAuthGuard, RolesGuard],
+  exports: [TokenService, JwtAuthGuard, RolesGuard, OtpService],
 })
 export class AuthModule {}

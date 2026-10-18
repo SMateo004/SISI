@@ -76,6 +76,8 @@ model User {
   moderationFlaggedAt DateTime?  @map("moderation_flagged_at") @db.Timestamptz(3)
   /// Trabajos que canceló (sin penalidad por ahora, Fase 4).
   cancellationsCount  Int        @default(0) @map("cancellations_count")
+  /// Cuenta eliminada y anonimizada (ADR-0049): sin nombre, foto ni teléfono real.
+  deletedAt           DateTime?  @map("deleted_at") @db.Timestamptz(3)
   createdAt           DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt           DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -92,6 +94,7 @@ model User {
   jobsAsWorker           Job[]               @relation("JobWorker")
   adminAuditEntries      AdminAuditLog[]     @relation("AdminAuditLogAdmin")
   legalAcceptances       LegalAcceptance[]
+  accountDeletion        AccountDeletion?
 
   @@index([cityId])
   // Búsqueda del panel por nombre o teléfono con ILIKE (pg_trgm, Fase 6) y listado por alta.
@@ -1156,4 +1159,21 @@ model PilotInterest {
   @@unique([cityId, phone])
   @@index([cityId, createdAt])
   @@map("pilot_interest")
+}
+
+/// Registro de una eliminación de cuenta (ADR-0049). Sin el teléfono: solo un HMAC, para que el
+/// panel vea si el mismo número vuelve a registrarse (p. ej. después de una suspensión).
+model AccountDeletion {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String   @unique @map("user_id") @db.Uuid
+  phoneHmac        String   @map("phone_hmac")
+  /// app o web (página pública de eliminación).
+  source           String
+  hadWorkerProfile Boolean  @map("had_worker_profile")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([phoneHmac])
+  @@map("account_deletions")
 }

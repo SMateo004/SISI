@@ -1,5 +1,13 @@
-import { type CanActivate, type ExecutionContext, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  type CanActivate,
+  type ExecutionContext,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import type { Redis } from 'ioredis';
+import { REDIS_CLIENT } from '../../redis/redis.constants';
 import { ApiError } from '../../common/errors/api-error';
 import { setContextUser } from '../../observability/request-context';
 import { type AuthenticatedRequest, IS_PUBLIC_KEY } from '../decorators/auth.decorators';
@@ -47,6 +55,7 @@ export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly tokens: TokenService,
+    @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -64,6 +73,10 @@ export class JwtAuthGuard implements CanActivate {
       this.tokens,
       scheme === 'Bearer' ? token : undefined,
     );
+    // Una cuenta recién eliminada: sus tokens de acceso vigentes dejan de servir (ADR-0049).
+    if ((await this.redis.exists(`account:deleted:${user.id}`)) === 1) {
+      throw new ApiError(HttpStatus.UNAUTHORIZED, 'ACCOUNT_DELETED', 'Esta cuenta fue eliminada.');
+    }
     req.user = { id: user.id, role: user.role, aud: user.aud };
     setContextUser(user.id);
     return true;

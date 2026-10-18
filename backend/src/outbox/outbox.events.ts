@@ -69,6 +69,8 @@ export interface OutboxPayloads {
    * El trabajo terminó (R6.3, ADR-0030). Lo consume la Fase 5 para el ledger; montos como
    * texto con 2 decimales.
    */
+  /** Cuenta eliminada (ADR-0049): el worker borra sus archivos del bucket. */
+  'account.deleted': { userId: string; fileKeys: string[] };
   'job.completed': {
     jobId: string;
     workerId: string;

@@ -1,4 +1,6 @@
+import { AccountDeletionHandlers } from '../account-deletion/account-deletion.handlers';
 import { AuditModule } from '../audit/audit.module';
+import { StorageModule } from '../storage/storage.module';
 import { ObservabilityModule } from '../observability/observability.module';
 import { OpsMonitor } from '../observability/ops-monitor';
 import { AdminCountersPublisher } from '../dashboard/admin-counters.publisher';
@@ -54,6 +56,8 @@ import { RequestStatusModule } from '../requests/request-status.module';
     BillingDebtModule,
     BillingCapModule,
     ObservabilityModule,
+    // Borra archivos de cuentas eliminadas y de la retención (ADR-0049, ADR-0050).
+    StorageModule,
   ],
   providers: [
     RequestEventsHandlers,
@@ -66,6 +70,7 @@ import { RequestStatusModule } from '../requests/request-status.module';
     AdminCountersPublisher,
     // Alertas de outbox, colas, OTP y push, y latido del worker (ADR-0048).
     OpsMonitor,
+    AccountDeletionHandlers,
   ],
 })
 export class WorkerModule {}

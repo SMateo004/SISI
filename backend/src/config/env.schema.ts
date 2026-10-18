@@ -115,6 +115,8 @@ export const envSchema = z
     RATE_AUTH_IP_PER_MIN: positiveInt(30),
     /** Por usuario (ADR-0047): reportes, URLs de subida y registros de dispositivo. */
     RATE_REPORT_PER_HOUR: positiveInt(10),
+    /** Pedidos de código y confirmaciones para eliminar la cuenta (ADR-0049). */
+    RATE_ACCOUNT_DELETION_PER_DAY: positiveInt(5),
     /** "Pronto en tu zona": registros de interés por IP (ADR-0052). */
     RATE_PILOT_INTEREST_IP_PER_HOUR: positiveInt(10),
     RATE_UPLOAD_URL_PER_HOUR: positiveInt(60),

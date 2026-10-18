@@ -24,5 +24,7 @@ import { EarningsService } from './earnings.service';
     // Pasarela automática: sin implementar, detrás del flag payments.gateway (ADR-0037).
     { provide: PAYMENT_GATEWAY, useClass: NoPaymentGateway },
   ],
+  // La eliminación de cuenta muestra la deuda y cómo pagarla (ADR-0049).
+  exports: [EarningsService],
 })
 export class BillingModule {}

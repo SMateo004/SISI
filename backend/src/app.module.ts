@@ -19,6 +19,7 @@ import { RateLimitedFilter } from './common/rate-limit/rate-limited.filter';
 import { SisiThrottlerGuard } from './common/rate-limit/sisi-throttler.guard';
 import { AppVersionGuard } from './client-app/app-version.guard';
 import { ClientAppModule } from './client-app/client-app.module';
+import { AccountDeletionModule } from './account-deletion/account-deletion.module';
 import { PilotModule } from './pilot/pilot.module';
 import { LegalGuard } from './legal/legal.guard';
 import { LegalModule } from './legal/legal.module';
@@ -84,6 +85,7 @@ import { WorkersModule } from './workers/workers.module';
     LegalModule,
     ClientAppModule,
     PilotModule,
+    AccountDeletionModule,
   ],
   providers: [
     // Versión mínima de la app primero: una app vieja recibe 426 sin gastar nada más (ADR-0054).

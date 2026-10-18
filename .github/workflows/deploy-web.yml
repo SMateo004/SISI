@@ -102,6 +102,15 @@ jobs:
           'self.FIREBASE_CONFIG='+JSON.stringify({apiKey:e.FIREBASE_API_KEY,appId:e.FIREBASE_APP_ID,
           messagingSenderId:e.FIREBASE_SENDER_ID,projectId:e.FIREBASE_PROJECT_ID})+';')"
 
+      # Página pública de eliminación de cuenta (Google Play, ADR-0049): /eliminar-cuenta.
+      - name: API de la página de eliminación de cuenta
+        if: matrix.project == 'app-web'
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: >-
+          node -e "require('fs').writeFileSync('build/web/eliminar-cuenta/config.js',
+          'window.SISI_CONFIG='+JSON.stringify({apiUrl:process.env.API_URL})+';')"
+
       # El admin llama a la API por su propio origen (/api/* → API_URL) para que la cookie
       # httpOnly del refresh sea de primera parte (ADR-0040). El socket va directo a SOCKET_URL.
       - name: Proxy /api del admin

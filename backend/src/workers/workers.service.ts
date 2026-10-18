@@ -23,6 +23,7 @@ import {
 } from './dto/worker.dto';
 import { canApply, type WorkerStatus } from './worker-status.machine';
 import { WorkerStatusService } from './worker-status.service';
+import { hasName } from './mode-switch.rules';
 
 type ProfileWithRelations = WorkerProfile & {
   documents: WorkerDocument[];
@@ -110,6 +111,15 @@ export class WorkersService {
         HttpStatus.BAD_REQUEST,
         'PHONE_NOT_VERIFIED',
         'Primero verifica tu número de celular.',
+      );
+    }
+
+    // R1.3 ampliada (Fase 7): sin nombre no se envía la solicitud.
+    if (!hasName(user.name)) {
+      throw new ApiError(
+        HttpStatus.BAD_REQUEST,
+        'NAME_REQUIRED',
+        'Antes de enviar tu solicitud, carga tu nombre en tu perfil.',
       );
     }
 

@@ -1425,7 +1425,7 @@
             }
           },
           "409": {
-            "description": "WORKER_NOT_REQUESTED, WORKER_UNDER_REVIEW, WORKER_REJECTED, WORKER_BLOCKED_DEBT o WORKER_SUSPENDED",
+            "description": "WORKER_NOT_REQUESTED, WORKER_UNDER_REVIEW, WORKER_REJECTED, WORKER_BLOCKED_DEBT, WORKER_SUSPENDED o NAME_REQUIRED (R1.3 ampliada)",
             "content": {
               "application/json": {
                 "schema": {
@@ -9225,7 +9225,8 @@
               "VIEW_REVIEW_STATUS",
               "RESUBMIT_VERIFICATION",
               "PAY_COMMISSION",
-              "CONTACT_SUPPORT"
+              "CONTACT_SUPPORT",
+              "COMPLETE_PROFILE"
             ],
             "example": "COMPLETE_VERIFICATION"
           },

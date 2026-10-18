@@ -126,6 +126,7 @@ String routeForAction(NextAction action) => switch (action) {
   NextAction.completeVerification ||
   NextAction.resubmitVerification => Routes.workerOnboarding,
   NextAction.payCommission => Routes.pay,
+  NextAction.completeProfile => Routes.profile,
   _ => Routes.workerStatus,
 };
 

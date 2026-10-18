@@ -5,7 +5,7 @@
 ## R1. Cuentas y modos
 - R1.1 Cada persona tiene **una sola cuenta** identificada por su número de teléfono.
 - R1.2 Toda cuenta nueva inicia en **modo empleador**.
-- R1.3 El modo trabajador requiere **upgrade**: carnet de identidad (anverso y reverso), selfie, teléfono verificado, mayoría de edad, categorías elegidas, medio de transporte y radio máximo de trabajo.
+- R1.3 El modo trabajador requiere **upgrade**: carnet de identidad (anverso y reverso), selfie, teléfono verificado, mayoría de edad, categorías elegidas, medio de transporte y radio máximo de trabajo. **Además, la cuenta debe tener su nombre cargado** (aprobado el 2026-10-18, Fase 7): sin nombre no se envía la solicitud de trabajador ni se pasa a modo trabajador, aunque el perfil ya esté aprobado. El empleador ve el nombre corto del trabajador en cada oferta (R5.3).
 - R1.4 Estados del perfil de trabajador: `sin_solicitar`, `pendiente_revision`, `aprobado`, `rechazado`, `bloqueado_deuda`, `suspendido_moderacion`.
 - R1.5 El interruptor de modo solo cambia a trabajador si el estado es `aprobado`. En otro caso muestra el motivo.
 - R1.6 Un trabajador bloqueado puede seguir usando la app como empleador.

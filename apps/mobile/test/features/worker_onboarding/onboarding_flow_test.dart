@@ -181,4 +181,24 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Paso 1 de 5'), findsOneWidget);
   });
+
+  testWidgets(
+    'sin nombre pide completar el perfil antes de la solicitud (R1.3)',
+    (tester) async {
+      await pumpSisiApp(
+        tester,
+        storedTokens: testTokens,
+        me: FakeMeRepository(user: testUser(name: null)),
+        worker: FakeWorkerRepository(),
+      );
+      await tester.tap(find.text('¿Quieres trabajar en SISI?'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Completa tu verificación'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('onboarding-name-required')), findsOneWidget);
+      await tester.tap(find.text('Completar mi perfil'));
+      await tester.pumpAndSettle();
+      expect(find.text('Mi perfil'), findsOneWidget);
+    },
+  );
 }

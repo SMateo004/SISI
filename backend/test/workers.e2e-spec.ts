@@ -52,9 +52,18 @@ describe('Trabajador: upgrade, documentos e interruptor (e2e)', () => {
     maxRadiusKm: 5,
   });
 
-  /** Cuenta con documentos subidos y solicitud enviada (pendiente_revision). */
+  /** R1.3 ampliada: sin nombre no se envía la solicitud ni se trabaja. */
+  const setName = (token: string) =>
+    request(server())
+      .patch('/me')
+      .set(...bearer(token))
+      .send({ name: 'Juana Rojas' })
+      .expect(200);
+
+  /** Cuenta con nombre, documentos subidos y solicitud enviada (pendiente_revision). */
   const submittedWorker = async (): Promise<LoginResponseDto> => {
     const session = await login(t);
+    await setName(session.accessToken);
     for (const type of ['ci_front', 'ci_back', 'selfie'] as const) {
       await uploadDocument(session.accessToken, type);
     }
@@ -85,6 +94,7 @@ describe('Trabajador: upgrade, documentos e interruptor (e2e)', () => {
 
   it('upgrade completo: documentos a S3, solicitud y estado pendiente_revision', async () => {
     const session = await login(t);
+    await setName(session.accessToken);
     const empty = (
       await request(server())
         .get('/me/worker')
@@ -152,6 +162,7 @@ describe('Trabajador: upgrade, documentos e interruptor (e2e)', () => {
 
   it('valida edad, categorías, transporte y radio', async () => {
     const session = await login(t);
+    await setName(session.accessToken);
     for (const type of ['ci_front', 'ci_back', 'selfie'] as const) {
       await uploadDocument(session.accessToken, type);
     }
@@ -237,6 +248,41 @@ describe('Trabajador: upgrade, documentos e interruptor (e2e)', () => {
     expect(approved.activeMode).toBe('worker');
     const back = (await switchMode(session.accessToken, 'employer').expect(200)).body as UserDto;
     expect(back.activeMode).toBe('employer');
+  });
+
+  it('sin nombre no se envía la solicitud ni se pasa a worker, aunque esté aprobado (R1.3)', async () => {
+    const session = await login(t);
+    for (const type of ['ci_front', 'ci_back', 'selfie'] as const) {
+      await uploadDocument(session.accessToken, type);
+    }
+    const noName = await request(server())
+      .post('/me/worker/upgrade')
+      .set(...bearer(session.accessToken))
+      .send(validUpgrade())
+      .expect(400);
+    expect(noName.body).toMatchObject({ code: 'NAME_REQUIRED' });
+
+    // Un perfil aprobado (p. ej. de antes de la regla) tampoco pasa a worker sin nombre.
+    const status = t.app.get(WorkerStatusService);
+    await status.apply(session.user.id, { type: 'SUBMIT' }, null, async (tx) => {
+      await tx.workerProfile.update({
+        where: { userId: session.user.id },
+        data: { transport: 'moto', maxRadiusKm: 5, birthDate: new Date('1995-04-21') },
+      });
+    });
+    await status.apply(session.user.id, { type: 'APPROVE' }, null);
+    const denied = await switchMode(session.accessToken, 'worker').expect(409);
+    expect(denied.body).toMatchObject({
+      code: 'NAME_REQUIRED',
+      nextAction: 'COMPLETE_PROFILE',
+      actionLabel: 'Completar mi perfil',
+    });
+    const user = await t.prisma.user.findUniqueOrThrow({ where: { id: session.user.id } });
+    expect(user.activeMode).toBe('employer');
+
+    await setName(session.accessToken);
+    const ok = (await switchMode(session.accessToken, 'worker').expect(200)).body as UserDto;
+    expect(ok.activeMode).toBe('worker');
   });
 
   it('interruptor sin solicitud: indica completar la verificación', async () => {

@@ -7,6 +7,9 @@ enum NextAction {
   resubmitVerification,
   payCommission,
   contactSupport,
+
+  /// Cargar el nombre en el perfil (R1.3 ampliada).
+  completeProfile,
   unknown;
 
   static NextAction fromApi(String? value) => switch (value) {
@@ -15,6 +18,7 @@ enum NextAction {
     'RESUBMIT_VERIFICATION' => resubmitVerification,
     'PAY_COMMISSION' => payCommission,
     'CONTACT_SUPPORT' => contactSupport,
+    'COMPLETE_PROFILE' => completeProfile,
     _ => unknown,
   };
 }

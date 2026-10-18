@@ -1,4 +1,4 @@
-import { decideModeSwitch } from './mode-switch.rules';
+import { decideModeSwitch, hasName } from './mode-switch.rules';
 import {
   allowedTransitions,
   canApply,
@@ -142,6 +142,21 @@ describe('interruptor de modo (R1.5, R1.6)', () => {
 
   it('a worker solo con estado aprobado', () => {
     expect(decideModeSwitch('worker', 'aprobado')).toEqual({ allowed: true });
+  });
+
+  it('aprobado pero sin nombre: completar el perfil (R1.3 ampliada)', () => {
+    expect(decideModeSwitch('worker', 'aprobado', false)).toMatchObject({
+      allowed: false,
+      code: 'NAME_REQUIRED',
+      nextAction: 'COMPLETE_PROFILE',
+    });
+    // Sin aprobar, manda el estado (la solicitud también pide el nombre).
+    expect(decideModeSwitch('worker', 'rechazado', false)).toMatchObject({
+      code: 'WORKER_REJECTED',
+    });
+    expect(hasName('  ')).toBe(false);
+    expect(hasName('Ana')).toBe(true);
+    expect(hasName(null)).toBe(false);
   });
 
   it.each([

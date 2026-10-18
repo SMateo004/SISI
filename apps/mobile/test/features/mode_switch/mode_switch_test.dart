@@ -114,6 +114,17 @@ void main() {
       ),
       'Tu verificación',
     ),
+    (
+      // R1.3 ampliada (Fase 7): aprobado pero sin nombre.
+      'sin nombre',
+      denial(
+        'NAME_REQUIRED',
+        'Para trabajar en SISI tu cuenta tiene que tener tu nombre. Cárgalo en tu perfil.',
+        NextAction.completeProfile,
+        'Completar mi perfil',
+      ),
+      'Mi perfil',
+    ),
   ];
 
   for (final (name, deniedWith, destination) in cases) {

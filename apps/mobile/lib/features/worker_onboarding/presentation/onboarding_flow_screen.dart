@@ -7,6 +7,7 @@ import '../../../core/files/picked_image.dart';
 import '../../../core/http/api_exception.dart';
 import '../../../core/router/routes.dart';
 import '../../../shared/money.dart';
+import '../../profile/application/current_user.dart';
 import '../application/onboarding_draft.dart';
 import '../data/worker_repository.dart';
 import '../domain/worker_models.dart';
@@ -69,6 +70,9 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen> {
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(workerProfileProvider);
+    // R1.3 ampliada: sin nombre no se envía la solicitud (el cliente lo ve en cada oferta).
+    final user = ref.watch(currentUserProvider).value;
+    final missingName = user != null && (user.name?.trim().length ?? 0) < 2;
     final draft = ref.watch(onboardingProvider);
     final controller = ref.read(onboardingProvider.notifier);
 
@@ -77,6 +81,15 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen> {
       body: switch (profileAsync) {
         AsyncError(:final error) => _Message(
           text: ApiException.from(error).message,
+        ),
+        AsyncData() when missingName => _Message(
+          key: const Key('onboarding-name-required'),
+          text:
+              'Para trabajar en SISI, primero carga tu nombre en tu perfil: el cliente lo ve en cada oferta.',
+          action: FilledButton(
+            onPressed: () => context.push(Routes.profile),
+            child: const Text('Completar mi perfil'),
+          ),
         ),
         AsyncData(value: final profile) when !profile.editable => _Message(
           text: 'Tu solicitud ya fue enviada.',
@@ -177,7 +190,7 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen> {
 }
 
 class _Message extends StatelessWidget {
-  const _Message({required this.text, this.action});
+  const _Message({super.key, required this.text, this.action});
 
   final String text;
   final Widget? action;

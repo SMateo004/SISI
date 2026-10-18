@@ -110,7 +110,8 @@ export const envSchema = z
     RATE_OTP_PHONE_COOLDOWN_SEC: positiveInt(60),
     RATE_OTP_PHONE_PER_HOUR: positiveInt(5),
     RATE_OTP_PHONE_PER_DAY: positiveInt(10),
-    RATE_OTP_IP_PER_HOUR: positiveInt(20),
+    /** 60/h: las operadoras móviles usan CGNAT y muchos usuarios comparten IP (aprobado en la Fase 7). */
+    RATE_OTP_IP_PER_HOUR: positiveInt(60),
     RATE_OTP_VERIFY_IP_PER_15MIN: positiveInt(30),
     RATE_AUTH_IP_PER_MIN: positiveInt(30),
     /** Por usuario (ADR-0047): reportes, URLs de subida y registros de dispositivo. */
@@ -203,7 +204,8 @@ export const envSchema = z
     /** km:límite por anillo, separados por coma. */
     MATCHING_RINGS: z
       .string()
-      .default('2:5,5:10,10:10')
+      // Anillo 1 de R4.2; anillos 2 y 3 con 15 (aprobado en la Fase 7: poca densidad en el piloto).
+      .default('2:5,5:15,10:15')
       .refine((v) => {
         try {
           parseRings(v);
@@ -215,8 +217,8 @@ export const envSchema = z
     MATCHING_RING_WAIT_MS: positiveInt(45_000),
     MATCHING_ENOUGH_OFFERS: positiveInt(3),
     MATCHING_OFFERS_GRACE_MS: positiveInt(600_000),
-    /** Tiempo mínimo de búsqueda aunque no haya candidatos (propuesta: 3 min). */
-    MATCHING_MIN_SEARCH_MS: z.coerce.number().int().min(0).default(180_000),
+    /** Tiempo mínimo de búsqueda aunque no haya candidatos (aprobado en la Fase 7: 5 min). */
+    MATCHING_MIN_SEARCH_MS: z.coerce.number().int().min(0).default(300_000),
     MATCHING_RESCAN_MS: positiveInt(45_000),
 
     // Ofertas (R5, ADR-0026). Propuestas en docs/pendientes.md.

@@ -5,14 +5,16 @@ export type ModeSwitchCode =
   | 'WORKER_UNDER_REVIEW'
   | 'WORKER_REJECTED'
   | 'WORKER_BLOCKED_DEBT'
-  | 'WORKER_SUSPENDED';
+  | 'WORKER_SUSPENDED'
+  | 'NAME_REQUIRED';
 
 export type NextAction =
   | 'COMPLETE_VERIFICATION'
   | 'VIEW_REVIEW_STATUS'
   | 'RESUBMIT_VERIFICATION'
   | 'PAY_COMMISSION'
-  | 'CONTACT_SUPPORT';
+  | 'CONTACT_SUPPORT'
+  | 'COMPLETE_PROFILE';
 
 export interface ModeSwitchDenial {
   code: ModeSwitchCode;
@@ -55,18 +57,34 @@ const DENIALS: Record<Exclude<WorkerStatus, 'aprobado'>, ModeSwitchDenial> = {
   },
 };
 
+/** R1.3 ampliada (Fase 7): sin nombre no se trabaja; el empleador lo ve en cada oferta. */
+export const NAME_REQUIRED: ModeSwitchDenial = {
+  code: 'NAME_REQUIRED',
+  message: 'Para trabajar en SISI tu cuenta tiene que tener tu nombre. Cárgalo en tu perfil.',
+  nextAction: 'COMPLETE_PROFILE',
+  actionLabel: 'Completar mi perfil',
+};
+
 export type ModeSwitchDecision = { allowed: true } | ({ allowed: false } & ModeSwitchDenial);
 
 /**
- * R1.5 y R1.6: a employer siempre se puede cambiar; a worker solo con estado aprobado.
+ * R1.5 y R1.6: a employer siempre se puede cambiar; a worker solo con estado aprobado y, desde
+ * la Fase 7 (R1.3 ampliada), con el nombre cargado. Primero el estado: un perfil sin aprobar
+ * tiene otro camino (la solicitud, que también pide el nombre).
  * `status` null = la persona nunca solicitó el upgrade (equivale a sin_solicitar).
  */
 export function decideModeSwitch(
   target: 'employer' | 'worker',
   status: WorkerStatus | null,
+  hasName = true,
 ): ModeSwitchDecision {
   if (target === 'employer') return { allowed: true };
   const current = status ?? 'sin_solicitar';
-  if (current === 'aprobado') return { allowed: true };
-  return { allowed: false, ...DENIALS[current] };
+  if (current !== 'aprobado') return { allowed: false, ...DENIALS[current] };
+  if (!hasName) return { allowed: false, ...NAME_REQUIRED };
+  return { allowed: true };
 }
+
+/** Un nombre cargado (PATCH /me exige 2 letras; una cuenta eliminada queda sin nombre). */
+export const hasName = (name: string | null | undefined): boolean =>
+  (name?.trim().length ?? 0) >= 2;

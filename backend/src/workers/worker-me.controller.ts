@@ -43,6 +43,7 @@ export class ModeDeniedDto extends ApiErrorBody {
       'RESUBMIT_VERIFICATION',
       'PAY_COMMISSION',
       'CONTACT_SUPPORT',
+      'COMPLETE_PROFILE',
     ],
     example: 'COMPLETE_VERIFICATION',
   })
@@ -78,7 +79,7 @@ export class WorkerMeController {
   @ApiConflictResponse({
     type: ModeDeniedDto,
     description:
-      'WORKER_NOT_REQUESTED, WORKER_UNDER_REVIEW, WORKER_REJECTED, WORKER_BLOCKED_DEBT o WORKER_SUSPENDED',
+      'WORKER_NOT_REQUESTED, WORKER_UNDER_REVIEW, WORKER_REJECTED, WORKER_BLOCKED_DEBT, WORKER_SUSPENDED o NAME_REQUIRED (R1.3 ampliada)',
   })
   async switchMode(
     @CurrentUser() current: AuthenticatedUser,

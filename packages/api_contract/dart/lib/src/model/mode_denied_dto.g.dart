@@ -144,4 +144,5 @@ const _$ModeDeniedDtoNextActionEnumEnumMap = {
   ModeDeniedDtoNextActionEnum.RESUBMIT_VERIFICATION: 'RESUBMIT_VERIFICATION',
   ModeDeniedDtoNextActionEnum.PAY_COMMISSION: 'PAY_COMMISSION',
   ModeDeniedDtoNextActionEnum.CONTACT_SUPPORT: 'CONTACT_SUPPORT',
+  ModeDeniedDtoNextActionEnum.COMPLETE_PROFILE: 'COMPLETE_PROFILE',
 };

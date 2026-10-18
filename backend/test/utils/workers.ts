@@ -22,6 +22,8 @@ export async function createApprovedWorker(
 ): Promise<TestWorker> {
   const session = await login(t);
   const userId = session.user.id;
+  // R1.3 ampliada: sin nombre no se pasa a modo trabajador.
+  await t.prisma.user.update({ where: { id: userId }, data: { name: 'Trabajador de prueba' } });
   const categories = await t.prisma.category.findMany({
     where: { slug: { in: opts.categorySlugs ?? ['plomeria'] } },
     select: { id: true },
@@ -57,6 +59,7 @@ export async function createPendingWorker(
 ): Promise<TestWorker> {
   const session = await login(t);
   const userId = session.user.id;
+  await t.prisma.user.update({ where: { id: userId }, data: { name: 'Trabajador de prueba' } });
   const categories = await t.prisma.category.findMany({
     where: { slug: { in: opts.categorySlugs ?? ['plomeria'] } },
     select: { id: true },

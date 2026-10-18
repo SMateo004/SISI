@@ -224,7 +224,7 @@ Saldo, periodos y movimientos de un trabajador: `GET /admin/billing/workers/<uui
 ## Panel admin (Fase 6)
 
 ### Acceso
-- **Primer admin:** solo por `dev-tools`, nunca desde el panel. `node dist/scripts/dev-tools.js make-admin --phone 7XXXXXXX` (en staging, Render → `api-staging` → Shell). En producción, `dev-tools` no corre: se da el rol con una consulta SQL revisada por dos personas, y queda anotado aquí con la fecha.
+- **Primer admin:** solo por `dev-tools`, nunca desde el panel. `node dist/scripts/dev-tools.js make-admin --phone 7XXXXXXX` (en staging, Render → `api-staging` → Shell). En producción, `dev-tools` no corre: el procedimiento está por definir (propuesta: una consulta SQL revisada por dos personas y anotada aquí con la fecha; ver pendientes).
 - **Ingreso:** el admin entra con su celular y el código de 6 dígitos. La sesión dura 10 min de acceso y 8 h como máximo desde el login. El refresh va en una cookie httpOnly (ADR-0040). Una cuenta sin rol admin ve "Esta cuenta no tiene acceso al panel".
 - **Una sesión del panel no sirve en la app ni al revés.** Las rutas `/admin` exigen `aud=admin`; por API se obtiene con `POST /auth/admin/otp/verify`.
 

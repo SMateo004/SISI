@@ -30,6 +30,7 @@ Aprobadas el 2026-10-14. Hay que reflejarlas en el documento 01 en la sección i
 - [ ] **CSV para el contador:** separado por comas, punto decimal, UTF-8 con BOM. Confirmar con el contador (en Excel con configuración regional de Bolivia puede esperar punto y coma).
 - [ ] **Documentos de identidad en el panel:** se ven sin botón de descarga y con URL de 5 min, pero no se puede impedir una captura de pantalla. Definir la norma interna.
 - [ ] **Auditoría:** crece sin límite. Definir retención o archivado (p. ej. por año).
+- [ ] **Primer admin en producción:** `dev-tools` no corre en producción. Definir cómo se da el rol (propuesta: SQL revisado por dos personas y registrado en el runbook).
 - [ ] **Doc 02 §6:** agregar `admin:counters` (solo para el panel, ADR-0044) a la lista de eventos de tiempo real.
 
 ## Detectadas en la Fase 6

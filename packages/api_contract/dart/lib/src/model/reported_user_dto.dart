@@ -22,6 +22,10 @@ class ReportedUserDto {
 
     required  this.id,
 
+    required  this.name,
+
+    required  this.phone,
+
     required  this.validReporters,
 
     required  this.workerStatus,
@@ -38,6 +42,30 @@ class ReportedUserDto {
 
 
   final String id;
+
+
+
+  @JsonKey(
+    
+    name: r'name',
+    required: true,
+    includeIfNull: true,
+  )
+
+
+  final String? name;
+
+
+
+  @JsonKey(
+    
+    name: r'phone',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final String phone;
 
 
 
@@ -84,6 +112,8 @@ class ReportedUserDto {
     @override
     bool operator ==(Object other) => identical(this, other) || other is ReportedUserDto &&
       other.id == id &&
+      other.name == name &&
+      other.phone == phone &&
       other.validReporters == validReporters &&
       other.workerStatus == workerStatus &&
       other.flaggedAt == flaggedAt;
@@ -91,6 +121,8 @@ class ReportedUserDto {
     @override
     int get hashCode =>
         id.hashCode +
+        (name == null ? 0 : name.hashCode) +
+        phone.hashCode +
         validReporters.hashCode +
         (workerStatus == null ? 0 : workerStatus.hashCode) +
         (flaggedAt == null ? 0 : flaggedAt.hashCode);

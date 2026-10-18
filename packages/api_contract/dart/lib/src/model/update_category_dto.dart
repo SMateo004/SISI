@@ -31,6 +31,8 @@ class UpdateCategoryDto {
      this.commissionPct,
 
      this.active,
+
+     this.extraRequirements,
   });
 
   @JsonKey(
@@ -105,6 +107,19 @@ class UpdateCategoryDto {
 
 
 
+      /// Requisitos extra de verificación (claves en minúsculas, R2.2)
+  @JsonKey(
+    
+    name: r'extraRequirements',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final List<String>? extraRequirements;
+
+
+
 
 
     @override
@@ -114,7 +129,8 @@ class UpdateCategoryDto {
       other.priceMinBs == priceMinBs &&
       other.priceMaxBs == priceMaxBs &&
       other.commissionPct == commissionPct &&
-      other.active == active;
+      other.active == active &&
+      other.extraRequirements == extraRequirements;
 
     @override
     int get hashCode =>
@@ -123,7 +139,8 @@ class UpdateCategoryDto {
         priceMinBs.hashCode +
         priceMaxBs.hashCode +
         commissionPct.hashCode +
-        active.hashCode;
+        active.hashCode +
+        extraRequirements.hashCode;
 
   factory UpdateCategoryDto.fromJson(Map<String, dynamic> json) => _$UpdateCategoryDtoFromJson(json);
 

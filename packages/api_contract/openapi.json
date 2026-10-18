@@ -1,6 +1,304 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/admin/audit": {
+      "get": {
+        "description": "De la más nueva a la más vieja, 50 por página. Filtros combinables.",
+        "operationId": "AdminAuditController_list",
+        "parameters": [
+          {
+            "name": "adminId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "description": "Acción o prefijo (p. ej. \"billing.\" trae todas las de cobros)",
+            "schema": {
+              "example": "billing.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "worker",
+              "type": "string"
+            }
+          },
+          {
+            "name": "targetId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Desde (incluido)",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Hasta (excluido)",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "nextCursor de la página anterior",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditPageDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Auditoría del panel (ADR-0041)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/settings": {
+      "get": {
+        "description": "Valor vigente, valor por defecto (entorno), rango y unidad.",
+        "operationId": "AdminSettingsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SettingDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SETTING_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Parámetros de negocio editables (ADR-0043)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/settings/{key}": {
+      "put": {
+        "description": "Se valida el rango. API, worker y cron lo toman en segundos, sin redeploy.",
+        "operationId": "AdminSettingsController_set",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetSettingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "SETTING_OUT_OF_RANGE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SETTING_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cambiar un parámetro, con motivo",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/settings/{key}/reset": {
+      "post": {
+        "operationId": "AdminSettingsController_reset",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetSettingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SETTING_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Volver al valor por defecto (variable de entorno)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/admin/feature-flags": {
       "get": {
         "operationId": "FeatureFlagsController_list",
@@ -20,7 +318,7 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN: solo administradores",
+            "description": "FORBIDDEN: solo administradores\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -31,6 +329,9 @@
           }
         },
         "security": [
+          {
+            "bearer": []
+          },
           {
             "bearer": []
           }
@@ -87,7 +388,7 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN: solo administradores",
+            "description": "FORBIDDEN: solo administradores\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -98,6 +399,9 @@
           }
         },
         "security": [
+          {
+            "bearer": []
+          },
           {
             "bearer": []
           }
@@ -561,6 +865,147 @@
         ]
       }
     },
+    "/auth/admin/otp/verify": {
+      "post": {
+        "description": "Solo cuentas con rol admin; no crea cuentas. El refresh queda en la cookie httpOnly `sisi_admin_rt`.",
+        "operationId": "AdminAuthController_verify",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyOtpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSessionDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "ADMIN_ONLY",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de intentos (Retry-After)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Valida el código e inicia sesión en el panel",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/admin/refresh": {
+      "post": {
+        "description": "Rota el refresh. La sesión no se extiende más allá de 8 h desde el login.",
+        "operationId": "AdminAuthController_refresh",
+        "parameters": [
+          {
+            "name": "X-SISI-Admin",
+            "in": "header",
+            "description": "Siempre \"1\" (CSRF)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSessionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "SESSION_*",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de intentos (Retry-After)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Renueva el token de acceso del panel con la cookie",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/admin/logout": {
+      "post": {
+        "operationId": "AdminAuthController_logout",
+        "parameters": [
+          {
+            "name": "X-SISI-Admin",
+            "in": "header",
+            "description": "Siempre \"1\" (CSRF)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "429": {
+            "description": "Límite de intentos (Retry-After)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cierra la sesión del panel (revoca el refresh y borra la cookie)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/me/mode": {
       "patch": {
         "description": "A employer siempre se puede cambiar. A worker solo con el perfil aprobado; si no, 409 con el motivo y la acción siguiente (R1.5, R1.6).",
@@ -873,64 +1318,6 @@
         ]
       }
     },
-    "/admin/workers/{userId}/documents/{documentId}/url": {
-      "get": {
-        "description": "Válido 5 minutos. Solo administradores.",
-        "operationId": "AdminWorkersController_documentUrl",
-        "parameters": [
-          {
-            "name": "userId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "documentId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocumentUrlDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "FORBIDDEN: solo administradores",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorBody"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "El documento no existe o no es de ese trabajador"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Enlace temporal a un documento de identidad (R9.5)",
-        "tags": [
-          "admin"
-        ]
-      }
-    },
     "/categories": {
       "get": {
         "description": "Lista cerrada (R2.1) con el rango de referencia efectivo de la ciudad (R2.2, R10.1).",
@@ -981,7 +1368,7 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN: solo administradores",
+            "description": "FORBIDDEN: solo administradores\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -994,9 +1381,71 @@
         "security": [
           {
             "bearer": []
+          },
+          {
+            "bearer": []
           }
         ],
         "summary": "Todas las categorías con sus valores por ciudad",
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "description": "Con rango, comisión (13 % por defecto), requisitos extra y las ciudades donde queda activa.",
+        "operationId": "AdminCategoriesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminCategoryDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CATEGORY_SLUG_TAKEN",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Crea una categoría (R2.2)",
         "tags": [
           "admin"
         ]
@@ -1004,6 +1453,7 @@
     },
     "/admin/categories/{id}": {
       "patch": {
+        "description": "Si cambia la comisión, `notice` avisa que solo afecta a los trabajos asignados desde ahora.",
         "operationId": "AdminCategoriesController_update",
         "parameters": [
           {
@@ -1047,7 +1497,7 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN: solo administradores",
+            "description": "FORBIDDEN: solo administradores\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -1058,6 +1508,9 @@
           }
         },
         "security": [
+          {
+            "bearer": []
+          },
           {
             "bearer": []
           }
@@ -1122,7 +1575,50 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN: solo administradores",
+            "description": "FORBIDDEN: solo administradores\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Activa o ajusta una categoría en una ciudad",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/cities": {
+      "get": {
+        "operationId": "AdminCitiesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminCityDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -1137,7 +1633,7 @@
             "bearer": []
           }
         ],
-        "summary": "Activa o ajusta una categoría en una ciudad",
+        "summary": "Ciudades",
         "tags": [
           "admin"
         ]
@@ -1171,7 +1667,7 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN: solo administradores",
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -1227,7 +1723,7 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN: solo administradores",
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -1253,6 +1749,54 @@
           }
         ],
         "summary": "Agrega un término o patrón",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/moderation-terms/test": {
+      "post": {
+        "description": "Mismo filtro y presupuesto de tiempo que las solicitudes y el chat. No guarda nada.",
+        "operationId": "ModerationTermsController_test",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestModerationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationTestResultDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Probador: qué términos vigentes coinciden con un texto",
         "tags": [
           "admin"
         ]
@@ -1293,7 +1837,17 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN: solo administradores",
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "MODERATION_TERM_NOT_FOUND",
             "content": {
               "application/json": {
                 "schema": {
@@ -1330,7 +1884,17 @@
             "description": ""
           },
           "403": {
-            "description": "FORBIDDEN: solo administradores",
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "MODERATION_TERM_NOT_FOUND",
             "content": {
               "application/json": {
                 "schema": {
@@ -1783,6 +2347,15 @@
               ],
               "type": "string"
             }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "nextCursor de la página anterior",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1791,16 +2364,13 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AdminHeldRequestDto"
-                  }
+                  "$ref": "#/components/schemas/AdminRequestPageDto"
                 }
               }
             }
           },
           "403": {
-            "description": "FORBIDDEN: solo administradores",
+            "description": "FORBIDDEN: solo administradores\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -1811,6 +2381,9 @@
           }
         },
         "security": [
+          {
+            "bearer": []
+          },
           {
             "bearer": []
           }
@@ -1834,6 +2407,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationDecisionDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -1846,7 +2429,7 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN: solo administradores",
+            "description": "FORBIDDEN: solo administradores\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -1867,6 +2450,9 @@
           }
         },
         "security": [
+          {
+            "bearer": []
+          },
           {
             "bearer": []
           }
@@ -1896,7 +2482,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RejectRequestDto"
+                "$ref": "#/components/schemas/ModerationDecisionDto"
               }
             }
           }
@@ -1913,7 +2499,7 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN: solo administradores",
+            "description": "FORBIDDEN: solo administradores\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -1924,6 +2510,9 @@
           }
         },
         "security": [
+          {
+            "bearer": []
+          },
           {
             "bearer": []
           }
@@ -3608,7 +4197,7 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN: solo administradores",
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -3629,9 +4218,66 @@
         ]
       }
     },
+    "/admin/jobs/{id}": {
+      "get": {
+        "description": "Partes, solicitud, montos, línea de tiempo (job_events), todo el chat (incluido lo retenido) y las ofertas con su historial (offer_events).",
+        "operationId": "AdminJobsController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminJobDetailDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JOB_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Detalle de un trabajo para revisar una disputa",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/admin/jobs/{id}/resolve": {
       "post": {
-        "description": "confirm → terminado con comisión (job.completed); cancel → cancelado sin comisión. La nota queda en el historial.",
+        "description": "confirm → terminado con comisión (job.completed); cancel → cancelado sin comisión. La nota queda en el historial y en la auditoría.",
         "operationId": "AdminJobsController_resolve",
         "parameters": [
           {
@@ -3670,7 +4316,7 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN: solo administradores",
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -3940,23 +4586,30 @@
     "/admin/chat/held": {
       "get": {
         "operationId": "AdminChatController_held",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "nextCursor de la página anterior",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AdminHeldMessageDto"
-                  }
+                  "$ref": "#/components/schemas/AdminHeldMessagePageDto"
                 }
               }
             }
           },
           "403": {
-            "description": "FORBIDDEN: solo administradores",
+            "description": "FORBIDDEN: solo administradores\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -3969,9 +4622,151 @@
         "security": [
           {
             "bearer": []
+          },
+          {
+            "bearer": []
           }
         ],
-        "summary": "Mensajes de chat retenidos (los 100 más recientes)",
+        "summary": "Mensajes de chat retenidos, del más antiguo al más nuevo",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/chat/{messageId}/release": {
+      "post": {
+        "description": "Con motivo; queda en la auditoría.",
+        "operationId": "AdminChatController_release",
+        "parameters": [
+          {
+            "name": "messageId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationDecisionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminHeldMessageDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "MESSAGE_ALREADY_REVIEWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Liberar un mensaje retenido: se entrega al destinatario",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/chat/{messageId}/discard": {
+      "post": {
+        "operationId": "AdminChatController_discard",
+        "parameters": [
+          {
+            "name": "messageId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationDecisionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminHeldMessageDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: solo administradores\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "MESSAGE_ALREADY_REVIEWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Descartar un mensaje retenido: no se entrega nunca",
         "tags": [
           "admin"
         ]
@@ -4313,6 +5108,16 @@
                 "descartado"
               ]
             }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "nextCursor de la página anterior",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4321,16 +5126,13 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AdminReportDto"
-                  }
+                  "$ref": "#/components/schemas/AdminReportPageDto"
                 }
               }
             }
           },
           "403": {
-            "description": "FORBIDDEN: solo administradores",
+            "description": "FORBIDDEN: solo administradores\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -4341,6 +5143,9 @@
           }
         },
         "security": [
+          {
+            "bearer": []
+          },
           {
             "bearer": []
           }
@@ -4387,7 +5192,7 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN: solo administradores",
+            "description": "FORBIDDEN: solo administradores\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -4420,9 +5225,497 @@
         "security": [
           {
             "bearer": []
+          },
+          {
+            "bearer": []
           }
         ],
         "summary": "Marcar un reporte como válido o descartado",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/billing/export/ledger.csv": {
+      "get": {
+        "description": "UTF-8 con BOM, separador coma, montos con punto decimal y fechas en la hora local de la ciudad. Queda auditado.",
+        "operationId": "AdminBillingController_exportLedger",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "example": "2026-10-01T04:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "example": "2026-11-01T04:00:00.000Z",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Archivo CSV"
+          },
+          "403": {
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "CSV del ledger por rango de fechas [desde, hasta), para el contador",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/billing/export/payments.csv": {
+      "get": {
+        "description": "Mismo formato que el del ledger. Queda auditado.",
+        "operationId": "AdminBillingController_exportPayments",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "example": "2026-10-01T04:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "example": "2026-11-01T04:00:00.000Z",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Archivo CSV"
+          },
+          "403": {
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "CSV de pagos por fecha de pago [desde, hasta), para el contador",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/billing/periods": {
+      "get": {
+        "description": "Más nuevos primero, 25 por página. El saldo es la suma del ledger.",
+        "operationId": "AdminBillingController_periods",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "abierto",
+                "cerrado_pendiente",
+                "pagado",
+                "vencido"
+              ]
+            }
+          },
+          {
+            "name": "week",
+            "required": false,
+            "in": "query",
+            "description": "Semana ISO del inicio del periodo",
+            "schema": {
+              "example": "2026-W42",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "nextCursor de la página anterior",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PanelPeriodPageDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Periodos de cobro con filtros por estado, semana y ciudad",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/billing/overdue": {
+      "get": {
+        "operationId": "AdminBillingController_overdue",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverdueListDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Periodos vencidos con monto y días de atraso (R7.7)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/billing/workers/{id}/ledger": {
+      "get": {
+        "description": "Del más nuevo al más viejo, 50 por página.",
+        "operationId": "AdminBillingController_ledger",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "nextCursor de la página anterior",
+            "schema": {
+              "example": "40",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LedgerPageDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ledger completo de un trabajador con saldo acumulado",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/billing/payments/preview": {
+      "post": {
+        "description": "Saldo antes y después, periodos que cubre y si desbloquea. No guarda nada.",
+        "operationId": "AdminBillingController_previewPayment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentPreviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalancePreviewDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Efecto de un pago antes de registrarlo",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/billing/adjustments/preview": {
+      "post": {
+        "operationId": "AdminBillingController_previewAdjustment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdjustmentPreviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalancePreviewDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Efecto de un ajuste antes de registrarlo (no guarda nada)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/billing/qr": {
+      "get": {
+        "operationId": "AdminBillingController_currentQr",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentQrDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "QR de cobro actual (URL temporal), o null si no hay",
+        "tags": [
+          "admin"
+        ]
+      },
+      "put": {
+        "description": "Después del PUT a la URL de subida. Los trabajadores lo ven en \"Pagar comisión\".",
+        "operationId": "AdminBillingController_setQr",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetQrDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QrResultDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Configurar el QR de cobro (R7.4)",
         "tags": [
           "admin"
         ]
@@ -4454,7 +5747,7 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)",
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -4465,6 +5758,9 @@
           }
         },
         "security": [
+          {
+            "bearer": []
+          },
           {
             "bearer": []
           }
@@ -4522,7 +5818,7 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)",
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -4543,6 +5839,9 @@
           }
         },
         "security": [
+          {
+            "bearer": []
+          },
           {
             "bearer": []
           }
@@ -4590,7 +5889,7 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)",
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -4611,6 +5910,9 @@
           }
         },
         "security": [
+          {
+            "bearer": []
+          },
           {
             "bearer": []
           }
@@ -4646,7 +5948,7 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)",
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -4657,6 +5959,9 @@
           }
         },
         "security": [
+          {
+            "bearer": []
+          },
           {
             "bearer": []
           }
@@ -4693,7 +5998,7 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)",
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -4704,59 +6009,14 @@
           }
         },
         "security": [
+          {
+            "bearer": []
+          },
           {
             "bearer": []
           }
         ],
         "summary": "URL para subir la imagen del QR de cobro de la empresa",
-        "tags": [
-          "admin"
-        ]
-      }
-    },
-    "/admin/billing/qr": {
-      "put": {
-        "description": "Después del PUT a la URL de subida. Los trabajadores lo ven en \"Pagar comisión\".",
-        "operationId": "AdminBillingController_setQr",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetQrDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QrResultDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorBody"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Configurar el QR de cobro (R7.4)",
         "tags": [
           "admin"
         ]
@@ -4796,7 +6056,7 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)",
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -4807,6 +6067,9 @@
           }
         },
         "security": [
+          {
+            "bearer": []
+          },
           {
             "bearer": []
           }
@@ -4853,7 +6116,7 @@
             }
           },
           "403": {
-            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)",
+            "description": "FORBIDDEN (no admin) o SELF_REVIEW_FORBIDDEN (su propia cuenta)\n\nFORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
             "content": {
               "application/json": {
                 "schema": {
@@ -4864,6 +6127,9 @@
           }
         },
         "security": [
+          {
+            "bearer": []
+          },
           {
             "bearer": []
           }
@@ -5205,6 +6471,796 @@
           "ganancias"
         ]
       }
+    },
+    "/admin/users": {
+      "get": {
+        "description": "25 por página.",
+        "operationId": "AdminUsersController_search",
+        "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Teléfono (dígitos, con o sin +591) o parte del nombre. Vacío: los más nuevos.",
+            "schema": {
+              "example": "7001",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "nextCursor de la página anterior",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPageDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "USER_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Buscar usuarios por teléfono o nombre",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/users/{id}": {
+      "get": {
+        "description": "Estado, modo, ciudad, calificaciones, cancelaciones, reportes recibidos, trabajos, saldo y periodos.",
+        "operationId": "AdminUsersController_profile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "USER_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ficha de un usuario",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/users/{id}/clear-flag": {
+      "post": {
+        "operationId": "AdminUsersController_clearFlag",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReasonDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRowDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "USER_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "USER_NOT_FLAGGED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Quitar la marca \"revisar\" de un empleador reportado",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/workers/{id}/suspend": {
+      "post": {
+        "description": "Pasa a suspendido_moderacion y a modo empleador (R1.6). Solo trabajadores.",
+        "operationId": "AdminUsersController_suspend",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReasonDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerStatusResultDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "USER_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "WORKER_TRANSITION_NOT_ALLOWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Suspender el perfil de trabajador",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/workers/{id}/reactivate": {
+      "post": {
+        "description": "Vuelve a aprobado, o a bloqueado_deuda si tiene un periodo vencido.",
+        "operationId": "AdminUsersController_reactivate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReasonDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerStatusResultDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "USER_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "WORKER_TRANSITION_NOT_ALLOWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Levantar la suspensión",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/verifications": {
+      "get": {
+        "description": "De la más antigua a la más nueva, 25 por página.",
+        "operationId": "VerificationsController_queue",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "nextCursor de la página anterior",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationPageDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "VERIFICATION_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cola de verificaciones (pendiente_revision)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/verifications/{userId}": {
+      "get": {
+        "description": "Datos, edad, categorías con sus requisitos extra y documentos por URL temporal de 5 minutos (R9.5). Queda auditado.",
+        "operationId": "VerificationsController_detail",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationDetailDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "VERIFICATION_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Detalle de una solicitud de trabajador",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/verifications/{userId}/approve": {
+      "post": {
+        "operationId": "VerificationsController_approve",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveVerificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationResultDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "VERIFICATION_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "WORKER_TRANSITION_NOT_ALLOWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Aprobar: el perfil pasa a aprobado y se le avisa (push)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/verifications/{userId}/reject": {
+      "post": {
+        "description": "El trabajador ve el motivo y la nota, y puede corregir y volver a enviar.",
+        "operationId": "VerificationsController_reject",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectVerificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationResultDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "VERIFICATION_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "WORKER_TRANSITION_NOT_ALLOWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rechazar con motivo de la lista y nota",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/workers/{userId}/documents/{documentId}/url": {
+      "get": {
+        "description": "Válido 5 minutos, sin caché. Queda auditado.",
+        "operationId": "VerificationsController_documentUrl",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "documentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentUrlDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "VERIFICATION_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Enlace temporal a un documento de identidad (R9.5)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/dashboard": {
+      "get": {
+        "description": "Solicitudes, asignación, expiración, tiempo a la primera oferta, trabajos, cancelaciones, comisión, deuda vencida, disponibles ahora y colas.",
+        "operationId": "DashboardController_get",
+        "parameters": [
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "day",
+              "type": "string",
+              "enum": [
+                "day",
+                "week"
+              ]
+            }
+          },
+          {
+            "name": "cityId",
+            "required": false,
+            "in": "query",
+            "description": "Por defecto, la ciudad principal",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dashboard del día o de la semana (hora local de la ciudad)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/counters": {
+      "get": {
+        "description": "También llegan en vivo por el evento admin:counters (ADR-0044).",
+        "operationId": "DashboardController_counters",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountersDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Colas pendientes para el menú del panel",
+        "tags": [
+          "admin"
+        ]
+      }
     }
   },
   "info": {
@@ -5245,6 +7301,224 @@
           "statusCode",
           "code",
           "message"
+        ]
+      },
+      "AuditEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "42"
+          },
+          "adminId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "adminName": {
+            "type": "string",
+            "nullable": true
+          },
+          "adminPhone": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "example": "verification.approve"
+          },
+          "targetType": {
+            "type": "string",
+            "example": "worker"
+          },
+          "targetId": {
+            "type": "string"
+          },
+          "before": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true
+          },
+          "after": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "ip": {
+            "type": "string",
+            "nullable": true
+          },
+          "forwardedFor": {
+            "type": "string",
+            "nullable": true
+          },
+          "userAgent": {
+            "type": "string",
+            "nullable": true
+          },
+          "cityId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "adminId",
+          "adminName",
+          "adminPhone",
+          "action",
+          "targetType",
+          "targetId",
+          "before",
+          "after",
+          "reason",
+          "ip",
+          "forwardedFor",
+          "userAgent",
+          "cityId",
+          "createdAt"
+        ]
+      },
+      "AuditPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditEntryDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "SettingDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "MATCHING_RING_WAIT_MS"
+          },
+          "group": {
+            "type": "string",
+            "enum": [
+              "matching",
+              "ofertas",
+              "trabajos",
+              "cobros"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "example": "Espera por anillo"
+          },
+          "help": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "int",
+              "decimal",
+              "rings"
+            ]
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "ms",
+              "días",
+              "hora",
+              "Bs",
+              "ofertas",
+              "veces",
+              "anillos"
+            ]
+          },
+          "min": {
+            "type": "number",
+            "nullable": true
+          },
+          "max": {
+            "type": "number",
+            "nullable": true
+          },
+          "value": {
+            "type": "string",
+            "example": "45000",
+            "description": "Valor vigente, como texto"
+          },
+          "defaultValue": {
+            "type": "string",
+            "example": "45000",
+            "description": "Valor por defecto (variable de entorno)"
+          },
+          "overridden": {
+            "type": "boolean",
+            "description": "Cambiado desde el panel"
+          },
+          "updatedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "key",
+          "group",
+          "label",
+          "help",
+          "kind",
+          "unit",
+          "min",
+          "max",
+          "value",
+          "defaultValue",
+          "overridden",
+          "updatedAt"
+        ]
+      },
+      "SetSettingDto": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "example": "45000",
+            "description": "Número en la unidad del parámetro (ms, días, Bs…) o los anillos, como texto"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Más trabajadores en la zona norte: se acorta la espera."
+          }
+        },
+        "required": [
+          "value",
+          "reason"
+        ]
+      },
+      "ResetSettingDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "Volver al valor de la propuesta."
+          }
+        },
+        "required": [
+          "reason"
         ]
       },
       "FeatureFlagDto": {
@@ -5657,6 +7931,42 @@
           "refreshExpiresIn"
         ]
       },
+      "AdminSessionDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "tokenType": {
+            "type": "string",
+            "example": "Bearer",
+            "enum": [
+              "Bearer"
+            ]
+          },
+          "expiresIn": {
+            "type": "number",
+            "example": 600,
+            "description": "Vida del token de acceso, en segundos"
+          },
+          "sessionExpiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fin de la sesión (8 h desde el login); después hay que volver a ingresar"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserDto"
+          }
+        },
+        "required": [
+          "accessToken",
+          "tokenType",
+          "expiresIn",
+          "sessionExpiresAt",
+          "user"
+        ]
+      },
       "SwitchModeDto": {
         "type": "object",
         "properties": {
@@ -5905,24 +8215,6 @@
           "maxRadiusKm"
         ]
       },
-      "DocumentUrlDto": {
-        "type": "object",
-        "properties": {
-          "url": {
-            "type": "string",
-            "example": "https://...?X-Amz-Signature=...",
-            "description": "Enlace temporal (5 min)"
-          },
-          "expiresAt": {
-            "type": "string",
-            "example": "2026-10-14T12:05:00.000Z"
-          }
-        },
-        "required": [
-          "url",
-          "expiresAt"
-        ]
-      },
       "CategoryDto": {
         "type": "object",
         "properties": {
@@ -6051,11 +8343,22 @@
           "active": {
             "type": "boolean"
           },
+          "extraRequirements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "cities": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AdminCategoryCityDto"
             }
+          },
+          "notice": {
+            "type": "string",
+            "nullable": true,
+            "description": "Aviso al cambiar la comisión: solo afecta a los trabajos asignados desde ahora"
           }
         },
         "required": [
@@ -6067,7 +8370,64 @@
           "priceMaxBs",
           "commissionPct",
           "active",
-          "cities"
+          "extraRequirements",
+          "cities",
+          "notice"
+        ]
+      },
+      "CreateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "example": "jardineria",
+            "description": "Identificador estable: no cambia después"
+          },
+          "name": {
+            "type": "string",
+            "example": "Jardinería"
+          },
+          "description": {
+            "type": "string",
+            "example": "Poda, césped y riego",
+            "nullable": true
+          },
+          "priceMinBs": {
+            "type": "string",
+            "example": "80.00"
+          },
+          "priceMaxBs": {
+            "type": "string",
+            "example": "300.00"
+          },
+          "commissionPct": {
+            "type": "string",
+            "example": "13.00",
+            "description": "Por defecto 13 % (R2.2)"
+          },
+          "extraRequirements": {
+            "example": [
+              "certificado_electricista"
+            ],
+            "description": "Requisitos extra de verificación (claves en minúsculas, R2.2)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "cityIds": {
+            "description": "Ciudades donde queda activa",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "priceMinBs",
+          "priceMaxBs"
         ]
       },
       "UpdateCategoryDto": {
@@ -6097,6 +8457,16 @@
           "active": {
             "type": "boolean",
             "example": true
+          },
+          "extraRequirements": {
+            "example": [
+              "certificado_electricista"
+            ],
+            "description": "Requisitos extra de verificación (claves en minúsculas, R2.2)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -6126,6 +8496,37 @@
           }
         },
         "required": [
+          "active"
+        ]
+      },
+      "AdminCityDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string",
+            "example": "santa-cruz"
+          },
+          "name": {
+            "type": "string",
+            "example": "Santa Cruz de la Sierra"
+          },
+          "timezone": {
+            "type": "string",
+            "example": "America/La_Paz"
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "timezone",
           "active"
         ]
       },
@@ -6211,6 +8612,78 @@
           "term",
           "kind",
           "category"
+        ]
+      },
+      "TestModerationDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "example": "Necesito plomero y de paso me consigues marihuana"
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "ModerationMatchDto": {
+        "type": "object",
+        "properties": {
+          "termId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "term": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "word",
+              "regex"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "sexual",
+              "drogas",
+              "armas",
+              "ilegal",
+              "inmoral",
+              "venta_productos"
+            ]
+          }
+        },
+        "required": [
+          "termId",
+          "term",
+          "kind",
+          "category"
+        ]
+      },
+      "ModerationTestResultDto": {
+        "type": "object",
+        "properties": {
+          "held": {
+            "type": "boolean",
+            "description": "Con este texto, la solicitud o el mensaje quedaría retenido"
+          },
+          "matches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModerationMatchDto"
+            }
+          },
+          "timedOut": {
+            "type": "boolean",
+            "description": "Un regex no terminó a tiempo (se retendría por seguridad)"
+          }
+        },
+        "required": [
+          "held",
+          "matches",
+          "timedOut"
         ]
       },
       "UpdateModerationTermDto": {
@@ -6624,7 +9097,26 @@
           "employerId"
         ]
       },
-      "RejectRequestDto": {
+      "AdminRequestPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminHeldRequestDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "ModerationDecisionDto": {
         "type": "object",
         "properties": {
           "reason": {
@@ -7697,6 +10189,285 @@
           "disputeNote"
         ]
       },
+      "AdminJobPartyDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "phone"
+        ]
+      },
+      "AdminJobEventDto": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "example": "FINISH"
+          },
+          "fromStatus": {
+            "type": "string"
+          },
+          "toStatus": {
+            "type": "string"
+          },
+          "actorRole": {
+            "type": "string",
+            "enum": [
+              "worker",
+              "employer",
+              "system",
+              "admin"
+            ]
+          },
+          "actorId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "action",
+          "fromStatus",
+          "toStatus",
+          "actorRole",
+          "actorId",
+          "note",
+          "at"
+        ]
+      },
+      "AdminJobMessageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "from": {
+            "type": "string",
+            "enum": [
+              "worker",
+              "employer"
+            ]
+          },
+          "body": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "entregado",
+              "retenido",
+              "descartado"
+            ],
+            "description": "Retenido o descartado: no le llegó a la contraparte"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "from",
+          "body",
+          "status",
+          "at"
+        ]
+      },
+      "AdminOfferEventDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "creada",
+              "reemplazada",
+              "retirada",
+              "aceptada",
+              "cerrada"
+            ]
+          },
+          "revision": {
+            "type": "number"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "accept",
+              "counter"
+            ]
+          },
+          "amountBs": {
+            "type": "string",
+            "example": "150.00"
+          },
+          "etaMin": {
+            "type": "number"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "kind",
+          "revision",
+          "type",
+          "amountBs",
+          "etaMin",
+          "at"
+        ]
+      },
+      "AdminJobOfferDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "worker": {
+            "$ref": "#/components/schemas/AdminJobPartyDto"
+          },
+          "status": {
+            "type": "string"
+          },
+          "chosen": {
+            "type": "boolean",
+            "description": "La que eligió el empleador"
+          },
+          "history": {
+            "description": "Historial (ADR-0042)",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminOfferEventDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "worker",
+          "status",
+          "chosen",
+          "history"
+        ]
+      },
+      "AdminJobDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/JobCategoryDto"
+          },
+          "description": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "proposedPriceBs": {
+            "type": "string",
+            "example": "150.00"
+          },
+          "finalPriceBs": {
+            "type": "string",
+            "example": "170.00"
+          },
+          "commissionPct": {
+            "type": "string",
+            "example": "13.00"
+          },
+          "commissionBs": {
+            "type": "string",
+            "nullable": true,
+            "example": "22.10"
+          },
+          "worker": {
+            "$ref": "#/components/schemas/AdminJobPartyDto"
+          },
+          "employer": {
+            "$ref": "#/components/schemas/AdminJobPartyDto"
+          },
+          "disputedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "disputeNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "timeline": {
+            "description": "job_events",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminJobEventDto"
+            }
+          },
+          "chat": {
+            "description": "Todo el chat",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminJobMessageDto"
+            }
+          },
+          "offers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminJobOfferDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "requestId",
+          "status",
+          "category",
+          "description",
+          "address",
+          "proposedPriceBs",
+          "finalPriceBs",
+          "commissionPct",
+          "commissionBs",
+          "worker",
+          "employer",
+          "disputedAt",
+          "disputeNote",
+          "timeline",
+          "chat",
+          "offers"
+        ]
+      },
       "ResolveDisputeDto": {
         "type": "object",
         "properties": {
@@ -7940,6 +10711,25 @@
           "createdAt"
         ]
       },
+      "AdminHeldMessagePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminHeldMessageDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
       "CreateReviewDto": {
         "type": "object",
         "properties": {
@@ -8127,6 +10917,13 @@
             "type": "string",
             "format": "uuid"
           },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string"
+          },
           "validReporters": {
             "type": "number",
             "description": "Personas distintas con un reporte válido contra este usuario"
@@ -8144,6 +10941,8 @@
         },
         "required": [
           "id",
+          "name",
+          "phone",
           "validReporters",
           "workerStatus",
           "flaggedAt"
@@ -8201,6 +11000,17 @@
             "type": "string",
             "format": "uuid"
           },
+          "reporterName": {
+            "type": "string",
+            "nullable": true
+          },
+          "reporterPhone": {
+            "type": "string"
+          },
+          "targetSummary": {
+            "type": "string",
+            "description": "Qué se reportó, en una línea"
+          },
           "note": {
             "type": "string",
             "nullable": true
@@ -8224,10 +11034,32 @@
           "status",
           "createdAt",
           "reporterId",
+          "reporterName",
+          "reporterPhone",
+          "targetSummary",
           "note",
           "noteHeld",
           "resolution",
           "reportedUser"
+        ]
+      },
+      "AdminReportPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminReportDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
         ]
       },
       "ResolveReportDto": {
@@ -8268,6 +11100,414 @@
         "required": [
           "report",
           "outcome"
+        ]
+      },
+      "PanelPeriodDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "workerPhone": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "abierto",
+              "cerrado_pendiente",
+              "pagado",
+              "vencido"
+            ]
+          },
+          "paymentReference": {
+            "type": "string"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "grossBs": {
+            "type": "string",
+            "example": "150.00"
+          },
+          "commissionBs": {
+            "type": "string",
+            "example": "19.50"
+          },
+          "balanceBs": {
+            "type": "string",
+            "example": "19.50",
+            "description": "Saldo del periodo (suma del ledger)"
+          }
+        },
+        "required": [
+          "id",
+          "workerId",
+          "workerName",
+          "workerPhone",
+          "status",
+          "paymentReference",
+          "startAt",
+          "endAt",
+          "dueAt",
+          "grossBs",
+          "commissionBs",
+          "balanceBs"
+        ]
+      },
+      "PanelPeriodPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PanelPeriodDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "OverdueRowDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "workerPhone": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "abierto",
+              "cerrado_pendiente",
+              "pagado",
+              "vencido"
+            ]
+          },
+          "paymentReference": {
+            "type": "string"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "grossBs": {
+            "type": "string",
+            "example": "150.00"
+          },
+          "commissionBs": {
+            "type": "string",
+            "example": "19.50"
+          },
+          "balanceBs": {
+            "type": "string",
+            "example": "19.50",
+            "description": "Saldo del periodo (suma del ledger)"
+          },
+          "daysLate": {
+            "type": "number",
+            "example": 3,
+            "description": "Días de atraso en la zona de la ciudad"
+          },
+          "workerStatus": {
+            "type": "string",
+            "example": "bloqueado_deuda"
+          }
+        },
+        "required": [
+          "id",
+          "workerId",
+          "workerName",
+          "workerPhone",
+          "status",
+          "paymentReference",
+          "startAt",
+          "endAt",
+          "dueAt",
+          "grossBs",
+          "commissionBs",
+          "balanceBs",
+          "daysLate",
+          "workerStatus"
+        ]
+      },
+      "OverdueListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OverdueRowDto"
+            }
+          },
+          "totalBs": {
+            "type": "string",
+            "example": "89.70",
+            "description": "Suma de los saldos vencidos"
+          }
+        },
+        "required": [
+          "items",
+          "totalBs"
+        ]
+      },
+      "LedgerRowDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "42"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "comision",
+              "pago",
+              "ajuste"
+            ]
+          },
+          "amountBs": {
+            "type": "string",
+            "example": "19.50",
+            "description": "Con signo: + debe, − paga"
+          },
+          "runningBs": {
+            "type": "string",
+            "example": "29.90",
+            "description": "Saldo acumulado después de este movimiento"
+          },
+          "paymentReference": {
+            "type": "string"
+          },
+          "jobId": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "correctsEntryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "amountBs",
+          "runningBs",
+          "paymentReference",
+          "jobId",
+          "paymentId",
+          "correctsEntryId",
+          "reason",
+          "createdAt"
+        ]
+      },
+      "LedgerPageDto": {
+        "type": "object",
+        "properties": {
+          "balanceBs": {
+            "type": "string",
+            "example": "29.90"
+          },
+          "items": {
+            "description": "Del más nuevo al más viejo",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LedgerRowDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "balanceBs",
+          "items",
+          "nextCursor"
+        ]
+      },
+      "PaymentPreviewDto": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amountBs": {
+            "type": "string",
+            "example": "29.90"
+          }
+        },
+        "required": [
+          "workerId",
+          "amountBs"
+        ]
+      },
+      "PreviewAllocationDto": {
+        "type": "object",
+        "properties": {
+          "periodId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "null = periodo actual que todavía no existe"
+          },
+          "paymentReference": {
+            "type": "string",
+            "nullable": true
+          },
+          "amountBs": {
+            "type": "string",
+            "example": "19.50"
+          },
+          "periodBalanceAfterBs": {
+            "type": "string",
+            "example": "0.00"
+          },
+          "statusAfter": {
+            "type": "string",
+            "enum": [
+              "abierto",
+              "cerrado_pendiente",
+              "pagado",
+              "vencido"
+            ]
+          }
+        },
+        "required": [
+          "periodId",
+          "paymentReference",
+          "amountBs",
+          "periodBalanceAfterBs",
+          "statusAfter"
+        ]
+      },
+      "BalancePreviewDto": {
+        "type": "object",
+        "properties": {
+          "balanceBeforeBs": {
+            "type": "string",
+            "example": "29.90"
+          },
+          "balanceAfterBs": {
+            "type": "string",
+            "example": "0.00"
+          },
+          "allocations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PreviewAllocationDto"
+            }
+          },
+          "blockedNow": {
+            "type": "boolean",
+            "description": "Hoy está bloqueado por deuda"
+          },
+          "unblocks": {
+            "type": "boolean",
+            "description": "Después de esto no quedaría ningún periodo vencido"
+          }
+        },
+        "required": [
+          "balanceBeforeBs",
+          "balanceAfterBs",
+          "allocations",
+          "blockedNow",
+          "unblocks"
+        ]
+      },
+      "AdjustmentPreviewDto": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amountBs": {
+            "type": "string",
+            "example": "-19.50",
+            "description": "Con signo: + aumenta la deuda"
+          },
+          "correctsEntryId": {
+            "type": "string",
+            "example": "42"
+          },
+          "periodId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "workerId",
+          "amountBs"
+        ]
+      },
+      "CurrentQrDto": {
+        "type": "object",
+        "properties": {
+          "qrUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "URL temporal; null si no hay QR"
+          }
+        },
+        "required": [
+          "qrUrl"
         ]
       },
       "ReceiptUploadDto": {
@@ -9127,6 +12367,850 @@
           "dueAt",
           "instructions",
           "gatewayEnabled"
+        ]
+      },
+      "UserRowDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "phone": {
+            "type": "string",
+            "example": "+59170012345"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "admin"
+            ]
+          },
+          "activeMode": {
+            "type": "string",
+            "enum": [
+              "employer",
+              "worker"
+            ]
+          },
+          "cityName": {
+            "type": "string"
+          },
+          "workerStatus": {
+            "type": "string",
+            "nullable": true,
+            "description": "Estado del perfil de trabajador"
+          },
+          "flagged": {
+            "type": "boolean",
+            "description": "Empleador marcado para revisión (3 reportes válidos)"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "phone",
+          "name",
+          "role",
+          "activeMode",
+          "cityName",
+          "workerStatus",
+          "flagged",
+          "createdAt"
+        ]
+      },
+      "UserPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserRowDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "RatingDto": {
+        "type": "object",
+        "properties": {
+          "avg": {
+            "type": "string",
+            "example": "4.50"
+          },
+          "count": {
+            "type": "number",
+            "example": 12
+          }
+        },
+        "required": [
+          "avg",
+          "count"
+        ]
+      },
+      "PeriodRowDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "paymentReference": {
+            "type": "string"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "commissionBs": {
+            "type": "string",
+            "example": "19.50"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "paymentReference",
+          "startAt",
+          "dueAt",
+          "commissionBs"
+        ]
+      },
+      "WorkerSummaryDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "statusChangedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "rating": {
+            "$ref": "#/components/schemas/RatingDto"
+          },
+          "rejectionReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "moderationResolution": {
+            "type": "string",
+            "nullable": true
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "transport": {
+            "type": "string",
+            "nullable": true
+          },
+          "maxRadiusKm": {
+            "type": "number",
+            "nullable": true
+          },
+          "balanceBs": {
+            "type": "string",
+            "example": "29.90",
+            "description": "Saldo del ledger (positivo = debe)"
+          },
+          "periods": {
+            "description": "Últimos 8",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PeriodRowDto"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "statusChangedAt",
+          "rating",
+          "rejectionReason",
+          "moderationResolution",
+          "categories",
+          "transport",
+          "maxRadiusKm",
+          "balanceBs",
+          "periods"
+        ]
+      },
+      "ReportCountsDto": {
+        "type": "object",
+        "properties": {
+          "pendiente": {
+            "type": "number"
+          },
+          "valido": {
+            "type": "number"
+          },
+          "descartado": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "pendiente",
+          "valido",
+          "descartado"
+        ]
+      },
+      "ReportRowDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "targetType": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "targetType",
+          "reason",
+          "status",
+          "createdAt"
+        ]
+      },
+      "JobRowDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "as": {
+            "type": "string",
+            "enum": [
+              "worker",
+              "employer"
+            ]
+          },
+          "status": {
+            "type": "string"
+          },
+          "categoryName": {
+            "type": "string"
+          },
+          "finalPriceBs": {
+            "type": "string",
+            "example": "150.00"
+          },
+          "assignedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "as",
+          "status",
+          "categoryName",
+          "finalPriceBs",
+          "assignedAt"
+        ]
+      },
+      "UserProfileDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "phone": {
+            "type": "string",
+            "example": "+59170012345"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "admin"
+            ]
+          },
+          "activeMode": {
+            "type": "string",
+            "enum": [
+              "employer",
+              "worker"
+            ]
+          },
+          "cityName": {
+            "type": "string"
+          },
+          "workerStatus": {
+            "type": "string",
+            "nullable": true,
+            "description": "Estado del perfil de trabajador"
+          },
+          "flagged": {
+            "type": "boolean",
+            "description": "Empleador marcado para revisión (3 reportes válidos)"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "employerRating": {
+            "description": "Como empleador",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RatingDto"
+              }
+            ]
+          },
+          "cancellationsCount": {
+            "type": "number"
+          },
+          "flaggedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "worker": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkerSummaryDto"
+              }
+            ]
+          },
+          "reportCounts": {
+            "description": "Reportes recibidos",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportCountsDto"
+              }
+            ]
+          },
+          "reports": {
+            "description": "Últimos 10 recibidos",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportRowDto"
+            }
+          },
+          "jobsCount": {
+            "type": "number",
+            "example": 14,
+            "description": "Trabajos como trabajador o empleador"
+          },
+          "jobs": {
+            "description": "Últimos 10",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobRowDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "phone",
+          "name",
+          "role",
+          "activeMode",
+          "cityName",
+          "workerStatus",
+          "flagged",
+          "createdAt",
+          "employerRating",
+          "cancellationsCount",
+          "flaggedAt",
+          "worker",
+          "reportCounts",
+          "reports",
+          "jobsCount",
+          "jobs"
+        ]
+      },
+      "ReasonDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "Tres reportes de acoso verificados por el equipo."
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "WorkerStatusResultDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "modeForcedToEmployer": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "userId",
+          "status",
+          "modeForcedToEmployer"
+        ]
+      },
+      "VerificationRowDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string"
+          },
+          "cityName": {
+            "type": "string"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "userId",
+          "name",
+          "phone",
+          "cityName",
+          "submittedAt",
+          "categories"
+        ]
+      },
+      "VerificationPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VerificationRowDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "VerificationCategoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "extraRequirements": {
+            "description": "Requisitos extra de verificación (R2.2)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "extraRequirements"
+        ]
+      },
+      "VerificationDocumentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "ci_front",
+              "ci_back",
+              "selfie",
+              "cert"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "description": "URL temporal (5 minutos, sin caché). Nunca se guarda."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "url",
+          "expiresAt"
+        ]
+      },
+      "VerificationDetailDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string"
+          },
+          "cityName": {
+            "type": "string"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "example": "pendiente_revision"
+          },
+          "birthDate": {
+            "type": "string",
+            "nullable": true,
+            "format": "date"
+          },
+          "age": {
+            "type": "number",
+            "nullable": true,
+            "description": "Edad en la zona de su ciudad"
+          },
+          "transport": {
+            "type": "string",
+            "nullable": true
+          },
+          "maxRadiusKm": {
+            "type": "number",
+            "nullable": true
+          },
+          "categoryDetails": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VerificationCategoryDto"
+            }
+          },
+          "documents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VerificationDocumentDto"
+            }
+          }
+        },
+        "required": [
+          "userId",
+          "name",
+          "phone",
+          "cityName",
+          "submittedAt",
+          "categories",
+          "status",
+          "birthDate",
+          "age",
+          "transport",
+          "maxRadiusKm",
+          "categoryDetails",
+          "documents"
+        ]
+      },
+      "ApproveVerificationDto": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "example": "Documentos claros."
+          }
+        }
+      },
+      "VerificationResultDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "aprobado",
+              "rechazado"
+            ]
+          },
+          "rejectionReason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "userId",
+          "status",
+          "rejectionReason"
+        ]
+      },
+      "RejectVerificationDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "documento_ilegible",
+              "documento_no_coincide",
+              "selfie_no_coincide",
+              "menor_de_edad",
+              "documento_vencido",
+              "requisitos_de_categoria",
+              "datos_incompletos",
+              "otro"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "example": "La foto del reverso está movida; vuelve a sacarla con buena luz."
+          }
+        },
+        "required": [
+          "reason",
+          "note"
+        ]
+      },
+      "DocumentUrlDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "example": "https://...?X-Amz-Signature=...",
+            "description": "Enlace temporal (5 min)"
+          },
+          "expiresAt": {
+            "type": "string",
+            "example": "2026-10-14T12:05:00.000Z"
+          }
+        },
+        "required": [
+          "url",
+          "expiresAt"
+        ]
+      },
+      "CancellationCountDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "cambio_de_planes"
+          },
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "reason",
+          "count"
+        ]
+      },
+      "CountersDto": {
+        "type": "object",
+        "properties": {
+          "verifications": {
+            "type": "number",
+            "description": "Solicitudes de trabajador por revisar"
+          },
+          "heldRequests": {
+            "type": "number",
+            "description": "Solicitudes retenidas por moderación"
+          },
+          "heldMessages": {
+            "type": "number",
+            "description": "Mensajes de chat retenidos"
+          },
+          "reports": {
+            "type": "number",
+            "description": "Reportes pendientes"
+          },
+          "disputes": {
+            "type": "number",
+            "description": "Disputas abiertas"
+          },
+          "submissions": {
+            "type": "number",
+            "description": "Comprobantes por revisar"
+          }
+        },
+        "required": [
+          "verifications",
+          "heldRequests",
+          "heldMessages",
+          "reports",
+          "disputes",
+          "submissions"
+        ]
+      },
+      "DashboardDto": {
+        "type": "object",
+        "properties": {
+          "range": {
+            "type": "string",
+            "enum": [
+              "day",
+              "week"
+            ]
+          },
+          "cityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cityName": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "requestsCreated": {
+            "type": "number",
+            "description": "Publicadas en el rango (sin borradores)"
+          },
+          "assignmentRatePct": {
+            "type": "number",
+            "nullable": true,
+            "example": 72.5
+          },
+          "expirationRatePct": {
+            "type": "number",
+            "nullable": true,
+            "example": 12.5
+          },
+          "avgFirstOfferSec": {
+            "type": "number",
+            "nullable": true,
+            "description": "Desde la publicación, en segundos"
+          },
+          "jobsCompleted": {
+            "type": "number"
+          },
+          "cancellationsByReason": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CancellationCountDto"
+            }
+          },
+          "commissionGeneratedBs": {
+            "type": "string",
+            "example": "195.00"
+          },
+          "commissionCollectedBs": {
+            "type": "string",
+            "example": "120.00"
+          },
+          "overdueDebtBs": {
+            "type": "string",
+            "example": "58.50",
+            "description": "Saldo de los periodos vencidos (ahora)"
+          },
+          "overdueWorkers": {
+            "type": "number"
+          },
+          "workersAvailableNow": {
+            "type": "number",
+            "description": "Disponibles con ubicación reciente"
+          },
+          "queues": {
+            "$ref": "#/components/schemas/CountersDto"
+          }
+        },
+        "required": [
+          "range",
+          "cityId",
+          "cityName",
+          "from",
+          "to",
+          "requestsCreated",
+          "assignmentRatePct",
+          "expirationRatePct",
+          "avgFirstOfferSec",
+          "jobsCompleted",
+          "cancellationsByReason",
+          "commissionGeneratedBs",
+          "commissionCollectedBs",
+          "overdueDebtBs",
+          "overdueWorkers",
+          "workersAvailableNow",
+          "queues"
         ]
       }
     }

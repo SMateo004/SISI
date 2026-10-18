@@ -9,6 +9,10 @@ part of 'reported_user_dto.dart';
 abstract class _$ReportedUserDtoCWProxy {
   ReportedUserDto id(String id);
 
+  ReportedUserDto name(String? name);
+
+  ReportedUserDto phone(String phone);
+
   ReportedUserDto validReporters(num validReporters);
 
   ReportedUserDto workerStatus(String? workerStatus);
@@ -23,6 +27,8 @@ abstract class _$ReportedUserDtoCWProxy {
   /// ````
   ReportedUserDto call({
     String id,
+    String? name,
+    String phone,
     num validReporters,
     String? workerStatus,
     DateTime? flaggedAt,
@@ -37,6 +43,12 @@ class _$ReportedUserDtoCWProxyImpl implements _$ReportedUserDtoCWProxy {
 
   @override
   ReportedUserDto id(String id) => this(id: id);
+
+  @override
+  ReportedUserDto name(String? name) => this(name: name);
+
+  @override
+  ReportedUserDto phone(String phone) => this(phone: phone);
 
   @override
   ReportedUserDto validReporters(num validReporters) =>
@@ -58,6 +70,8 @@ class _$ReportedUserDtoCWProxyImpl implements _$ReportedUserDtoCWProxy {
   /// ````
   ReportedUserDto call({
     Object? id = const $CopyWithPlaceholder(),
+    Object? name = const $CopyWithPlaceholder(),
+    Object? phone = const $CopyWithPlaceholder(),
     Object? validReporters = const $CopyWithPlaceholder(),
     Object? workerStatus = const $CopyWithPlaceholder(),
     Object? flaggedAt = const $CopyWithPlaceholder(),
@@ -67,6 +81,14 @@ class _$ReportedUserDtoCWProxyImpl implements _$ReportedUserDtoCWProxy {
           ? _value.id
           // ignore: cast_nullable_to_non_nullable
           : id as String,
+      name: name == const $CopyWithPlaceholder()
+          ? _value.name
+          // ignore: cast_nullable_to_non_nullable
+          : name as String?,
+      phone: phone == const $CopyWithPlaceholder()
+          ? _value.phone
+          // ignore: cast_nullable_to_non_nullable
+          : phone as String,
       validReporters: validReporters == const $CopyWithPlaceholder()
           ? _value.validReporters
           // ignore: cast_nullable_to_non_nullable
@@ -99,6 +121,8 @@ ReportedUserDto _$ReportedUserDtoFromJson(Map<String, dynamic> json) =>
         json,
         requiredKeys: const [
           'id',
+          'name',
+          'phone',
           'validReporters',
           'workerStatus',
           'flaggedAt',
@@ -106,6 +130,8 @@ ReportedUserDto _$ReportedUserDtoFromJson(Map<String, dynamic> json) =>
       );
       final val = ReportedUserDto(
         id: $checkedConvert('id', (v) => v as String),
+        name: $checkedConvert('name', (v) => v as String?),
+        phone: $checkedConvert('phone', (v) => v as String),
         validReporters: $checkedConvert('validReporters', (v) => v as num),
         workerStatus: $checkedConvert('workerStatus', (v) => v as String?),
         flaggedAt: $checkedConvert(
@@ -119,6 +145,8 @@ ReportedUserDto _$ReportedUserDtoFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$ReportedUserDtoToJson(ReportedUserDto instance) =>
     <String, dynamic>{
       'id': instance.id,
+      'name': instance.name,
+      'phone': instance.phone,
       'validReporters': instance.validReporters,
       'workerStatus': instance.workerStatus,
       'flaggedAt': instance.flaggedAt?.toIso8601String(),

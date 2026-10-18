@@ -35,6 +35,12 @@ class AdminReportDto {
 
     required  this.reporterId,
 
+    required  this.reporterName,
+
+    required  this.reporterPhone,
+
+    required  this.targetSummary,
+
     required  this.note,
 
     required  this.noteHeld,
@@ -130,6 +136,43 @@ class AdminReportDto {
 
   @JsonKey(
     
+    name: r'reporterName',
+    required: true,
+    includeIfNull: true,
+  )
+
+
+  final String? reporterName;
+
+
+
+  @JsonKey(
+    
+    name: r'reporterPhone',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final String reporterPhone;
+
+
+
+      /// Qué se reportó, en una línea
+  @JsonKey(
+    
+    name: r'targetSummary',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final String targetSummary;
+
+
+
+  @JsonKey(
+    
     name: r'note',
     required: true,
     includeIfNull: true,
@@ -187,6 +230,9 @@ class AdminReportDto {
       other.status == status &&
       other.createdAt == createdAt &&
       other.reporterId == reporterId &&
+      other.reporterName == reporterName &&
+      other.reporterPhone == reporterPhone &&
+      other.targetSummary == targetSummary &&
       other.note == note &&
       other.noteHeld == noteHeld &&
       other.resolution == resolution &&
@@ -201,6 +247,9 @@ class AdminReportDto {
         status.hashCode +
         createdAt.hashCode +
         reporterId.hashCode +
+        (reporterName == null ? 0 : reporterName.hashCode) +
+        reporterPhone.hashCode +
+        targetSummary.hashCode +
         (note == null ? 0 : note.hashCode) +
         noteHeld.hashCode +
         (resolution == null ? 0 : resolution.hashCode) +

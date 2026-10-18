@@ -15,6 +15,9 @@ Name | Type | Description | Notes
 **status** | **String** |  | 
 **createdAt** | [**DateTime**](DateTime.md) |  | 
 **reporterId** | **String** |  | 
+**reporterName** | **String** |  | 
+**reporterPhone** | **String** |  | 
+**targetSummary** | **String** | Qué se reportó, en una línea | 
 **note** | **String** |  | 
 **noteHeld** | **bool** |  | 
 **resolution** | **String** |  | 

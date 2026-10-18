@@ -37,7 +37,11 @@ class AdminCategoryDto {
 
     required  this.active,
 
+    required  this.extraRequirements,
+
     required  this.cities,
+
+    required  this.notice,
   });
 
   @JsonKey(
@@ -138,6 +142,18 @@ class AdminCategoryDto {
 
   @JsonKey(
     
+    name: r'extraRequirements',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final List<String> extraRequirements;
+
+
+
+  @JsonKey(
+    
     name: r'cities',
     required: true,
     includeIfNull: false,
@@ -145,6 +161,19 @@ class AdminCategoryDto {
 
 
   final List<AdminCategoryCityDto> cities;
+
+
+
+      /// Aviso al cambiar la comisión: solo afecta a los trabajos asignados desde ahora
+  @JsonKey(
+    
+    name: r'notice',
+    required: true,
+    includeIfNull: true,
+  )
+
+
+  final String? notice;
 
 
 
@@ -160,7 +189,9 @@ class AdminCategoryDto {
       other.priceMaxBs == priceMaxBs &&
       other.commissionPct == commissionPct &&
       other.active == active &&
-      other.cities == cities;
+      other.extraRequirements == extraRequirements &&
+      other.cities == cities &&
+      other.notice == notice;
 
     @override
     int get hashCode =>
@@ -172,7 +203,9 @@ class AdminCategoryDto {
         priceMaxBs.hashCode +
         commissionPct.hashCode +
         active.hashCode +
-        cities.hashCode;
+        extraRequirements.hashCode +
+        cities.hashCode +
+        (notice == null ? 0 : notice.hashCode);
 
   factory AdminCategoryDto.fromJson(Map<String, dynamic> json) => _$AdminCategoryDtoFromJson(json);
 

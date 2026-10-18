@@ -49,13 +49,19 @@ import 'package:sisi_api/sisi_api.dart';
 
 
 final api = SisiApi().getAdminApi();
-final FileUploadDto fileUploadDto = ; // FileUploadDto | 
+final String adminId = 38400000-8cf0-11bd-b23e-10b96e4ef00d; // String | 
+final String action = billing.; // String | Acción o prefijo (p. ej. \"billing.\" trae todas las de cobros)
+final String targetType = worker; // String | 
+final String targetId = targetId_example; // String | 
+final DateTime from = 2013-10-20T19:20:30+01:00; // DateTime | Desde (incluido)
+final DateTime to = 2013-10-20T19:20:30+01:00; // DateTime | Hasta (excluido)
+final String cursor = cursor_example; // String | nextCursor de la página anterior
 
 try {
-    final response = await api.adminBillingControllerQrUploadUrl(fileUploadDto);
+    final response = await api.adminAuditControllerList(adminId, action, targetType, targetId, from, to, cursor);
     print(response);
 } on DioException catch (e) {
-    print("Exception when calling AdminApi->adminBillingControllerQrUploadUrl: $e\n");
+    print("Exception when calling AdminApi->adminAuditControllerList: $e\n");
 }
 
 ```
@@ -66,6 +72,15 @@ All URIs are relative to *http://localhost*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
+[*AdminApi*](doc/AdminApi.md) | [**adminAuditControllerList**](doc/AdminApi.md#adminauditcontrollerlist) | **GET** /admin/audit | Auditoría del panel (ADR-0041)
+[*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerCurrentQr**](doc/AdminApi.md#adminbillingcontrollercurrentqr) | **GET** /admin/billing/qr | QR de cobro actual (URL temporal), o null si no hay
+[*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerExportLedger**](doc/AdminApi.md#adminbillingcontrollerexportledger) | **GET** /admin/billing/export/ledger.csv | CSV del ledger por rango de fechas [desde, hasta), para el contador
+[*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerExportPayments**](doc/AdminApi.md#adminbillingcontrollerexportpayments) | **GET** /admin/billing/export/payments.csv | CSV de pagos por fecha de pago [desde, hasta), para el contador
+[*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerLedger**](doc/AdminApi.md#adminbillingcontrollerledger) | **GET** /admin/billing/workers/{id}/ledger | Ledger completo de un trabajador con saldo acumulado
+[*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerOverdue**](doc/AdminApi.md#adminbillingcontrolleroverdue) | **GET** /admin/billing/overdue | Periodos vencidos con monto y días de atraso (R7.7)
+[*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerPeriods**](doc/AdminApi.md#adminbillingcontrollerperiods) | **GET** /admin/billing/periods | Periodos de cobro con filtros por estado, semana y ciudad
+[*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerPreviewAdjustment**](doc/AdminApi.md#adminbillingcontrollerpreviewadjustment) | **POST** /admin/billing/adjustments/preview | Efecto de un ajuste antes de registrarlo (no guarda nada)
+[*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerPreviewPayment**](doc/AdminApi.md#adminbillingcontrollerpreviewpayment) | **POST** /admin/billing/payments/preview | Efecto de un pago antes de registrarlo
 [*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerQrUploadUrl**](doc/AdminApi.md#adminbillingcontrollerqruploadurl) | **POST** /admin/billing/qr/upload-url | URL para subir la imagen del QR de cobro de la empresa
 [*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerReceiptUploadUrl**](doc/AdminApi.md#adminbillingcontrollerreceiptuploadurl) | **POST** /admin/billing/receipts/upload-url | URL para subir el comprobante de un pago (receipts/, privado)
 [*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerRegisterAdjustment**](doc/AdminApi.md#adminbillingcontrollerregisteradjustment) | **POST** /admin/billing/adjustments | Registrar un ajuste (R7.9)
@@ -74,10 +89,15 @@ Class | Method | HTTP request | Description
 [*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerSetQr**](doc/AdminApi.md#adminbillingcontrollersetqr) | **PUT** /admin/billing/qr | Configurar el QR de cobro (R7.4)
 [*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerSubmissions**](doc/AdminApi.md#adminbillingcontrollersubmissions) | **GET** /admin/billing/submissions | Comprobantes enviados por los trabajadores (por defecto, pendientes)
 [*AdminApi*](doc/AdminApi.md) | [**adminBillingControllerWorker**](doc/AdminApi.md#adminbillingcontrollerworker) | **GET** /admin/billing/workers/{id} | Saldo, periodos y movimientos de un trabajador
+[*AdminApi*](doc/AdminApi.md) | [**adminCategoriesControllerCreate**](doc/AdminApi.md#admincategoriescontrollercreate) | **POST** /admin/categories | Crea una categoría (R2.2)
 [*AdminApi*](doc/AdminApi.md) | [**adminCategoriesControllerList**](doc/AdminApi.md#admincategoriescontrollerlist) | **GET** /admin/categories | Todas las categorías con sus valores por ciudad
 [*AdminApi*](doc/AdminApi.md) | [**adminCategoriesControllerUpdate**](doc/AdminApi.md#admincategoriescontrollerupdate) | **PATCH** /admin/categories/{id} | Edita los valores base de una categoría
 [*AdminApi*](doc/AdminApi.md) | [**adminCategoriesControllerUpsertCity**](doc/AdminApi.md#admincategoriescontrollerupsertcity) | **PUT** /admin/categories/{id}/cities/{cityId} | Activa o ajusta una categoría en una ciudad
-[*AdminApi*](doc/AdminApi.md) | [**adminChatControllerHeld**](doc/AdminApi.md#adminchatcontrollerheld) | **GET** /admin/chat/held | Mensajes de chat retenidos (los 100 más recientes)
+[*AdminApi*](doc/AdminApi.md) | [**adminChatControllerDiscard**](doc/AdminApi.md#adminchatcontrollerdiscard) | **POST** /admin/chat/{messageId}/discard | Descartar un mensaje retenido: no se entrega nunca
+[*AdminApi*](doc/AdminApi.md) | [**adminChatControllerHeld**](doc/AdminApi.md#adminchatcontrollerheld) | **GET** /admin/chat/held | Mensajes de chat retenidos, del más antiguo al más nuevo
+[*AdminApi*](doc/AdminApi.md) | [**adminChatControllerRelease**](doc/AdminApi.md#adminchatcontrollerrelease) | **POST** /admin/chat/{messageId}/release | Liberar un mensaje retenido: se entrega al destinatario
+[*AdminApi*](doc/AdminApi.md) | [**adminCitiesControllerList**](doc/AdminApi.md#admincitiescontrollerlist) | **GET** /admin/cities | Ciudades
+[*AdminApi*](doc/AdminApi.md) | [**adminJobsControllerDetail**](doc/AdminApi.md#adminjobscontrollerdetail) | **GET** /admin/jobs/{id} | Detalle de un trabajo para revisar una disputa
 [*AdminApi*](doc/AdminApi.md) | [**adminJobsControllerDisputed**](doc/AdminApi.md#adminjobscontrollerdisputed) | **GET** /admin/jobs/disputed | Trabajos con un problema reportado, sin resolver
 [*AdminApi*](doc/AdminApi.md) | [**adminJobsControllerResolve**](doc/AdminApi.md#adminjobscontrollerresolve) | **POST** /admin/jobs/{id}/resolve | Resolver una disputa
 [*AdminApi*](doc/AdminApi.md) | [**adminReportsControllerList**](doc/AdminApi.md#adminreportscontrollerlist) | **GET** /admin/reports | Reportes por estado (por defecto, pendientes)
@@ -85,13 +105,31 @@ Class | Method | HTTP request | Description
 [*AdminApi*](doc/AdminApi.md) | [**adminRequestsControllerList**](doc/AdminApi.md#adminrequestscontrollerlist) | **GET** /admin/requests | Solicitudes por estado (por defecto, las retenidas por moderación)
 [*AdminApi*](doc/AdminApi.md) | [**adminRequestsControllerReject**](doc/AdminApi.md#adminrequestscontrollerreject) | **POST** /admin/requests/{id}/reject | Rechaza una solicitud retenida
 [*AdminApi*](doc/AdminApi.md) | [**adminRequestsControllerRelease**](doc/AdminApi.md#adminrequestscontrollerrelease) | **POST** /admin/requests/{id}/release | Libera una solicitud retenida: pasa a \&quot;buscando\&quot;
-[*AdminApi*](doc/AdminApi.md) | [**adminWorkersControllerDocumentUrl**](doc/AdminApi.md#adminworkerscontrollerdocumenturl) | **GET** /admin/workers/{userId}/documents/{documentId}/url | Enlace temporal a un documento de identidad (R9.5)
+[*AdminApi*](doc/AdminApi.md) | [**adminSettingsControllerList**](doc/AdminApi.md#adminsettingscontrollerlist) | **GET** /admin/settings | Parámetros de negocio editables (ADR-0043)
+[*AdminApi*](doc/AdminApi.md) | [**adminSettingsControllerReset**](doc/AdminApi.md#adminsettingscontrollerreset) | **POST** /admin/settings/{key}/reset | Volver al valor por defecto (variable de entorno)
+[*AdminApi*](doc/AdminApi.md) | [**adminSettingsControllerSet**](doc/AdminApi.md#adminsettingscontrollerset) | **PUT** /admin/settings/{key} | Cambiar un parámetro, con motivo
+[*AdminApi*](doc/AdminApi.md) | [**adminUsersControllerClearFlag**](doc/AdminApi.md#adminuserscontrollerclearflag) | **POST** /admin/users/{id}/clear-flag | Quitar la marca \&quot;revisar\&quot; de un empleador reportado
+[*AdminApi*](doc/AdminApi.md) | [**adminUsersControllerProfile**](doc/AdminApi.md#adminuserscontrollerprofile) | **GET** /admin/users/{id} | Ficha de un usuario
+[*AdminApi*](doc/AdminApi.md) | [**adminUsersControllerReactivate**](doc/AdminApi.md#adminuserscontrollerreactivate) | **POST** /admin/workers/{id}/reactivate | Levantar la suspensión
+[*AdminApi*](doc/AdminApi.md) | [**adminUsersControllerSearch**](doc/AdminApi.md#adminuserscontrollersearch) | **GET** /admin/users | Buscar usuarios por teléfono o nombre
+[*AdminApi*](doc/AdminApi.md) | [**adminUsersControllerSuspend**](doc/AdminApi.md#adminuserscontrollersuspend) | **POST** /admin/workers/{id}/suspend | Suspender el perfil de trabajador
+[*AdminApi*](doc/AdminApi.md) | [**dashboardControllerCounters**](doc/AdminApi.md#dashboardcontrollercounters) | **GET** /admin/counters | Colas pendientes para el menú del panel
+[*AdminApi*](doc/AdminApi.md) | [**dashboardControllerGet**](doc/AdminApi.md#dashboardcontrollerget) | **GET** /admin/dashboard | Dashboard del día o de la semana (hora local de la ciudad)
 [*AdminApi*](doc/AdminApi.md) | [**featureFlagsControllerList**](doc/AdminApi.md#featureflagscontrollerlist) | **GET** /admin/feature-flags | Feature flags (globales y por ciudad)
 [*AdminApi*](doc/AdminApi.md) | [**featureFlagsControllerSet**](doc/AdminApi.md#featureflagscontrollerset) | **PUT** /admin/feature-flags/{key} | Enciende o apaga un flag
 [*AdminApi*](doc/AdminApi.md) | [**moderationTermsControllerCreate**](doc/AdminApi.md#moderationtermscontrollercreate) | **POST** /admin/moderation-terms | Agrega un término o patrón
 [*AdminApi*](doc/AdminApi.md) | [**moderationTermsControllerList**](doc/AdminApi.md#moderationtermscontrollerlist) | **GET** /admin/moderation-terms | Términos del filtro de moderación
 [*AdminApi*](doc/AdminApi.md) | [**moderationTermsControllerRemove**](doc/AdminApi.md#moderationtermscontrollerremove) | **DELETE** /admin/moderation-terms/{id} | Desactiva un término (baja lógica)
+[*AdminApi*](doc/AdminApi.md) | [**moderationTermsControllerTest**](doc/AdminApi.md#moderationtermscontrollertest) | **POST** /admin/moderation-terms/test | Probador: qué términos vigentes coinciden con un texto
 [*AdminApi*](doc/AdminApi.md) | [**moderationTermsControllerUpdate**](doc/AdminApi.md#moderationtermscontrollerupdate) | **PATCH** /admin/moderation-terms/{id} | Cambia la categoría, la nota o reactiva un término
+[*AdminApi*](doc/AdminApi.md) | [**verificationsControllerApprove**](doc/AdminApi.md#verificationscontrollerapprove) | **POST** /admin/verifications/{userId}/approve | Aprobar: el perfil pasa a aprobado y se le avisa (push)
+[*AdminApi*](doc/AdminApi.md) | [**verificationsControllerDetail**](doc/AdminApi.md#verificationscontrollerdetail) | **GET** /admin/verifications/{userId} | Detalle de una solicitud de trabajador
+[*AdminApi*](doc/AdminApi.md) | [**verificationsControllerDocumentUrl**](doc/AdminApi.md#verificationscontrollerdocumenturl) | **GET** /admin/workers/{userId}/documents/{documentId}/url | Enlace temporal a un documento de identidad (R9.5)
+[*AdminApi*](doc/AdminApi.md) | [**verificationsControllerQueue**](doc/AdminApi.md#verificationscontrollerqueue) | **GET** /admin/verifications | Cola de verificaciones (pendiente_revision)
+[*AdminApi*](doc/AdminApi.md) | [**verificationsControllerReject**](doc/AdminApi.md#verificationscontrollerreject) | **POST** /admin/verifications/{userId}/reject | Rechazar con motivo de la lista y nota
+[*AuthApi*](doc/AuthApi.md) | [**adminAuthControllerLogout**](doc/AuthApi.md#adminauthcontrollerlogout) | **POST** /auth/admin/logout | Cierra la sesión del panel (revoca el refresh y borra la cookie)
+[*AuthApi*](doc/AuthApi.md) | [**adminAuthControllerRefresh**](doc/AuthApi.md#adminauthcontrollerrefresh) | **POST** /auth/admin/refresh | Renueva el token de acceso del panel con la cookie
+[*AuthApi*](doc/AuthApi.md) | [**adminAuthControllerVerify**](doc/AuthApi.md#adminauthcontrollerverify) | **POST** /auth/admin/otp/verify | Valida el código e inicia sesión en el panel
 [*AuthApi*](doc/AuthApi.md) | [**authControllerLogout**](doc/AuthApi.md#authcontrollerlogout) | **POST** /auth/logout | Cierra la sesión (revoca la familia del refresh token)
 [*AuthApi*](doc/AuthApi.md) | [**authControllerRefresh**](doc/AuthApi.md#authcontrollerrefresh) | **POST** /auth/refresh | Renueva la sesión (rota el refresh token)
 [*AuthApi*](doc/AuthApi.md) | [**authControllerRequestOtp**](doc/AuthApi.md#authcontrollerrequestotp) | **POST** /auth/otp/request | Envía un código de 6 dígitos al celular
@@ -161,25 +199,44 @@ Class | Method | HTTP request | Description
 ## Documentation For Models
 
  - [AcceptOfferResultDto](doc/AcceptOfferResultDto.md)
+ - [AdjustmentPreviewDto](doc/AdjustmentPreviewDto.md)
  - [AdjustmentResultDto](doc/AdjustmentResultDto.md)
  - [AdminCategoryCityDto](doc/AdminCategoryCityDto.md)
  - [AdminCategoryDto](doc/AdminCategoryDto.md)
+ - [AdminCityDto](doc/AdminCityDto.md)
  - [AdminDisputedJobDto](doc/AdminDisputedJobDto.md)
  - [AdminHeldMessageDto](doc/AdminHeldMessageDto.md)
+ - [AdminHeldMessagePageDto](doc/AdminHeldMessagePageDto.md)
  - [AdminHeldRequestDto](doc/AdminHeldRequestDto.md)
+ - [AdminJobDetailDto](doc/AdminJobDetailDto.md)
+ - [AdminJobEventDto](doc/AdminJobEventDto.md)
+ - [AdminJobMessageDto](doc/AdminJobMessageDto.md)
+ - [AdminJobOfferDto](doc/AdminJobOfferDto.md)
+ - [AdminJobPartyDto](doc/AdminJobPartyDto.md)
  - [AdminJobsControllerResolve200Response](doc/AdminJobsControllerResolve200Response.md)
  - [AdminLedgerEntryDto](doc/AdminLedgerEntryDto.md)
+ - [AdminOfferEventDto](doc/AdminOfferEventDto.md)
  - [AdminPeriodDto](doc/AdminPeriodDto.md)
  - [AdminReportDto](doc/AdminReportDto.md)
+ - [AdminReportPageDto](doc/AdminReportPageDto.md)
+ - [AdminRequestPageDto](doc/AdminRequestPageDto.md)
+ - [AdminSessionDto](doc/AdminSessionDto.md)
  - [AdminWorkerBillingDto](doc/AdminWorkerBillingDto.md)
  - [AllocationDto](doc/AllocationDto.md)
  - [ApiErrorBody](doc/ApiErrorBody.md)
+ - [ApproveVerificationDto](doc/ApproveVerificationDto.md)
+ - [AuditEntryDto](doc/AuditEntryDto.md)
+ - [AuditPageDto](doc/AuditPageDto.md)
  - [AvailabilityDto](doc/AvailabilityDto.md)
+ - [BalancePreviewDto](doc/BalancePreviewDto.md)
  - [CancelJobDto](doc/CancelJobDto.md)
+ - [CancellationCountDto](doc/CancellationCountDto.md)
  - [CategoryDto](doc/CategoryDto.md)
  - [ChatMessageDto](doc/ChatMessageDto.md)
  - [ChatPageDto](doc/ChatPageDto.md)
  - [ConfirmUploadDto](doc/ConfirmUploadDto.md)
+ - [CountersDto](doc/CountersDto.md)
+ - [CreateCategoryDto](doc/CreateCategoryDto.md)
  - [CreateModerationTermDto](doc/CreateModerationTermDto.md)
  - [CreateOfferDto](doc/CreateOfferDto.md)
  - [CreateReportDto](doc/CreateReportDto.md)
@@ -188,6 +245,8 @@ Class | Method | HTTP request | Description
  - [CreateSubmissionDto](doc/CreateSubmissionDto.md)
  - [CreatedRequestDto](doc/CreatedRequestDto.md)
  - [CurrentPeriodDto](doc/CurrentPeriodDto.md)
+ - [CurrentQrDto](doc/CurrentQrDto.md)
+ - [DashboardDto](doc/DashboardDto.md)
  - [DebtCapStateDto](doc/DebtCapStateDto.md)
  - [DisputeJobDto](doc/DisputeJobDto.md)
  - [DocumentUploadRequestDto](doc/DocumentUploadRequestDto.md)
@@ -210,14 +269,20 @@ Class | Method | HTTP request | Description
  - [JobLocationDto](doc/JobLocationDto.md)
  - [JobPageDto](doc/JobPageDto.md)
  - [JobReviewsDto](doc/JobReviewsDto.md)
+ - [JobRowDto](doc/JobRowDto.md)
  - [JobTimelineDto](doc/JobTimelineDto.md)
+ - [LedgerPageDto](doc/LedgerPageDto.md)
+ - [LedgerRowDto](doc/LedgerRowDto.md)
  - [LocationUpdateDto](doc/LocationUpdateDto.md)
  - [LocationUpdateResultDto](doc/LocationUpdateResultDto.md)
  - [LoginResponseDto](doc/LoginResponseDto.md)
  - [MarkReadDto](doc/MarkReadDto.md)
  - [MarkReadResultDto](doc/MarkReadResultDto.md)
  - [ModeDeniedDto](doc/ModeDeniedDto.md)
+ - [ModerationDecisionDto](doc/ModerationDecisionDto.md)
+ - [ModerationMatchDto](doc/ModerationMatchDto.md)
  - [ModerationTermDto](doc/ModerationTermDto.md)
+ - [ModerationTestResultDto](doc/ModerationTestResultDto.md)
  - [MyOfferDto](doc/MyOfferDto.md)
  - [MyPaymentDto](doc/MyPaymentDto.md)
  - [MyReviewDto](doc/MyReviewDto.md)
@@ -225,28 +290,39 @@ Class | Method | HTTP request | Description
  - [NotificationPageDto](doc/NotificationPageDto.md)
  - [OfferWorkerDto](doc/OfferWorkerDto.md)
  - [OtpRequestedDto](doc/OtpRequestedDto.md)
+ - [OverdueListDto](doc/OverdueListDto.md)
+ - [OverdueRowDto](doc/OverdueRowDto.md)
+ - [PanelPeriodDto](doc/PanelPeriodDto.md)
+ - [PanelPeriodPageDto](doc/PanelPeriodPageDto.md)
  - [PayInfoDto](doc/PayInfoDto.md)
  - [PaymentAllocationDto](doc/PaymentAllocationDto.md)
  - [PaymentPageDto](doc/PaymentPageDto.md)
+ - [PaymentPreviewDto](doc/PaymentPreviewDto.md)
  - [PaymentResultDto](doc/PaymentResultDto.md)
  - [PaymentSubmissionDto](doc/PaymentSubmissionDto.md)
  - [PeriodPageDto](doc/PeriodPageDto.md)
+ - [PeriodRowDto](doc/PeriodRowDto.md)
  - [PeriodSummaryDto](doc/PeriodSummaryDto.md)
  - [PresignedUploadDto](doc/PresignedUploadDto.md)
+ - [PreviewAllocationDto](doc/PreviewAllocationDto.md)
  - [PriceRangeDto](doc/PriceRangeDto.md)
  - [PublicReviewDto](doc/PublicReviewDto.md)
  - [PublishResultDto](doc/PublishResultDto.md)
  - [QrResultDto](doc/QrResultDto.md)
+ - [RatingDto](doc/RatingDto.md)
  - [ReadAllResultDto](doc/ReadAllResultDto.md)
+ - [ReasonDto](doc/ReasonDto.md)
  - [ReceiptUploadDto](doc/ReceiptUploadDto.md)
  - [ReceivedReviewDto](doc/ReceivedReviewDto.md)
  - [RefreshTokenDto](doc/RefreshTokenDto.md)
  - [RegisterAdjustmentDto](doc/RegisterAdjustmentDto.md)
  - [RegisterDeviceDto](doc/RegisterDeviceDto.md)
  - [RegisterPaymentDto](doc/RegisterPaymentDto.md)
- - [RejectRequestDto](doc/RejectRequestDto.md)
  - [RejectSubmissionDto](doc/RejectSubmissionDto.md)
+ - [RejectVerificationDto](doc/RejectVerificationDto.md)
+ - [ReportCountsDto](doc/ReportCountsDto.md)
  - [ReportDto](doc/ReportDto.md)
+ - [ReportRowDto](doc/ReportRowDto.md)
  - [ReportedUserDto](doc/ReportedUserDto.md)
  - [RequestCategoryDto](doc/RequestCategoryDto.md)
  - [RequestDto](doc/RequestDto.md)
@@ -254,6 +330,7 @@ Class | Method | HTTP request | Description
  - [RequestPageDto](doc/RequestPageDto.md)
  - [RequestPhotoDto](doc/RequestPhotoDto.md)
  - [RequestWarningDto](doc/RequestWarningDto.md)
+ - [ResetSettingDto](doc/ResetSettingDto.md)
  - [ResolveDisputeDto](doc/ResolveDisputeDto.md)
  - [ResolveReportDto](doc/ResolveReportDto.md)
  - [ResolveReportResultDto](doc/ResolveReportResultDto.md)
@@ -263,8 +340,11 @@ Class | Method | HTTP request | Description
  - [SetAvailabilityDto](doc/SetAvailabilityDto.md)
  - [SetFeatureFlagDto](doc/SetFeatureFlagDto.md)
  - [SetQrDto](doc/SetQrDto.md)
+ - [SetSettingDto](doc/SetSettingDto.md)
+ - [SettingDto](doc/SettingDto.md)
  - [SubmitUpgradeDto](doc/SubmitUpgradeDto.md)
  - [SwitchModeDto](doc/SwitchModeDto.md)
+ - [TestModerationDto](doc/TestModerationDto.md)
  - [TokensDto](doc/TokensDto.md)
  - [TrackedPointDto](doc/TrackedPointDto.md)
  - [UnreadCountDto](doc/UnreadCountDto.md)
@@ -274,10 +354,21 @@ Class | Method | HTTP request | Description
  - [UploadRequestDto](doc/UploadRequestDto.md)
  - [UpsertCategoryCityDto](doc/UpsertCategoryCityDto.md)
  - [UserDto](doc/UserDto.md)
+ - [UserPageDto](doc/UserPageDto.md)
+ - [UserProfileDto](doc/UserProfileDto.md)
  - [UserReviewsDto](doc/UserReviewsDto.md)
+ - [UserRowDto](doc/UserRowDto.md)
+ - [VerificationCategoryDto](doc/VerificationCategoryDto.md)
+ - [VerificationDetailDto](doc/VerificationDetailDto.md)
+ - [VerificationDocumentDto](doc/VerificationDocumentDto.md)
+ - [VerificationPageDto](doc/VerificationPageDto.md)
+ - [VerificationResultDto](doc/VerificationResultDto.md)
+ - [VerificationRowDto](doc/VerificationRowDto.md)
  - [VerifyOtpDto](doc/VerifyOtpDto.md)
  - [WorkerDocumentStatusDto](doc/WorkerDocumentStatusDto.md)
  - [WorkerProfileDto](doc/WorkerProfileDto.md)
+ - [WorkerStatusResultDto](doc/WorkerStatusResultDto.md)
+ - [WorkerSummaryDto](doc/WorkerSummaryDto.md)
 
 
 ## Documentation For Authorization

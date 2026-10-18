@@ -23,7 +23,11 @@ abstract class _$AdminCategoryDtoCWProxy {
 
   AdminCategoryDto active(bool active);
 
+  AdminCategoryDto extraRequirements(List<String> extraRequirements);
+
   AdminCategoryDto cities(List<AdminCategoryCityDto> cities);
+
+  AdminCategoryDto notice(String? notice);
 
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `AdminCategoryDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
@@ -40,7 +44,9 @@ abstract class _$AdminCategoryDtoCWProxy {
     String priceMaxBs,
     String commissionPct,
     bool active,
+    List<String> extraRequirements,
     List<AdminCategoryCityDto> cities,
+    String? notice,
   });
 }
 
@@ -79,8 +85,15 @@ class _$AdminCategoryDtoCWProxyImpl implements _$AdminCategoryDtoCWProxy {
   AdminCategoryDto active(bool active) => this(active: active);
 
   @override
+  AdminCategoryDto extraRequirements(List<String> extraRequirements) =>
+      this(extraRequirements: extraRequirements);
+
+  @override
   AdminCategoryDto cities(List<AdminCategoryCityDto> cities) =>
       this(cities: cities);
+
+  @override
+  AdminCategoryDto notice(String? notice) => this(notice: notice);
 
   @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `AdminCategoryDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
@@ -98,7 +111,9 @@ class _$AdminCategoryDtoCWProxyImpl implements _$AdminCategoryDtoCWProxy {
     Object? priceMaxBs = const $CopyWithPlaceholder(),
     Object? commissionPct = const $CopyWithPlaceholder(),
     Object? active = const $CopyWithPlaceholder(),
+    Object? extraRequirements = const $CopyWithPlaceholder(),
     Object? cities = const $CopyWithPlaceholder(),
+    Object? notice = const $CopyWithPlaceholder(),
   }) {
     return AdminCategoryDto(
       id: id == const $CopyWithPlaceholder()
@@ -133,10 +148,18 @@ class _$AdminCategoryDtoCWProxyImpl implements _$AdminCategoryDtoCWProxy {
           ? _value.active
           // ignore: cast_nullable_to_non_nullable
           : active as bool,
+      extraRequirements: extraRequirements == const $CopyWithPlaceholder()
+          ? _value.extraRequirements
+          // ignore: cast_nullable_to_non_nullable
+          : extraRequirements as List<String>,
       cities: cities == const $CopyWithPlaceholder()
           ? _value.cities
           // ignore: cast_nullable_to_non_nullable
           : cities as List<AdminCategoryCityDto>,
+      notice: notice == const $CopyWithPlaceholder()
+          ? _value.notice
+          // ignore: cast_nullable_to_non_nullable
+          : notice as String?,
     );
   }
 }
@@ -164,7 +187,9 @@ AdminCategoryDto _$AdminCategoryDtoFromJson(Map<String, dynamic> json) =>
           'priceMaxBs',
           'commissionPct',
           'active',
+          'extraRequirements',
           'cities',
+          'notice',
         ],
       );
       final val = AdminCategoryDto(
@@ -176,6 +201,10 @@ AdminCategoryDto _$AdminCategoryDtoFromJson(Map<String, dynamic> json) =>
         priceMaxBs: $checkedConvert('priceMaxBs', (v) => v as String),
         commissionPct: $checkedConvert('commissionPct', (v) => v as String),
         active: $checkedConvert('active', (v) => v as bool),
+        extraRequirements: $checkedConvert(
+          'extraRequirements',
+          (v) => (v as List<dynamic>).map((e) => e as String).toList(),
+        ),
         cities: $checkedConvert(
           'cities',
           (v) => (v as List<dynamic>)
@@ -184,6 +213,7 @@ AdminCategoryDto _$AdminCategoryDtoFromJson(Map<String, dynamic> json) =>
               )
               .toList(),
         ),
+        notice: $checkedConvert('notice', (v) => v as String?),
       );
       return val;
     });
@@ -198,5 +228,7 @@ Map<String, dynamic> _$AdminCategoryDtoToJson(AdminCategoryDto instance) =>
       'priceMaxBs': instance.priceMaxBs,
       'commissionPct': instance.commissionPct,
       'active': instance.active,
+      'extraRequirements': instance.extraRequirements,
       'cities': instance.cities.map((e) => e.toJson()).toList(),
+      'notice': instance.notice,
     };

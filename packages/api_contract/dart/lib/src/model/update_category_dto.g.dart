@@ -19,6 +19,8 @@ abstract class _$UpdateCategoryDtoCWProxy {
 
   UpdateCategoryDto active(bool? active);
 
+  UpdateCategoryDto extraRequirements(List<String>? extraRequirements);
+
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `UpdateCategoryDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -32,6 +34,7 @@ abstract class _$UpdateCategoryDtoCWProxy {
     String? priceMaxBs,
     String? commissionPct,
     bool? active,
+    List<String>? extraRequirements,
   });
 }
 
@@ -64,6 +67,10 @@ class _$UpdateCategoryDtoCWProxyImpl implements _$UpdateCategoryDtoCWProxy {
   UpdateCategoryDto active(bool? active) => this(active: active);
 
   @override
+  UpdateCategoryDto extraRequirements(List<String>? extraRequirements) =>
+      this(extraRequirements: extraRequirements);
+
+  @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `UpdateCategoryDto(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -77,6 +84,7 @@ class _$UpdateCategoryDtoCWProxyImpl implements _$UpdateCategoryDtoCWProxy {
     Object? priceMaxBs = const $CopyWithPlaceholder(),
     Object? commissionPct = const $CopyWithPlaceholder(),
     Object? active = const $CopyWithPlaceholder(),
+    Object? extraRequirements = const $CopyWithPlaceholder(),
   }) {
     return UpdateCategoryDto(
       name: name == const $CopyWithPlaceholder()
@@ -103,6 +111,10 @@ class _$UpdateCategoryDtoCWProxyImpl implements _$UpdateCategoryDtoCWProxy {
           ? _value.active
           // ignore: cast_nullable_to_non_nullable
           : active as bool?,
+      extraRequirements: extraRequirements == const $CopyWithPlaceholder()
+          ? _value.extraRequirements
+          // ignore: cast_nullable_to_non_nullable
+          : extraRequirements as List<String>?,
     );
   }
 }
@@ -127,6 +139,10 @@ UpdateCategoryDto _$UpdateCategoryDtoFromJson(Map<String, dynamic> json) =>
         priceMaxBs: $checkedConvert('priceMaxBs', (v) => v as String?),
         commissionPct: $checkedConvert('commissionPct', (v) => v as String?),
         active: $checkedConvert('active', (v) => v as bool?),
+        extraRequirements: $checkedConvert(
+          'extraRequirements',
+          (v) => (v as List<dynamic>?)?.map((e) => e as String).toList(),
+        ),
       );
       return val;
     });
@@ -139,4 +155,5 @@ Map<String, dynamic> _$UpdateCategoryDtoToJson(UpdateCategoryDto instance) =>
       'priceMaxBs': ?instance.priceMaxBs,
       'commissionPct': ?instance.commissionPct,
       'active': ?instance.active,
+      'extraRequirements': ?instance.extraRequirements,
     };

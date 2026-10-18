@@ -9,6 +9,8 @@ import 'package:sisi_api/api.dart';
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **String** |  | 
+**name** | **String** |  | 
+**phone** | **String** |  | 
 **validReporters** | **num** | Personas distintas con un reporte válido contra este usuario | 
 **workerStatus** | **String** |  | 
 **flaggedAt** | [**DateTime**](DateTime.md) | Marcado para revisión (solo empleador con 3 reportes válidos) | 

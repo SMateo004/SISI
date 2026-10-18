@@ -21,6 +21,12 @@ abstract class _$AdminReportDtoCWProxy {
 
   AdminReportDto reporterId(String reporterId);
 
+  AdminReportDto reporterName(String? reporterName);
+
+  AdminReportDto reporterPhone(String reporterPhone);
+
+  AdminReportDto targetSummary(String targetSummary);
+
   AdminReportDto note(String? note);
 
   AdminReportDto noteHeld(bool noteHeld);
@@ -43,6 +49,9 @@ abstract class _$AdminReportDtoCWProxy {
     AdminReportDtoStatusEnum status,
     DateTime createdAt,
     String reporterId,
+    String? reporterName,
+    String reporterPhone,
+    String targetSummary,
     String? note,
     bool noteHeld,
     String? resolution,
@@ -81,6 +90,18 @@ class _$AdminReportDtoCWProxyImpl implements _$AdminReportDtoCWProxy {
   AdminReportDto reporterId(String reporterId) => this(reporterId: reporterId);
 
   @override
+  AdminReportDto reporterName(String? reporterName) =>
+      this(reporterName: reporterName);
+
+  @override
+  AdminReportDto reporterPhone(String reporterPhone) =>
+      this(reporterPhone: reporterPhone);
+
+  @override
+  AdminReportDto targetSummary(String targetSummary) =>
+      this(targetSummary: targetSummary);
+
+  @override
   AdminReportDto note(String? note) => this(note: note);
 
   @override
@@ -108,6 +129,9 @@ class _$AdminReportDtoCWProxyImpl implements _$AdminReportDtoCWProxy {
     Object? status = const $CopyWithPlaceholder(),
     Object? createdAt = const $CopyWithPlaceholder(),
     Object? reporterId = const $CopyWithPlaceholder(),
+    Object? reporterName = const $CopyWithPlaceholder(),
+    Object? reporterPhone = const $CopyWithPlaceholder(),
+    Object? targetSummary = const $CopyWithPlaceholder(),
     Object? note = const $CopyWithPlaceholder(),
     Object? noteHeld = const $CopyWithPlaceholder(),
     Object? resolution = const $CopyWithPlaceholder(),
@@ -142,6 +166,18 @@ class _$AdminReportDtoCWProxyImpl implements _$AdminReportDtoCWProxy {
           ? _value.reporterId
           // ignore: cast_nullable_to_non_nullable
           : reporterId as String,
+      reporterName: reporterName == const $CopyWithPlaceholder()
+          ? _value.reporterName
+          // ignore: cast_nullable_to_non_nullable
+          : reporterName as String?,
+      reporterPhone: reporterPhone == const $CopyWithPlaceholder()
+          ? _value.reporterPhone
+          // ignore: cast_nullable_to_non_nullable
+          : reporterPhone as String,
+      targetSummary: targetSummary == const $CopyWithPlaceholder()
+          ? _value.targetSummary
+          // ignore: cast_nullable_to_non_nullable
+          : targetSummary as String,
       note: note == const $CopyWithPlaceholder()
           ? _value.note
           // ignore: cast_nullable_to_non_nullable
@@ -184,6 +220,9 @@ AdminReportDto _$AdminReportDtoFromJson(Map<String, dynamic> json) =>
           'status',
           'createdAt',
           'reporterId',
+          'reporterName',
+          'reporterPhone',
+          'targetSummary',
           'note',
           'noteHeld',
           'resolution',
@@ -210,6 +249,9 @@ AdminReportDto _$AdminReportDtoFromJson(Map<String, dynamic> json) =>
           (v) => DateTime.parse(v as String),
         ),
         reporterId: $checkedConvert('reporterId', (v) => v as String),
+        reporterName: $checkedConvert('reporterName', (v) => v as String?),
+        reporterPhone: $checkedConvert('reporterPhone', (v) => v as String),
+        targetSummary: $checkedConvert('targetSummary', (v) => v as String),
         note: $checkedConvert('note', (v) => v as String?),
         noteHeld: $checkedConvert('noteHeld', (v) => v as bool),
         resolution: $checkedConvert('resolution', (v) => v as String?),
@@ -230,6 +272,9 @@ Map<String, dynamic> _$AdminReportDtoToJson(AdminReportDto instance) =>
       'status': _$AdminReportDtoStatusEnumEnumMap[instance.status]!,
       'createdAt': instance.createdAt.toIso8601String(),
       'reporterId': instance.reporterId,
+      'reporterName': instance.reporterName,
+      'reporterPhone': instance.reporterPhone,
+      'targetSummary': instance.targetSummary,
       'note': instance.note,
       'noteHeld': instance.noteHeld,
       'resolution': instance.resolution,

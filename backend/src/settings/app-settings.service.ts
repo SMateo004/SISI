@@ -28,8 +28,8 @@ export interface SettingView {
   unit: string;
   min: number | null;
   max: number | null;
-  value: number | string;
-  defaultValue: number | string;
+  value: string;
+  defaultValue: string;
   overridden: boolean;
   updatedAt: string | null;
 }
@@ -54,7 +54,13 @@ export class AppSettingsService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   async onModuleInit(): Promise<void> {
-    await this.reload();
+    // Sin base o Redis al arrancar (o en la exportación de OpenAPI) se usan los del entorno;
+    // la recarga periódica toma los del panel cuando vuelvan.
+    await this.reload().catch((error: unknown) => {
+      this.logger.warn(
+        `Parámetros del panel no disponibles; se usan los del entorno: ${String(error)}`,
+      );
+    });
     const every = this.config.get('SETTINGS_REFRESH_MS', { infer: true });
     this.timer = setInterval(() => {
       void this.refreshIfChanged().catch((error: unknown) => {
@@ -86,8 +92,8 @@ export class AppSettingsService implements OnModuleInit, OnModuleDestroy {
         unit: def.unit,
         min: def.min ?? null,
         max: def.max ?? null,
-        value: this.value(def.key) as number | string,
-        defaultValue: this.defaultOf(def.key),
+        value: String(this.value(def.key)),
+        defaultValue: String(this.defaultOf(def.key)),
         overridden: stored !== undefined,
         updatedAt: stored?.updatedAt.toISOString() ?? null,
       };

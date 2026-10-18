@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsDefined, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsString, MaxLength, MinLength } from 'class-validator';
 
 const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
 
@@ -13,25 +13,22 @@ export class SettingDto {
   @ApiProperty({ enum: ['ms', 'días', 'hora', 'Bs', 'ofertas', 'veces', 'anillos'] }) unit!: string;
   @ApiProperty({ type: Number, nullable: true }) min!: number | null;
   @ApiProperty({ type: Number, nullable: true }) max!: number | null;
-  @ApiProperty({ oneOf: [{ type: 'number' }, { type: 'string' }], description: 'Valor vigente' })
-  value!: number | string;
-  @ApiProperty({
-    oneOf: [{ type: 'number' }, { type: 'string' }],
-    description: 'Valor por defecto (variable de entorno)',
-  })
-  defaultValue!: number | string;
+  @ApiProperty({ example: '45000', description: 'Valor vigente, como texto' })
+  value!: string;
+  @ApiProperty({ example: '45000', description: 'Valor por defecto (variable de entorno)' })
+  defaultValue!: string;
   @ApiProperty({ description: 'Cambiado desde el panel' }) overridden!: boolean;
   @ApiProperty({ type: String, nullable: true, format: 'date-time' }) updatedAt!: string | null;
 }
 
 export class SetSettingDto {
   @ApiProperty({
-    oneOf: [{ type: 'number' }, { type: 'string' }],
-    example: 45000,
-    description: 'Número en la unidad del parámetro (ms, días, Bs…) o texto de anillos',
+    example: '45000',
+    description: 'Número en la unidad del parámetro (ms, días, Bs…) o los anillos, como texto',
   })
-  @IsDefined({ message: 'Falta el valor.' })
-  value!: number | string;
+  @IsString({ message: 'El valor va como texto.' })
+  @MaxLength(100)
+  value!: string;
 
   @ApiProperty({ example: 'Más trabajadores en la zona norte: se acorta la espera.' })
   @IsString({ message: 'Escribe el motivo.' })

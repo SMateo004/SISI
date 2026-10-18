@@ -58,13 +58,13 @@ describe('Parámetros en el panel (e2e)', () => {
 
   it('fuera de rango o sin motivo: 400 y sin cambios; un parámetro que no existe: 404', async () => {
     const res = await call('put', '/admin/settings/MATCHING_RING_WAIT_MS', {
-      value: 100,
+      value: '100',
       reason: 'Demasiado corto',
     }).expect(400);
     expect(res.body).toMatchObject({ code: 'SETTING_OUT_OF_RANGE' });
-    await call('put', '/admin/settings/MATCHING_RING_WAIT_MS', { value: 45_000 }).expect(400);
+    await call('put', '/admin/settings/MATCHING_RING_WAIT_MS', { value: '45000' }).expect(400);
     await call('put', '/admin/settings/RATE_GLOBAL_IP_PER_MIN', {
-      value: 1,
+      value: '1',
       reason: 'No es de negocio',
     }).expect(404);
     expect(
@@ -88,11 +88,11 @@ describe('Parámetros en el panel (e2e)', () => {
 
     const changed = (
       await call('put', '/admin/settings/OFFER_COUNTER_MAX_FACTOR', {
-        value: 1,
+        value: '1',
         reason: 'Contraofertas fuera de lugar esta semana.',
       }).expect(200)
     ).body as SettingDto;
-    expect(changed).toMatchObject({ value: 1, defaultValue: 3, overridden: true });
+    expect(changed).toMatchObject({ value: '1', defaultValue: '3', overridden: true });
     expect(t.app.get(AppSettingsService).value('OFFER_COUNTER_MAX_FACTOR')).toBe(1);
     const tooHigh = await offer('400.00').expect(400);
     expect(tooHigh.body).toMatchObject({ code: 'OFFER_AMOUNT_TOO_HIGH' });
@@ -109,7 +109,7 @@ describe('Parámetros en el panel (e2e)', () => {
         reason: 'Volvemos a la propuesta.',
       }).expect(200)
     ).body as SettingDto;
-    expect(reset).toMatchObject({ value: 3, overridden: false });
+    expect(reset).toMatchObject({ value: '3', overridden: false });
     await offer('400.00').expect(200);
     await expectAudited(t, {
       action: 'config.setting_reset',

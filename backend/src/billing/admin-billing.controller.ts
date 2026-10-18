@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   Query,
+  Res,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -18,21 +19,25 @@ import {
   ApiHeader,
   ApiOkResponse,
   ApiOperation,
+  ApiProduces,
   ApiTags,
 } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { type AuthenticatedUser, CurrentUser } from '../auth/decorators/auth.decorators';
 import { AdminCtx, type AdminContext } from '../audit/admin-context';
-import { Admin } from '../common/admin/admin-permissions';
+import { Admin, AdminExport } from '../common/admin/admin-permissions';
 import { ApiErrorBody } from '../common/errors/api-error';
 import { requireIdempotencyKey } from '../common/idempotency/idempotency';
 import { PresignedUploadDto } from '../storage/dto/upload.dto';
 import { BillingAdminService } from './billing-admin.service';
+import { BillingExportService, type ExportRange, exportRange } from './billing-export.service';
 import { BillingFilesService } from './billing-files.service';
 import { BillingPanelService } from './billing-panel.service';
 import {
   AdjustmentPreviewDto,
   BalancePreviewDto,
   CurrentQrDto,
+  ExportQueryDto,
   LedgerPageDto,
   LedgerQueryDto,
   OverdueListDto,
@@ -81,7 +86,43 @@ export class AdminBillingController {
     private readonly billing: BillingAdminService,
     private readonly files: BillingFilesService,
     private readonly panel: BillingPanelService,
+    private readonly exports: BillingExportService,
   ) {}
+
+  @Get('export/ledger.csv')
+  @AdminExport()
+  @ApiProduces('text/csv')
+  @ApiOperation({
+    summary: 'CSV del ledger por rango de fechas [desde, hasta), para el contador',
+    description:
+      'UTF-8 con BOM, separador coma, montos con punto decimal y fechas en la hora local de la ciudad. Queda auditado.',
+  })
+  @ApiOkResponse({ description: 'Archivo CSV' })
+  async exportLedger(
+    @AdminCtx() ctx: AdminContext,
+    @Query() query: ExportQueryDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    const range = exportRange(query.from, query.to);
+    await streamCsv(res, `sisi-ledger-${fileDate(range)}.csv`, this.exports.ledger(ctx, range));
+  }
+
+  @Get('export/payments.csv')
+  @AdminExport()
+  @ApiProduces('text/csv')
+  @ApiOperation({
+    summary: 'CSV de pagos por fecha de pago [desde, hasta), para el contador',
+    description: 'Mismo formato que el del ledger. Queda auditado.',
+  })
+  @ApiOkResponse({ description: 'Archivo CSV' })
+  async exportPayments(
+    @AdminCtx() ctx: AdminContext,
+    @Query() query: ExportQueryDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    const range = exportRange(query.from, query.to);
+    await streamCsv(res, `sisi-pagos-${fileDate(range)}.csv`, this.exports.payments(ctx, range));
+  }
 
   @Get('periods')
   @ApiOperation({
@@ -239,5 +280,23 @@ export class AdminBillingController {
     @Body() dto: RejectSubmissionDto,
   ): Promise<PaymentSubmissionDto> {
     return this.files.rejectSubmission(ctx, id, dto.note.trim());
+  }
+}
+
+const fileDate = (r: ExportRange): string =>
+  `${r.from.toISOString().slice(0, 10)}_${r.to.toISOString().slice(0, 10)}`;
+
+/** Escribe el CSV por partes; si falla a mitad, corta la respuesta (no queda un archivo "completo"). */
+async function streamCsv(res: Response, filename: string, chunks: AsyncIterable<string>) {
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    for await (const chunk of chunks) {
+      if (!res.write(chunk)) await new Promise((r) => res.once('drain', r));
+    }
+    res.end();
+  } catch (error) {
+    res.destroy(error as Error);
   }
 }

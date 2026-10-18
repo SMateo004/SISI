@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AdminBillingController } from './admin-billing.controller';
 import { BillingAdminService } from './billing-admin.service';
+import { BillingExportService } from './billing-export.service';
 import { BillingFilesService } from './billing-files.service';
 import { BillingPanelService } from './billing-panel.service';
 import { BillingMeController } from './billing-me.controller';
@@ -18,6 +19,7 @@ import { EarningsService } from './earnings.service';
     BillingAdminService,
     BillingFilesService,
     BillingPanelService,
+    BillingExportService,
     EarningsService,
     // Pasarela automática: sin implementar, detrás del flag payments.gateway (ADR-0037).
     { provide: PAYMENT_GATEWAY, useClass: NoPaymentGateway },

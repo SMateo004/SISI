@@ -916,6 +916,9 @@ model LedgerEntry {
 
   @@index([workerId, id])
   @@index([periodId])
+  // Exportación CSV por rango y dashboard por tipo (Fase 6).
+  @@index([createdAt, id])
+  @@index([type, createdAt])
   @@map("ledger_entries")
 }
 
@@ -967,6 +970,8 @@ model Payment {
   entries LedgerEntry[]
 
   @@index([workerId, paidAt])
+  // Exportación CSV de pagos por fecha de pago (Fase 6).
+  @@index([paidAt, id])
   @@map("payments")
 }
 

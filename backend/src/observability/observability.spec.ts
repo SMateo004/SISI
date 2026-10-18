@@ -82,7 +82,7 @@ describe('Sentry (ADR-0048)', () => {
       },
       user: { id: 'u1', ip_address: '1.2.3.4', email: 'a@b.c' },
       exception: { values: [{ type: 'Error', value: 'token eyJhbGciOi.eyJzdWIiOi.c2lnbmF0dXJl' }] },
-    } as ErrorEvent);
+    });
     expect(event.request?.cookies).toBeUndefined();
     expect(event.request?.data).toBeUndefined();
     expect(event.request?.query_string).toBeUndefined();

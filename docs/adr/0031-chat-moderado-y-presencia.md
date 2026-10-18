@@ -35,3 +35,6 @@ R9.4 pide el chat dentro de la app y R9.2 que el filtro de texto se aplique tamb
 - La conversación queda en la base y moderada, sin exponer los teléfonos más de lo que ya expone el contacto.
 - Un mensaje retenido no tiene "apelación" en el MVP: el admin solo lo ve. Liberar un retenido queda para la consola de la Fase 6.
 - Plazo de la ventana e imágenes en el chat, en docs/pendientes.md.
+
+## Actualización (Fase 6)
+Un mensaje retenido se revisa en el panel: **liberar** (se entrega con su hora original, por el outbox) o **descartar** (estado `descartado`; para quien lo envió sigue como "no enviado"). Las dos acciones quedan en la auditoría.

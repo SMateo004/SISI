@@ -79,7 +79,7 @@ En Windows, si el argumento lleva paréntesis u otros caracteres especiales, usa
 
 ## Solicitudes retenidas por moderación (R3.3)
 
-Hasta el panel admin (Fase 6) se revisan por API con un usuario admin:
+Desde la Fase 6 se revisan en el panel (ver "Panel admin"). Por API, con una sesión del panel (`aud=admin`):
 
 1. Dar rol admin: `node dist/scripts/dev-tools.js make-admin --phone 70012345`. El rol entra en el token siguiente: volver a ingresar o renovar con `POST /auth/refresh`.
 2. Ver las retenidas y qué término las retuvo (`matches`):
@@ -143,7 +143,7 @@ WHERE status IN ('buscando', 'con_ofertas') ORDER BY published_at;
 
 ## Disputas, reportes y mensajes retenidos (Fase 4)
 
-Hasta la consola de la Fase 6, con un usuario admin (ver arriba cómo darle el rol):
+Desde la Fase 6 se resuelven en el panel. Por API, con una sesión del panel (`aud=admin`):
 
 - **Disputas** ("Hubo un problema", ADR-0029): el trabajo queda en curso, sin autoconfirmación ni comisión.
   ```bash
@@ -220,3 +220,48 @@ Saldo, periodos y movimientos de un trabajador: `GET /admin/billing/workers/<uui
 - Variables: `BILLING_DUE_AFTER_DAYS`, `BILLING_REMINDER_HOUR`, `BILLING_DEBT_CAP_BS`, `BILLING_LOCK_TTL_MS` y `RECEIPT_URL_TTL_SEC`. Hay valores por defecto; ver `backend/.env.example`.
 - El servicio `billing-cron-staging` necesita `DATABASE_URL` y `REDIS_URL` (candado). Ya están en `render.yaml`.
 - Cargar el QR de prueba con el usuario admin de staging (sección de arriba).
+
+## Panel admin (Fase 6)
+
+### Acceso
+- **Primer admin:** solo por `dev-tools`, nunca desde el panel. `node dist/scripts/dev-tools.js make-admin --phone 7XXXXXXX` (en staging, Render → `api-staging` → Shell). En producción, `dev-tools` no corre: se da el rol con una consulta SQL revisada por dos personas, y queda anotado aquí con la fecha.
+- **Ingreso:** el admin entra con su celular y el código de 6 dígitos. La sesión dura 10 min de acceso y 8 h como máximo desde el login. El refresh va en una cookie httpOnly (ADR-0040). Una cuenta sin rol admin ve "Esta cuenta no tiene acceso al panel".
+- **Una sesión del panel no sirve en la app ni al revés.** Las rutas `/admin` exigen `aud=admin`; por API se obtiene con `POST /auth/admin/otp/verify`.
+
+### Operación diaria
+1. **Dashboard:** solicitudes, asignación, expiración, primera oferta, trabajos, cancelaciones, comisión generada y cobrada, deuda vencida y disponibles (hoy o esta semana, hora local).
+2. **Menú:** los números son las colas pendientes y se actualizan solos (socket y, como respaldo, cada 60 s).
+3. **Verificaciones**, de la más antigua a la más nueva: revisar datos, edad y requisitos extra; los documentos se ven con enlaces de 5 min.
+   - **Aprobar** con una nota.
+   - **Rechazar** con un motivo de la lista y una nota para el trabajador. Se le avisa con push.
+4. **Moderación:**
+   - **Retenidas:** liberar o rechazar, con motivo. Se muestra qué término coincidió.
+   - **Chat retenido:** liberar o descartar.
+   - **Reportes:** marcar como válido o descartarlo. Con 3 válidos de personas distintas, el trabajador queda suspendido.
+   - **Disputas:** ver línea de tiempo, chat y ofertas, y confirmar (con comisión) o cancelar (sin comisión).
+   - **Términos:** usar el probador antes de agregar uno.
+5. **Cobros:**
+   - **Comprobantes:** "Registrar pago" desde el comprobante. El monto viene precargado y la vista previa muestra el saldo y si desbloquea.
+   - **Vencidos:** días de atraso.
+   - **Ficha del trabajador:** ledger con saldo acumulado y ajustes ("Corregir" sobre un movimiento).
+   - **QR de cobro.**
+   - **Exportar:** CSV del ledger y de los pagos para el contador.
+6. **Usuarios:** buscar por celular o nombre. Desde la ficha se puede suspender o reactivar al trabajador y quitar la marca "revisar" a un empleador.
+7. **Catálogo y configuración:**
+   - **Comisión:** cambiarla solo afecta a los trabajos asignados desde ese momento.
+   - **Parámetros:** se escriben en su unidad (los tiempos, en minutos) y se aplican en segundos.
+   - **Flags:** por ciudad.
+8. **Auditoría:** toda acción que cambia algo queda con admin, motivo, antes y después. Filtrar por acción (p. ej. `billing.`) o por id del objetivo.
+
+**Toda acción pide un motivo** (queda en la auditoría). **Ningún admin puede actuar sobre su propia cuenta** (403 `SELF_REVIEW_FORBIDDEN`).
+
+### Configuración por ambiente
+- **Staging y producción:**
+  - el admin compila con `API_URL=/api`, y el proxy de Vercel lleva `/api/*` a la API (`apps/admin/tool/vercel-json.mjs`, lo genera `deploy-web`);
+  - `SOCKET_URL` apunta directo a Render;
+  - `ADMIN_COOKIE_PATH` no se define (por defecto `/api/auth/admin`);
+  - `CORS_ORIGINS` de la API incluye la URL del admin (para el socket).
+- **Local:**
+  - `ADMIN_COOKIE_PATH=/auth/admin` en `backend/.env`;
+  - `flutter run -d chrome --web-port 8081 --dart-define=API_URL=http://localhost:3000`.
+- **Parámetros (ADR-0043):** el valor del panel manda; sin valor, el de la variable de entorno. "Volver al valor por defecto" borra el del panel. Si algo se comporta raro después de un cambio, revisar la auditoría (`config.setting_`).

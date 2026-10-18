@@ -136,9 +136,11 @@ flutter test
 ```bash
 cd apps/admin
 flutter pub get
-flutter run -d chrome --web-port 8081
+flutter run -d chrome --web-port 8081 --dart-define=API_URL=http://localhost:3000
 flutter test
 ```
+
+En `backend/.env`, `ADMIN_COOKIE_PATH=/auth/admin` (ya está en `.env.example`): en local el panel llama directo a la API, sin el proxy `/api` de Vercel. Dar el rol admin con `npm run dev:tools -- make-admin --phone 7XXXXXXX` y entrar con el código que sale en el log de la API.
 
 Los puertos web 8080 y 8081 coinciden con `CORS_ORIGINS` del `.env` del backend.
 

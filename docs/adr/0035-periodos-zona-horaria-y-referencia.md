@@ -30,3 +30,6 @@
 - Cambiar el día de corte o el plazo es configuración, no código.
 - Cambiar la duración del periodo (por ejemplo a quincenal) sí requiere cambiar `periodWindow`.
 - La referencia identifica la semana y al trabajador. La aplicación del pago no depende de ella (ADR-0037): un pago con una referencia vieja igual se aplica a lo más antiguo.
+
+## Actualización (Fase 6)
+`BILLING_DUE_AFTER_DAYS` y `BILLING_REMINDER_HOUR` se pueden cambiar desde el panel (ADR-0043). El plazo solo afecta a los periodos que se crean desde el cambio: `due_at` se fija al crear el periodo. El día de corte (lunes 00:00 local) no es parámetro.

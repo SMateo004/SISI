@@ -22,6 +22,9 @@ Lee docs/00-contexto-general-SISI.md, docs/01-reglas-de-negocio.md y docs/02-con
 - El estado de un trabajo solo con JobStatusService.apply (ADR-0029); la comisión solo con commissionOf (HALF_UP, ADR-0030). job_events es append-only (trigger).
 - Un trabajador con un trabajo activo queda ocupado: fuera del matching y sin poder ofertar (ADR-0029).
 - Cobros: el saldo es siempre la suma del ledger (monto con signo, ADR-0034); periodos y fechas por la zona horaria de la ciudad, nunca con offset fijo (ADR-0035); el bloqueo por deuda solo con DebtStateService (ADR-0038). Pagos y ajustes del admin exigen Idempotency-Key y nunca sobre su propia cuenta (ADR-0037).
+- Panel admin (Fase 6): todo controlador /admin usa @Admin('<permiso>') (ADR-0040; el test de barrido falla si falta). Las acciones pasan por los servicios de dominio, auditan con AdminAuditService.record en la misma transacción (ADR-0041) y nunca sobre la propia cuenta (assertNotSelf).
+- Parámetros de negocio del catálogo de ADR-0043: leerlos con AppSettingsService.value en cada uso, no con ConfigService. Cambios de ofertas con recordOfferEvent/closeActiveOffers (offer_events append-only, ADR-0042).
+- El panel usa el cliente generado (ADR-0045): después de cambiar la API, regenerar el contrato.
 - Toda FK que se agregue a mano en una migración se declara también como relación en schema.prisma (si no, el siguiente `migrate diff` la borra). Revisa que el SQL generado no tenga DROP.
 - Texto de usuarios (solicitudes, chat, notas de cancelación, comentarios de calificaciones y reportes) se modera con ModerationService.check (ADR-0018).
 - Eventos de dominio por outbox: OutboxService.add dentro de la misma transacción del cambio; nada de eventos en memoria (ADR-0022). Los handlers del worker deben ser idempotentes.

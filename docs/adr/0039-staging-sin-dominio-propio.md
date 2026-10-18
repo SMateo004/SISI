@@ -13,7 +13,7 @@ SISI todavía no tiene dominio. `CORS_ORIGINS` de `api-staging` necesita orígen
   - `deploy-web.yml` despliega siempre con `--prod` al proyecto del ambiente, elegido por los secretos `VERCEL_PROJECT_ID_*` del GitHub Environment (`staging` en develop, `production` en main).
   - Cada proyecto tiene su URL de producción fija, `https://<proyecto>.vercel.app`.
 - **`CORS_ORIGINS` de `api-staging`:** `https://app-web-staging.vercel.app,https://admin-staging.vercel.app`. Si Vercel asigna otro nombre porque el subdominio está ocupado, se usa el que muestre el proyecto.
-- **Proxy del admin:** el admin llama a la API por su propio origen (`/api/*` → `API_URL`, rewrite generado por `apps/admin/tool/vercel-json.mjs`). Ver ADR-0040.
+- **Proxy del admin:** el admin compila con `API_URL=/api` y llama a la API por su propio origen (`/api/*` → `API_URL`, rewrite generado por `apps/admin/tool/vercel-json.mjs`). Ver ADR-0040.
 
 ## Consecuencias
 - URLs estables sin comprar dominio. Las previews por rama ya no se usan: develop es el único despliegue de staging.

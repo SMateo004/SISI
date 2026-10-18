@@ -21,6 +21,23 @@ Aprobadas el 2026-10-14. Hay que reflejarlas en el documento 01 en la sección i
 | Bloqueo y modo | Si pasa a `bloqueado_deuda` o `suspendido_moderacion` estando en modo trabajador, la cuenta cambia sola a `employer` y se le notifica. Al desbloquearse no vuelve sola: usa el interruptor. | R1.6 |
 | Teléfonos | MVP: solo +591. Prefijos permitidos en configuración (`PHONE_ALLOWED_COUNTRY_CODES`). | R1.1 |
 
+## Propuestas de la Fase 6 por validar
+- [ ] **Permisos por rol:** hoy `admin` tiene los 8 permisos del panel (`dashboard`, `verificaciones`, `moderacion`, `cobros`, `catalogo`, `configuracion`, `usuarios`, `auditoria`). Definir si habrá roles de moderador o finanzas: agregar un rol es una fila en `PERMISSIONS_BY_ROLE` y su valor en `user_role` (ADR-0040).
+- [ ] **Suspensión de empleadores:** "Suspender" en el panel aplica solo al perfil de trabajador. Para un empleador marcado por 3 reportes válidos solo existe quitar la marca. Definir si un empleador puede ser suspendido y qué pierde (ingresar, publicar).
+- [ ] **Motivos de rechazo de una verificación:** `documento_ilegible`, `documento_no_coincide`, `selfie_no_coincide`, `menor_de_edad`, `documento_vencido`, `requisitos_de_categoria`, `datos_incompletos`, `otro`; siempre con nota, que ve el trabajador.
+- [ ] **Parámetros editables desde el panel** (ADR-0043): matching (anillos, espera, ofertas suficientes, plazo para elegir, búsqueda mínima), contraoferta máxima, autoconfirmación, ventanas de chat y contacto, plazo para calificar, tope de deuda, días para pagar y hora de avisos. Validar los rangos de producción del catálogo. **Por ciudad:** la tabla lo admite, pero hoy todos son globales.
+- [ ] **Sesión del panel:** acceso de 10 min y 8 h como máximo desde el login, sin extenderse (ADR-0040). Validar con el equipo si 8 h alcanza para un turno.
+- [ ] **CSV para el contador:** separado por comas, punto decimal, UTF-8 con BOM. Confirmar con el contador (en Excel con configuración regional de Bolivia puede esperar punto y coma).
+- [ ] **Documentos de identidad en el panel:** se ven sin botón de descarga y con URL de 5 min, pero no se puede impedir una captura de pantalla. Definir la norma interna.
+- [ ] **Auditoría:** crece sin límite. Definir retención o archivado (p. ej. por año).
+- [ ] **Doc 02 §6:** agregar `admin:counters` (solo para el panel, ADR-0044) a la lista de eventos de tiempo real.
+
+## Detectadas en la Fase 6
+- [ ] **Paso 0 de staging bloqueado** por pasos manuales (ver el reporte de la Fase 6 y el runbook): Blueprint de Render y URL de `api-staging`, proyectos de Vercel de staging, variables y secretos del Environment `staging` de GitHub, Firebase y CORS de R2.
+- [ ] **IP real del cliente detrás del proxy del panel:** con `trust proxy` en 1, la API ve la IP de Vercel. La auditoría guarda también el `X-Forwarded-For` (informativo). Si hace falta la IP real, confiar en un header firmado por Vercel o en un segundo salto solo para `/api`.
+- [ ] **App móvil con el cliente generado:** el panel ya lo usa (ADR-0045). Migrar la app es opcional.
+- [ ] **Reloj simulado y periodos cerrados por adelantado:** con `billing-run --at <futuro>` un periodo puede cerrarse antes de terminar. Una comisión real de esa semana cae entonces en un periodo ya pagado (solo en pruebas manuales; en producción el cron cierra después del fin). Para probar cobros, usar trabajadores sin periodos cerrados por el reloj simulado.
+
 ## Propuestas de la Fase 5 por validar
 - [ ] **Corte, plazo y tope:** semana de cobro `[lunes 00:00, lunes siguiente 00:00)` en la hora local de la ciudad; vence 3 días después del corte, a las 00:00 del jueves ("miércoles 23:59"). Tope de deuda: **150 Bs**, saldo total incluido el periodo abierto (`BILLING_DUE_AFTER_DAYS`, `BILLING_DEBT_CAP_BS`, ADR-0035 y ADR-0038).
 - [ ] **El tope no bloquea la cuenta:** superarlo solo deja fuera de las solicitudes nuevas (sigue `aprobado` y termina lo que tiene). El bloqueo (`bloqueado_deuda`) es solo por un corte vencido (R7.7).
@@ -117,7 +134,7 @@ Valores implementados como propuesta; cambiarlos es configuración o un ajuste m
 - [x] **Deuda vencida** (`DebtStatusProvider`): periodos `vencido` (Fase 5, `BillingDebtStatusProvider`).
 - [ ] **Bloqueo permanente** por moderación: no existe en R1.4. Definir si se agrega un estado o se maneja como suspensión indefinida.
 - [ ] **Tokens en la versión web** (ADR-0014): evaluar pasar el refresh a una cookie `httpOnly` (vía API) antes de abrir la web a usuarios reales; CSP estricta en Vercel.
-- [ ] **Adopción del cliente Dart generado** (`packages/api_contract/dart`, ADR-0015) en `apps/mobile` y `apps/admin`.
+- [x] ~~**Adopción del cliente Dart generado** en `apps/admin`~~ — Fase 6 (ADR-0045). La app móvil sigue con sus modelos (pendiente en la Fase 6).
 - [ ] **CORS del bucket R2:** agregar los dominios definitivos de la app web cuando existan (hoy solo se configuran los de staging).
 - [ ] **Conservación de fotos de identidad:** cuánto tiempo se guardan y cuándo se borran (relacionado con la revisión legal de datos personales).
 

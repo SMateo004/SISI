@@ -160,6 +160,11 @@ projects:
 
       # ──────────────────────────── PRODUCTION ───────────────────────────
       # Planes pagos: un servicio inmediato no tolera arranques en frío (doc 02 §8).
+      # Despliegue solo desde deploy-production (tag vX.Y.Z en main, con aprobación, ADR-0046):
+      # autoDeployTrigger: off en api, worker y billing-cron; el workflow llama a sus deploy hooks
+      # con el commit del tag. La migración corre en el preDeploy de la API y siempre es
+      # compatible hacia atrás (expandir y luego contraer): el worker y el cron viejos siguen
+      # funcionando hasta que se despliegan.
       - name: production
         envVarGroups:
           - name: sisi-production-shared
@@ -179,6 +184,11 @@ projects:
                 value: "24"
               - key: TZ_DEFAULT
                 value: America/La_Paz
+              # URLs firmadas de vida corta (ADR-0047): producción no arranca con más de 900 s.
+              - key: AVATAR_URL_TTL_SEC
+                value: "900"
+              - key: REQUEST_PHOTO_URL_TTL_SEC
+                value: "900"
               - key: JWT_SECRET
                 generateValue: true
               - key: JWT_REFRESH_SECRET
@@ -196,7 +206,7 @@ projects:
             preDeployCommand: npx prisma migrate deploy && npm run prisma:seed
             startCommand: npm run start:prod
             healthCheckPath: /health
-            autoDeployTrigger: checksPass # despliega solo si pasa backend-ci
+            autoDeployTrigger: off # despliega deploy-production (ADR-0046)
             envVars:
               - fromGroup: sisi-production-shared
               - key: DATABASE_URL
@@ -208,6 +218,8 @@ projects:
                   type: keyvalue
                   name: cache
                   property: connectionString
+              # Solo https y sin comodines: la API no arranca si no (ADR-0047). Sin dominio propio:
+              # https://app-web.vercel.app,https://admin.vercel.app (URLs reales de Vercel).
               - key: CORS_ORIGINS
                 sync: false
               - key: OTP_PROVIDER_KEY
@@ -240,7 +252,7 @@ projects:
             rootDir: backend
             buildCommand: npm ci --include=dev && npm run build
             startCommand: npm run start:worker
-            autoDeployTrigger: checksPass # despliega solo si pasa backend-ci
+            autoDeployTrigger: off # despliega deploy-production (ADR-0046)
             envVars:
               - fromGroup: sisi-production-shared
               - key: DATABASE_URL
@@ -271,7 +283,7 @@ projects:
             schedule: "5 * * * *"
             buildCommand: npm ci --include=dev && npm run build
             startCommand: npm run start:billing-cron
-            autoDeployTrigger: checksPass # despliega solo si pasa backend-ci
+            autoDeployTrigger: off # despliega deploy-production (ADR-0046)
             envVars:
               - fromGroup: sisi-production-shared
               - key: DATABASE_URL
@@ -289,7 +301,8 @@ projects:
           - type: keyvalue
             name: cache
             region: virginia
-            plan: starter
+            # Plan pago: con persistencia (journal + snapshot); el free no persiste.
+            plan: 256mb
             # Obligatorio para colas BullMQ: nunca descartar claves.
             maxmemoryPolicy: noeviction
             ipAllowList: [] # solo red privada de Render
@@ -299,6 +312,8 @@ projects:
             databaseName: sisi
             user: sisi
             region: virginia
+            # Backups: recuperación a un punto en el tiempo (3 días en workspace Hobby, 7 en Pro) y
+            # exportes lógicos de 7 días. Restaurar crea una base nueva (docs/runbook.md).
             plan: basic-1gb
             postgresMajorVersion: "17"
             ipAllowList: [] # solo red privada de Render

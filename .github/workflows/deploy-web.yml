@@ -1,8 +1,9 @@
 name: deploy-web
 
-# Flutter web → Vercel (ADR-0006, ADR-0039).
-#   develop → proyectos de staging (app-web-staging, admin-staging)
-#   main    → proyectos de producción
+# Flutter web → Vercel (ADR-0006, ADR-0039, ADR-0046).
+#   develop → proyectos de staging (app-web-staging, admin-staging), en cada push
+#   producción → solo desde deploy-production (tag vX.Y.Z en main, con aprobación), que llama a
+#                este workflow con environment=production. Un push a main no despliega.
 # Los dos ambientes despliegan con --prod a su propio proyecto: así cada uno tiene una URL
 # .vercel.app fija (las previews cambian de URL en cada deploy y CORS_ORIGINS necesita orígenes fijos).
 # Requiere GitHub Environments "staging" y "production" con:
@@ -15,12 +16,18 @@ name: deploy-web
 
 on:
   push:
-    branches: [develop, main]
+    branches: [develop]
     paths: ["apps/**", ".github/workflows/deploy-web.yml"]
-  workflow_dispatch:
+  workflow_dispatch: # staging a mano
+  workflow_call:
+    # Los secretos de Vercel salen del Environment del job (production), no del que llama.
+    inputs:
+      environment:
+        type: string
+        required: true
 
 concurrency:
-  group: deploy-web-${{ github.ref }}
+  group: deploy-web-${{ inputs.environment || 'staging' }}
   cancel-in-progress: false
 
 permissions:
@@ -31,10 +38,10 @@ env:
 
 jobs:
   deploy:
-    name: ${{ matrix.project }} (${{ github.ref_name == 'main' && 'production' || 'staging' }})
+    name: ${{ matrix.project }} (${{ inputs.environment || 'staging' }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    environment: ${{ inputs.environment || 'staging' }}
     strategy:
       fail-fast: false
       matrix:
@@ -49,7 +56,7 @@ jobs:
       run:
         working-directory: ${{ matrix.path }}
     env:
-      APP_ENV: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+      APP_ENV: ${{ inputs.environment || 'staging' }}
 
     steps:
       - uses: actions/checkout@v4

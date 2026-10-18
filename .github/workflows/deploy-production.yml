@@ -1,0 +1,129 @@
+name: deploy-production
+
+# Producción solo desde main y con aprobación (ADR-0046).
+#   1. Se crea el tag vX.Y.Z sobre un commit de main (node tools/bump-version.mjs X.Y.Z antes).
+#   2. verify: el commit está en main, backend-ci pasó en ese commit, versiones iguales al tag,
+#      migraciones compatibles hacia atrás y textos legales sin marcadores.
+#   3. approve: espera la aprobación manual (Environment "production-approval", con revisores
+#      obligatorios). Una sola aprobación cubre todo el despliegue.
+#   4. backend: deploy hooks de Render con ?ref=<sha> (api, worker, billing-cron) y espera a que
+#      /version muestre ese commit y /health responda ok.
+#   5. web: deploy-web con environment=production (app web y admin en Vercel).
+#
+# GitHub Environments:
+#   production-approval: solo revisores obligatorios (sin secretos).
+#   production: regla de despliegue "solo tags v*"; sin revisores (la aprobación ya ocurrió).
+#     secrets: RENDER_DEPLOY_HOOK_API, RENDER_DEPLOY_HOOK_WORKER, RENDER_DEPLOY_HOOK_CRON,
+#              VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID_APP_WEB, VERCEL_PROJECT_ID_ADMIN
+#     vars:    API_URL (la de la API de producción) y las de deploy-web.
+# En render.yaml los servicios de producción tienen autoDeployTrigger: off: un push a main no
+# despliega nada por sí solo.
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  checks: read
+
+jobs:
+  verify:
+    name: Verificar el release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: El tag apunta a un commit de main
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
+            || { echo "::error::$GITHUB_REF_NAME no está en main"; exit 1; }
+
+      - name: backend-ci pasó en este commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          conclusion=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/check-runs?check_name=backend" \
+            --jq '[.check_runs[] | select(.conclusion != null)][0].conclusion')
+          echo "backend-ci: ${conclusion:-sin correr}"
+          [ "$conclusion" = "success" ] || { echo "::error::backend-ci no está en verde en $GITHUB_SHA"; exit 1; }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Versión igual al tag
+        run: node tools/bump-version.mjs --check "$GITHUB_REF_NAME"
+
+      - name: Textos legales finales (sin marcadores)
+        run: node tools/check-legal.mjs
+
+      - name: Migraciones compatibles hacia atrás
+        working-directory: backend
+        run: |
+          npm ci --ignore-scripts
+          npm run check:migrations
+
+  approve:
+    name: Aprobación manual
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: production-approval
+    steps:
+      - run: echo "Aprobado $GITHUB_REF_NAME ($GITHUB_SHA) por $GITHUB_ACTOR"
+
+  backend:
+    name: Backend en Render
+    needs: approve
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: production
+    steps:
+      - name: Deploy hooks (api, worker, billing-cron) en este commit
+        env:
+          HOOK_API: ${{ secrets.RENDER_DEPLOY_HOOK_API }}
+          HOOK_WORKER: ${{ secrets.RENDER_DEPLOY_HOOK_WORKER }}
+          HOOK_CRON: ${{ secrets.RENDER_DEPLOY_HOOK_CRON }}
+        run: |
+          for hook in "$HOOK_API" "$HOOK_WORKER" "$HOOK_CRON"; do
+            [ -n "$hook" ] || { echo "::error::Falta un deploy hook de Render"; exit 1; }
+            sep='?'; case "$hook" in *\?*) sep='&';; esac
+            curl --fail --silent --show-error -X POST "${hook}${sep}ref=${GITHUB_SHA}" > /dev/null
+          done
+
+      - name: Esperar a que la API corra este commit
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: |
+          for i in $(seq 1 60); do
+            sha=$(curl --silent --max-time 10 "$API_URL/version" | node -e \
+              "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s).sha??'')}catch{console.log('')}})")
+            if [ "$sha" = "$GITHUB_SHA" ]; then
+              curl --fail --silent --max-time 10 "$API_URL/health" && echo && exit 0
+            fi
+            echo "Esperando el deploy ($i/60): la API corre ${sha:-?}"
+            sleep 30
+          done
+          echo "::error::La API no mostró $GITHUB_SHA en 30 minutos (revisar Events en Render)"
+          exit 1
+
+      - name: Resumen
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: echo "### Backend $GITHUB_REF_NAME en producción → $API_URL" >> "$GITHUB_STEP_SUMMARY"
+
+  web:
+    name: Web en Vercel
+    needs: backend
+    uses: ./.github/workflows/deploy-web.yml
+    with:
+      environment: production
+    secrets: inherit

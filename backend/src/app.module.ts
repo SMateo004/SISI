@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { AdminGuard } from './common/admin/admin.guard';
 import { BillingModule } from './billing/billing.module';
@@ -38,6 +39,8 @@ import { WorkersModule } from './workers/workers.module';
     PrismaModule,
     RedisModule,
     RateLimitModule,
+    // Auditoría del panel (global, ADR-0041).
+    AuditModule,
     StorageModule,
     FeatureFlagsModule,
     HealthModule,

@@ -36,6 +36,7 @@ model City {
   requests        ServiceRequest[]
   workerLocations WorkerLocation[]
   notifications   Notification[]
+  adminAuditLog   AdminAuditLog[]
 
   @@map("cities")
 }
@@ -87,6 +88,7 @@ model User {
   deviceTokens           DeviceToken[]
   jobsAsEmployer         Job[]               @relation("JobEmployer")
   jobsAsWorker           Job[]               @relation("JobWorker")
+  adminAuditEntries      AdminAuditLog[]     @relation("AdminAuditLogAdmin")
 
   @@index([cityId])
   @@map("users")
@@ -982,4 +984,34 @@ model AppSetting {
 
   @@id([key, scope])
   @@map("app_settings")
+}
+
+/// Auditoría del panel (ADR-0041). Append-only (trigger): toda acción admin que cambia algo
+/// deja una fila en la misma transacción del cambio.
+model AdminAuditLog {
+  id           BigInt   @id @default(autoincrement())
+  adminId      String   @map("admin_id") @db.Uuid
+  /// área.verbo, p. ej. verification.approve o billing.payment.
+  action       String   @db.VarChar(64)
+  targetType   String   @map("target_type") @db.VarChar(32)
+  targetId     String   @map("target_id") @db.VarChar(64)
+  before       Json?
+  after        Json?
+  reason       String?
+  /// IP que vio la API (detrás del proxy del panel, la de Vercel, ADR-0040).
+  ip           String?  @db.VarChar(64)
+  /// X-Forwarded-For recibido: informativo, no confiable.
+  forwardedFor String?  @map("forwarded_for") @db.VarChar(256)
+  userAgent    String?  @map("user_agent") @db.VarChar(256)
+  cityId       String?  @map("city_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  admin User  @relation("AdminAuditLogAdmin", fields: [adminId], references: [id], onDelete: Restrict)
+  city  City? @relation(fields: [cityId], references: [id], onDelete: Restrict)
+
+  @@index([createdAt(sort: Desc)])
+  @@index([adminId, createdAt])
+  @@index([targetType, targetId])
+  @@index([action, createdAt])
+  @@map("admin_audit_log")
 }

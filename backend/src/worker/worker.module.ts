@@ -1,3 +1,4 @@
+import { AuditModule } from '../audit/audit.module';
 import { AccountNotificationsHandlers } from '../notifications/account-notifications.handlers';
 import { Module } from '@nestjs/common';
 import { BillingCoreModule } from '../billing/billing-core.module';
@@ -31,6 +32,8 @@ import { RequestStatusModule } from '../requests/request-status.module';
     AppConfigModule,
     PrismaModule,
     RedisModule,
+    // Los módulos compartidos con la API pueden auditar acciones del panel (ADR-0041).
+    AuditModule,
     FeatureFlagsModule,
     OutboxModule,
     OutboxRelayModule,

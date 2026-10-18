@@ -1,3 +1,4 @@
+import { AuditModule } from '../audit/audit.module';
 import { parseArgs } from 'node:util';
 import { Logger, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -49,6 +50,8 @@ import { type WorkerEventInput, WorkerStatusService } from '../workers/worker-st
     OutboxModule,
     JobStatusModule,
     BillingCoreModule,
+    // ReportsService audita cuando lo llama el panel; aquí el actor es null (sin filas).
+    AuditModule,
   ],
   providers: [
     WorkerStatusService,

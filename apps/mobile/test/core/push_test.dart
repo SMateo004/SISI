@@ -12,6 +12,8 @@ void main() {
     expect(isPushRoute('/solicitudes/r1'), isTrue);
     expect(isPushRoute('/trabajo/solicitudes/r1'), isTrue);
     expect(isPushRoute('/trabajos/j1/contacto'), isTrue);
+    // Resultado de la verificación (Fase 6).
+    expect(isPushRoute('/trabajador/estado'), isTrue);
     expect(isPushRoute('/perfil'), isFalse);
     expect(isPushRoute('https://otro.sitio/solicitudes/x'), isFalse);
     expect(isPushRoute(null), isFalse);

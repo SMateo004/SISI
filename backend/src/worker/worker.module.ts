@@ -1,3 +1,4 @@
+import { AccountNotificationsHandlers } from '../notifications/account-notifications.handlers';
 import { Module } from '@nestjs/common';
 import { BillingCoreModule } from '../billing/billing-core.module';
 import { BillingCapModule } from '../billing/billing-cap.module';
@@ -50,6 +51,7 @@ import { RequestStatusModule } from '../requests/request-status.module';
     JobEventsHandlers,
     ChatEventsHandlers,
     BillingEventsHandlers,
+    AccountNotificationsHandlers,
   ],
 })
 export class WorkerModule {}

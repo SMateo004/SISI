@@ -25,7 +25,15 @@ export abstract class StorageService {
     expiresInSec: number;
   }): Promise<PresignedUpload>;
 
-  abstract presignDownload(key: string, expiresInSec: number): Promise<string>;
+  /**
+   * URL firmada de descarga. `noStore`: el navegador no guarda la respuesta en su caché
+   * (documentos de identidad, R9.5).
+   */
+  abstract presignDownload(
+    key: string,
+    expiresInSec: number,
+    options?: { noStore?: boolean },
+  ): Promise<string>;
 
   /** Metadatos del objeto, o null si no existe. */
   abstract head(key: string): Promise<StoredObject | null>;

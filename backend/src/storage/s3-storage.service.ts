@@ -77,10 +77,17 @@ export class S3StorageService extends StorageService {
     };
   }
 
-  presignDownload(key: string, expiresInSec: number): Promise<string> {
-    return getSignedUrl(this.client, new GetObjectCommand({ Bucket: this.bucket, Key: key }), {
-      expiresIn: expiresInSec,
+  presignDownload(
+    key: string,
+    expiresInSec: number,
+    options: { noStore?: boolean } = {},
+  ): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      ...(options.noStore ? { ResponseCacheControl: 'no-store, private' } : {}),
     });
+    return getSignedUrl(this.client, command, { expiresIn: expiresInSec });
   }
 
   async head(key: string): Promise<StoredObject | null> {

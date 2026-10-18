@@ -1,4 +1,4 @@
-import { HttpStatus, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CategoryResolver } from '../categories/category-resolver';
 import { ApiError } from '../common/errors/api-error';
@@ -16,7 +16,6 @@ import {
   STORAGE_PREFIX,
 } from '../storage/upload-policy';
 import {
-  type DocumentUrlDto,
   REQUIRED_DOCUMENTS,
   type RequiredDocumentType,
   type SubmitUpgradeDto,
@@ -160,18 +159,6 @@ export class WorkersService {
   }
 
   /** Enlace temporal a un documento de identidad. Solo para administradores (R9.5). */
-  async adminDocumentUrl(workerId: string, documentId: string): Promise<DocumentUrlDto> {
-    const document = await this.prisma.workerDocument.findFirst({
-      where: { id: documentId, workerId },
-    });
-    if (!document) throw new NotFoundException('El documento no existe.');
-    const ttl = this.config.get('DOCUMENT_URL_TTL_SEC', { infer: true });
-    return {
-      url: await this.storage.presignDownload(document.fileKey, ttl),
-      expiresAt: new Date(Date.now() + ttl * 1000).toISOString(),
-    };
-  }
-
   private async findProfile(userId: string): Promise<ProfileWithRelations | null> {
     return this.prisma.workerProfile.findUnique({
       where: { userId },

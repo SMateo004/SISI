@@ -33,6 +33,8 @@ export interface NotificationInputs {
   billing_payment_registered: { paymentId: string; amountBs: string; balanceBs: string };
   account_blocked: { reason: 'deuda' | 'moderacion' };
   account_unblocked: { status: string };
+  verification_approved: Record<string, never>;
+  verification_rejected: { reason: string; note: string };
   review_request: { jobId: string; counterpartShortName: string; toWorker: boolean };
   job_cancelled: {
     jobId: string;
@@ -174,6 +176,16 @@ const RENDER: { [T in NotificationType]: (d: NotificationInputs[T]) => RenderedN
     title: 'Ya puedes volver a trabajar',
     body: 'Se levantó el bloqueo de tu modo trabajador. Actívalo con el interruptor.',
     route: '/',
+  }),
+  verification_approved: () => ({
+    title: '¡Ya eres trabajador en SISI!',
+    body: 'Revisamos tus documentos y tu cuenta quedó aprobada. Activa el modo trabajador.',
+    route: '/trabajador/estado',
+  }),
+  verification_rejected: (d) => ({
+    title: 'Tu solicitud de trabajador necesita cambios',
+    body: `${d.reason}. ${d.note}`.trim(),
+    route: '/trabajador/estado',
   }),
   review_request: (d) => ({
     title: d.toWorker ? 'Califica al empleador' : `Califica a ${d.counterpartShortName}`,

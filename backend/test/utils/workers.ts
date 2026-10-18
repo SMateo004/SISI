@@ -47,6 +47,43 @@ export async function createApprovedWorker(
   return Object.assign(session, { id: userId });
 }
 
+/**
+ * Solicitud de trabajador enviada (pendiente_revision), con documentos registrados (las
+ * claves no necesitan existir en el bucket para firmar una URL).
+ */
+export async function createPendingWorker(
+  t: TestApp,
+  opts: { birthDate?: string; categorySlugs?: string[] } = {},
+): Promise<TestWorker> {
+  const session = await login(t);
+  const userId = session.user.id;
+  const categories = await t.prisma.category.findMany({
+    where: { slug: { in: opts.categorySlugs ?? ['plomeria'] } },
+    select: { id: true },
+  });
+  await t.app.get(WorkerStatusService).apply(userId, { type: 'SUBMIT' }, null, async (tx) => {
+    await tx.workerProfile.update({
+      where: { userId },
+      data: {
+        transport: 'moto',
+        maxRadiusKm: 5,
+        birthDate: new Date(opts.birthDate ?? '1995-05-10'),
+        submittedAt: new Date(),
+        categories: { create: categories.map((c) => ({ categoryId: c.id })) },
+        documents: {
+          create: (['ci_front', 'ci_back', 'selfie'] as const).map((type) => ({
+            type,
+            fileKey: `identity/${userId}/${type}-e2e.jpg`,
+            contentType: 'image/jpeg',
+            sizeBytes: 1000,
+          })),
+        },
+      },
+    });
+  });
+  return Object.assign(session, { id: userId });
+}
+
 /** Activa "Disponible" en el punto dado (por defecto, el centro de Santa Cruz). */
 export async function makeAvailable(
   t: TestApp,

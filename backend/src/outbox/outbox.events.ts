@@ -1,3 +1,5 @@
+import type { RejectionReason } from '../verifications/verification.rules';
+
 /**
  * Eventos de dominio que pasan por el outbox (ADR-0022). Cada uno se escribe en la misma
  * transacción que el cambio de estado que lo origina, así que no se pierde si el
@@ -54,6 +56,13 @@ export interface OutboxPayloads {
   };
   /** Un admin registró un pago (R7.4): aviso, desbloqueo si corresponde y tope (ADR-0037). */
   'billing.payment_registered': { paymentId: string; workerId: string };
+  /** El admin aprobó o rechazó la solicitud de trabajador (Fase 6): aviso y push. */
+  'worker.reviewed': {
+    workerId: string;
+    decision: 'approved' | 'rejected';
+    reason?: RejectionReason;
+    note?: string;
+  };
   /** Mensaje de chat entregado (no retenido): chat:message y push si no está conectado. */
   'chat.message_sent': { jobId: string; messageId: string };
   /**

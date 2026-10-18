@@ -71,7 +71,7 @@ describe('Sentry (ADR-0048)', () => {
   });
 
   it('scrub quita cookies, cuerpo, query, datos del usuario y PII del mensaje', () => {
-    const event = scrub({
+    const input: ErrorEvent = {
       type: undefined,
       message: 'Falló para +59170012345',
       request: {
@@ -82,7 +82,8 @@ describe('Sentry (ADR-0048)', () => {
       },
       user: { id: 'u1', ip_address: '1.2.3.4', email: 'a@b.c' },
       exception: { values: [{ type: 'Error', value: 'token eyJhbGciOi.eyJzdWIiOi.c2lnbmF0dXJl' }] },
-    });
+    };
+    const event = scrub(input);
     expect(event.request?.cookies).toBeUndefined();
     expect(event.request?.data).toBeUndefined();
     expect(event.request?.query_string).toBeUndefined();

@@ -251,6 +251,19 @@ export const envSchema = z
     MAPS_API_KEY: optionalString,
     RATE_GEOCODE_IP_PER_MIN: positiveInt(60),
     SENTRY_DSN: z.preprocess(emptyAsUndefined, z.url().optional()),
+    // Retención (ADR-0050). Apagada hasta aprobar los plazos (docs/pendientes.md).
+    RETENTION_ENABLED: z
+      .preprocess(emptyAsUndefined, z.stringbool().optional())
+      .transform((v) => v ?? false),
+    RETENTION_RUN_MS: positiveInt(86_400_000),
+    RETENTION_REJECTED_DOCS_DAYS: positiveInt(90),
+    RETENTION_LOCATION_DAYS: positiveInt(30),
+    RETENTION_CHAT_DAYS: positiveInt(180),
+    RETENTION_DRAFT_DAYS: positiveInt(7),
+    RETENTION_REJECTED_RECEIPT_DAYS: positiveInt(365),
+    RETENTION_NOTIFICATION_DAYS: positiveInt(90),
+    RETENTION_TOKEN_DAYS: positiveInt(30),
+    RETENTION_IDEMPOTENCY_DAYS: positiveInt(30),
     // App y piloto (ADR-0052, ADR-0054). Valores por defecto del panel (app_settings).
     /** WhatsApp Business de soporte (+591…); vacío = sin botón de ayuda. */
     SUPPORT_WHATSAPP: z

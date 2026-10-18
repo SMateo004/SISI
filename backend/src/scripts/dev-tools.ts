@@ -1,4 +1,7 @@
 import { AuditModule } from '../audit/audit.module';
+import { RetentionModule } from '../retention/retention.module';
+import { RetentionService } from '../retention/retention.service';
+import { StorageModule } from '../storage/storage.module';
 import { ObservabilityModule } from '../observability/observability.module';
 import { type DrillKind, OpsDrill } from '../observability/ops-drill';
 import { SettingsModule } from '../settings/settings.module';
@@ -43,6 +46,7 @@ import { type WorkerEventInput, WorkerStatusService } from '../workers/worker-st
  *   npm run dev:tools -- billing-run --at 2026-10-19T04:05:00Z   (cron de cobros con reloj simulado)
  *   npm run dev:tools -- resolve-report --report <uuid> --approve --reason "Se verificó"   (o --reject "motivo")
  *   npm run dev:tools -- ops-drill outbox|otp|push|clear   (simulacro de alertas en staging, ADR-0048)
+ *   npm run dev:tools -- retention --dry-run   (cuenta lo que borraría la retención; sin --dry-run, borra; ADR-0050)
  */
 @Module({
   // WorkerStatusService apaga la disponibilidad al bloquear o suspender (Redis, ADR-0024).
@@ -58,6 +62,8 @@ import { type WorkerEventInput, WorkerStatusService } from '../workers/worker-st
     AuditModule,
     SettingsModule,
     ObservabilityModule,
+    StorageModule,
+    RetentionModule,
   ],
   providers: [
     OpsDrill,
@@ -93,6 +99,7 @@ async function main(): Promise<void> {
       decision: { type: 'string' },
       report: { type: 'string' },
       at: { type: 'string' },
+      'dry-run': { type: 'boolean' },
     },
   });
 
@@ -236,6 +243,13 @@ async function main(): Promise<void> {
           throw new Error('Usa ops-drill outbox|otp|push|clear');
         }
         logger.log(await app.get(OpsDrill).run(kind));
+        break;
+      }
+      case 'retention': {
+        // Corre la retención a mano (ADR-0050). --dry-run solo cuenta.
+        const dryRun = values['dry-run'] ?? false;
+        const report = await app.get(RetentionService).run({ dryRun });
+        logger.log(`Retención${dryRun ? ' (prueba)' : ''}: ${JSON.stringify(report)}`);
         break;
       }
       case 'resolve-report': {

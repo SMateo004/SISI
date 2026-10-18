@@ -1024,6 +1024,8 @@ model PaymentSubmission {
   workerId         String                  @map("worker_id") @db.Uuid
   cityId           String                  @map("city_id") @db.Uuid
   receiptKey       String                  @map("receipt_key")
+  /// La retención borró el archivo de un comprobante rechazado (ADR-0050); la fila queda.
+  receiptPurgedAt  DateTime?               @map("receipt_purged_at") @db.Timestamptz(3)
   declaredAmountBs Decimal?                @map("declared_amount_bs") @db.Decimal(12, 2)
   note             String?
   status           PaymentSubmissionStatus @default(pendiente)

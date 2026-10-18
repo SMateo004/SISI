@@ -24,6 +24,8 @@ export const MATCHING_JOBS = {
   sweepLocations: 'sweep_locations',
   /** Limpieza de eventos publicados del outbox (ADR-0022). */
   outboxCleanup: 'outbox_cleanup',
+  /** Retención de datos, una vez por día si está encendida (ADR-0050). */
+  retention: 'retention',
   /** Autoconfirmación de un trabajo (ADR-0029). */
   autoconfirm: 'autoconfirm',
 } as const;

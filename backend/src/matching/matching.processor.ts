@@ -15,6 +15,7 @@ import { DebtStateService } from '../billing/debt-state.service';
 import { JobAutoConfirmService } from '../jobs/job-autoconfirm.service';
 import { OutboxCleanupService } from '../outbox/outbox-cleanup.service';
 import { ReviewPublisher } from '../reviews/review-publisher.service';
+import { RetentionService } from '../retention/retention.service';
 import { MatchingReconciler } from './matching.reconciler';
 import { MatchingService } from './matching.service';
 
@@ -42,6 +43,7 @@ export class MatchingProcessor
     private readonly autoConfirm: JobAutoConfirmService,
     private readonly reviews: ReviewPublisher,
     private readonly debtState: DebtStateService,
+    private readonly retention: RetentionService,
     @InjectQueue(QUEUES.matching) private readonly queue: Queue,
     @Inject(ConfigService) private readonly config: AppConfigService,
   ) {
@@ -65,6 +67,16 @@ export class MatchingProcessor
       { every: this.config.get('OUTBOX_CLEANUP_MS', { infer: true }) },
       { name: MATCHING_JOBS.outboxCleanup },
     );
+    if (this.config.get('RETENTION_ENABLED', { infer: true })) {
+      await this.queue.upsertJobScheduler(
+        MATCHING_JOBS.retention,
+        { every: this.config.get('RETENTION_RUN_MS', { infer: true }) },
+        { name: MATCHING_JOBS.retention },
+      );
+    } else {
+      // Apagada: si una versión anterior la programó, se quita (ADR-0050).
+      await this.queue.removeJobScheduler(MATCHING_JOBS.retention);
+    }
   }
 
   /** Termina los jobs en curso antes de que se cierren Postgres y Redis. */
@@ -93,6 +105,8 @@ export class MatchingProcessor
         return this.availability.sweepStale();
       case MATCHING_JOBS.outboxCleanup:
         return this.outboxCleanup.runOnce();
+      case MATCHING_JOBS.retention:
+        return this.retention.run();
       case MATCHING_JOBS.autoconfirm:
         if (!jobId) break;
         return this.autoConfirm.confirmIfDue(jobId);

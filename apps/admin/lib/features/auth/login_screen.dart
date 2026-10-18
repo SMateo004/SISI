@@ -5,7 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/auth/session.dart';
 import '../../core/http/api_error.dart';
 
-/// Ingreso al panel con OTP (ADR-0040): teléfono, código y solo cuentas admin.
+/// Ingreso al panel (ADR-0055): una sola cuenta, sin teléfono. Usuario del panel y el
+/// código de 6 dígitos que muestra la app autenticadora (cambia cada 30 s).
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -14,43 +15,42 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _phone = TextEditingController();
+  final _username = TextEditingController(text: 'admin');
   final _code = TextEditingController();
-  bool _codeSent = false;
   bool _busy = false;
   String? _error;
 
   @override
   void dispose() {
-    _phone.dispose();
+    _username.dispose();
     _code.dispose();
     super.dispose();
   }
 
-  Future<void> _run(Future<void> Function() action) async {
+  bool get _ready =>
+      _username.text.trim().isNotEmpty && _code.text.trim().length == 6;
+
+  Future<void> _login() async {
+    if (!_ready || _busy) return;
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
-      await action();
+      await ref
+          .read(sessionProvider.notifier)
+          .login(_username.text.trim(), _code.text.trim());
     } catch (error) {
-      if (mounted) setState(() => _error = ApiError.from(error).message);
+      if (mounted) {
+        setState(() {
+          _error = ApiError.from(error).message;
+          _code.clear();
+        });
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
-
-  Future<void> _sendCode() => _run(() async {
-    await ref.read(sessionProvider.notifier).requestOtp(_phone.text.trim());
-    setState(() => _codeSent = true);
-  });
-
-  Future<void> _verify() => _run(
-    () => ref
-        .read(sessionProvider.notifier)
-        .verify(_phone.text.trim(), _code.text.trim()),
-  );
 
   @override
   Widget build(BuildContext context) {
@@ -77,34 +77,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ],
                   const SizedBox(height: 16),
                   TextField(
-                    key: const Key('login-phone'),
-                    controller: _phone,
-                    enabled: !_codeSent && !_busy,
-                    keyboardType: TextInputType.phone,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[\d+ ]')),
-                    ],
-                    decoration: const InputDecoration(
-                      labelText: 'Celular',
-                      prefixText: '+591 ',
-                    ),
+                    key: const Key('login-username'),
+                    controller: _username,
+                    enabled: !_busy,
+                    autocorrect: false,
+                    decoration: const InputDecoration(labelText: 'Usuario'),
+                    onChanged: (_) => setState(() {}),
                   ),
-                  if (_codeSent) ...[
-                    const SizedBox(height: 12),
-                    TextField(
-                      key: const Key('login-code'),
-                      controller: _code,
-                      enabled: !_busy,
-                      autofocus: true,
-                      keyboardType: TextInputType.number,
-                      maxLength: 6,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: const InputDecoration(
-                        labelText: 'Código de 6 dígitos',
-                      ),
-                      onSubmitted: (_) => _verify(),
+                  const SizedBox(height: 12),
+                  TextField(
+                    key: const Key('login-code'),
+                    controller: _code,
+                    enabled: !_busy,
+                    autofocus: true,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: const InputDecoration(
+                      labelText: 'Código de la app autenticadora',
+                      helperText: '6 dígitos; cambia cada 30 segundos.',
                     ),
-                  ],
+                    onChanged: (_) => setState(() {}),
+                    onSubmitted: (_) => _login(),
+                  ),
                   if (_error != null) ...[
                     const SizedBox(height: 8),
                     Text(
@@ -116,16 +111,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 16),
                   FilledButton(
                     key: const Key('login-submit'),
-                    onPressed: _busy ? null : (_codeSent ? _verify : _sendCode),
-                    child: Text(_codeSent ? 'Ingresar' : 'Enviar código'),
+                    onPressed: _busy || !_ready ? null : _login,
+                    child: Text(_busy ? 'Ingresando…' : 'Ingresar'),
                   ),
-                  if (_codeSent)
-                    TextButton(
-                      onPressed: _busy
-                          ? null
-                          : () => setState(() => _codeSent = false),
-                      child: const Text('Cambiar número'),
-                    ),
                 ],
               ),
             ),

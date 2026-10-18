@@ -92,6 +92,21 @@ export const envSchema = z
     JWT_ADMIN_SESSION_MAX_SEC: positiveInt(28_800),
     /** Ruta de la cookie del refresh admin, tal como la ve el navegador (detrás del proxy /api). */
     ADMIN_COOKIE_PATH: z.string().startsWith('/').default('/api/auth/admin'),
+    /**
+     * Ingreso al panel (ADR-0055): una sola cuenta, usuario fijo y código de una app
+     * autenticadora (TOTP). La clave es base32 y vive solo en el ambiente; con
+     * APP_ENV=production la API no arranca sin ella. Generarla: dev-tools admin-totp.
+     */
+    ADMIN_USERNAME: z.string().trim().min(3).default('admin'),
+    ADMIN_TOTP_SECRET: z.preprocess(
+      (v) => (typeof v === 'string' ? v.replace(/[\s=-]/g, '').toUpperCase() || undefined : v),
+      z
+        .string()
+        .regex(/^[A-Z2-7]{26,}$/, 'Clave base32 de al menos 128 bits (26 caracteres)')
+        .optional(),
+    ),
+    /** Intentos de ingreso al panel en 15 min, sumando todas las IP (una sola cuenta). */
+    RATE_ADMIN_LOGIN_PER_15MIN: positiveInt(20),
 
     // OTP (ADR-0009, ADR-0011)
     OTP_PROVIDER: z.enum(['console', 'bird']).default('console'),

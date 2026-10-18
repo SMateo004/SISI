@@ -10,7 +10,7 @@ El panel admin es una app web (Flutter web en Vercel) que puede ver documentos d
 ## Decisión
 
 ### Sesión aparte
-- `POST /auth/admin/otp/verify`: el código se pide con el mismo `/auth/otp/request`. Solo entran cuentas con `role=admin` (403 `ADMIN_ONLY`); este login no crea cuentas.
+- ~~`POST /auth/admin/otp/verify` con el teléfono y el código por SMS~~. **Reemplazado por ADR-0055:** una sola cuenta del panel, sin teléfono, con usuario y código de una app autenticadora (`POST /auth/admin/login`). El resto de este ADR (sesión, cookie, permisos y límites) sigue vigente.
 - **Duración:**
   - acceso de **10 min** (`JWT_ADMIN_ACCESS_TTL_SEC=600`);
   - la sesión dura como máximo **8 h desde el login** (`JWT_ADMIN_SESSION_MAX_SEC=28800`). Rotar el refresh no la extiende, y el acceso nunca dura más que lo que le queda a la sesión.

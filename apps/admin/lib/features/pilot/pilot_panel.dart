@@ -227,7 +227,9 @@ class _PilotPanelState extends ConsumerState<PilotPanel> {
               for (final r in rows)
                 ListTile(
                   dense: true,
-                  title: Text('${r.phone} · ${_roles[r.role.name] ?? r.role.name}'),
+                  title: Text(
+                    '${r.phone} · ${_roles[r.role.name] ?? r.role.name}',
+                  ),
                   subtitle: Text(
                     [
                       formatDateTime(r.createdAt),

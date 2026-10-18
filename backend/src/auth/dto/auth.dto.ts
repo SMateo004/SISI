@@ -19,6 +19,18 @@ export class VerifyOtpDto extends RequestOtpDto {
   code!: string;
 }
 
+/** Ingreso al panel (ADR-0055): usuario fijo y código de la app autenticadora. */
+export class AdminLoginDto {
+  @ApiProperty({ example: 'admin' })
+  @IsString()
+  @MaxLength(64)
+  username!: string;
+
+  @ApiProperty({ example: '482913', description: 'Código de 6 dígitos de la app autenticadora' })
+  @Matches(/^\d{6}$/, { message: 'El código tiene 6 dígitos.' })
+  code!: string;
+}
+
 export class RefreshTokenDto {
   @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
   @IsJWT({ message: 'La sesión no es válida.' })

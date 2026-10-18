@@ -63,11 +63,9 @@ class SessionController extends Notifier<SessionState> {
     }
   }
 
-  /// Pide el código por SMS. Devuelve los segundos hasta poder pedir otro.
-  Future<int> requestOtp(String phone) => _gateway.requestOtp(phone);
-
-  Future<void> verify(String phone, String code) async {
-    _signIn(await _gateway.verify(phone, code));
+  /// Usuario del panel y código de 6 dígitos de la app autenticadora (ADR-0055).
+  Future<void> login(String username, String code) async {
+    _signIn(await _gateway.login(username, code));
   }
 
   Future<void> logout() async {

@@ -8,6 +8,7 @@ import { ObservabilityModule } from '../observability/observability.module';
 import { type DrillKind, OpsDrill } from '../observability/ops-drill';
 import { SettingsModule } from '../settings/settings.module';
 import { parseArgs } from 'node:util';
+import { generateTotpSecret, otpauthUri } from '../auth/admin-totp';
 import { Logger, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
@@ -42,7 +43,7 @@ import { type WorkerEventInput, WorkerStatusService } from '../workers/worker-st
  *   npm run dev:tools -- worker-event --phone 70012345 --event BLOCK_FOR_DEBT
  *   npm run dev:tools -- worker-event --phone 70012345 --event SUSPEND --reason "3 reportes"
  *   npm run dev:tools -- create-category --name "Plomería (prueba)" --min 80 --max 250
- *   npm run dev:tools -- make-admin --phone 70012345
+ *   npm run dev:tools -- admin-totp   (clave nueva de la app autenticadora del panel, ADR-0055)
  *   npm run dev:tools -- quick-worker --phone 70012345 --categories plomeria,limpieza --transport moto --radius 10
  *   npm run dev:tools -- resolve-dispute --job <uuid> --decision confirm --reason "Se verificó con ambas partes"
  *   npm run dev:tools -- billing-run --at 2026-10-19T04:05:00Z   (cron de cobros con reloj simulado)
@@ -183,11 +184,27 @@ async function main(): Promise<void> {
         logger.log(`Categoría de prueba creada: ${category.name} (${category.id})`);
         break;
       }
-      case 'make-admin': {
-        const userId = await userIdFor(values.phone);
-        await prisma.user.update({ where: { id: userId }, data: { role: 'admin' } });
-        logger.log(
-          `La cuenta ${maskPhone(values.phone ?? '')} ahora es admin (vuelve a iniciar sesión)`,
+      case 'admin-totp': {
+        // Clave nueva para el ingreso al panel (ADR-0055). Se muestra solo en esta terminal
+        // (no en el log): va a ADMIN_TOTP_SECRET del ambiente y a la app autenticadora.
+        const secret = generateTotpSecret();
+        const username = config.get('ADMIN_USERNAME', { infer: true });
+        process.stdout.write(
+          [
+            '',
+            'Clave nueva del panel (no la compartas ni la subas al repo):',
+            '',
+            `  ADMIN_TOTP_SECRET=${secret}`,
+            '',
+            'En la app autenticadora: "Agregar código" → "Ingresar clave de configuración",',
+            `cuenta "SISI ${username}", clave de arriba, "Basada en el tiempo". O este enlace como QR:`,
+            '',
+            `  ${otpauthUri(secret, username)}`,
+            '',
+            'Después: ponla en el ambiente de la API (backend/.env en local, Render en staging o',
+            'producción) y reinicia la API. La clave anterior deja de servir.',
+            '',
+          ].join('\n'),
         );
         break;
       }
@@ -305,7 +322,7 @@ async function main(): Promise<void> {
       }
       default:
         throw new Error(
-          'Comandos: review-worker, worker-event, create-category, make-admin, quick-worker, resolve-dispute, resolve-report, billing-run (ver src/scripts/dev-tools.ts)',
+          'Comandos: review-worker, worker-event, create-category, admin-totp, quick-worker, resolve-dispute, resolve-report, billing-run (ver src/scripts/dev-tools.ts)',
         );
     }
   } finally {

@@ -137,9 +137,9 @@ Class | Method | HTTP request | Description
 [*AdminApi*](doc/AdminApi.md) | [**verificationsControllerQueue**](doc/AdminApi.md#verificationscontrollerqueue) | **GET** /admin/verifications | Cola de verificaciones (pendiente_revision)
 [*AdminApi*](doc/AdminApi.md) | [**verificationsControllerReject**](doc/AdminApi.md#verificationscontrollerreject) | **POST** /admin/verifications/{userId}/reject | Rechazar con motivo de la lista y nota
 [*AppApi*](doc/AppApi.md) | [**clientAppControllerConfig**](doc/AppApi.md#clientappcontrollerconfig) | **GET** /app/config | Configuración de la app al abrirla
+[*AuthApi*](doc/AuthApi.md) | [**adminAuthControllerLogin**](doc/AuthApi.md#adminauthcontrollerlogin) | **POST** /auth/admin/login | Ingresa al panel con el usuario y el código de la app autenticadora
 [*AuthApi*](doc/AuthApi.md) | [**adminAuthControllerLogout**](doc/AuthApi.md#adminauthcontrollerlogout) | **POST** /auth/admin/logout | Cierra la sesión del panel (revoca el refresh y borra la cookie)
 [*AuthApi*](doc/AuthApi.md) | [**adminAuthControllerRefresh**](doc/AuthApi.md#adminauthcontrollerrefresh) | **POST** /auth/admin/refresh | Renueva el token de acceso del panel con la cookie
-[*AuthApi*](doc/AuthApi.md) | [**adminAuthControllerVerify**](doc/AuthApi.md#adminauthcontrollerverify) | **POST** /auth/admin/otp/verify | Valida el código e inicia sesión en el panel
 [*AuthApi*](doc/AuthApi.md) | [**authControllerLogout**](doc/AuthApi.md#authcontrollerlogout) | **POST** /auth/logout | Cierra la sesión (revoca la familia del refresh token)
 [*AuthApi*](doc/AuthApi.md) | [**authControllerRefresh**](doc/AuthApi.md#authcontrollerrefresh) | **POST** /auth/refresh | Renueva la sesión (rota el refresh token)
 [*AuthApi*](doc/AuthApi.md) | [**authControllerRequestOtp**](doc/AuthApi.md#authcontrollerrequestotp) | **POST** /auth/otp/request | Envía un código de 6 dígitos al celular
@@ -237,6 +237,7 @@ Class | Method | HTTP request | Description
  - [AdminJobPartyDto](doc/AdminJobPartyDto.md)
  - [AdminJobsControllerResolve200Response](doc/AdminJobsControllerResolve200Response.md)
  - [AdminLedgerEntryDto](doc/AdminLedgerEntryDto.md)
+ - [AdminLoginDto](doc/AdminLoginDto.md)
  - [AdminOfferEventDto](doc/AdminOfferEventDto.md)
  - [AdminPaymentSubmissionDto](doc/AdminPaymentSubmissionDto.md)
  - [AdminPeriodDto](doc/AdminPeriodDto.md)

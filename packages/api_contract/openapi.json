@@ -981,17 +981,17 @@
         ]
       }
     },
-    "/auth/admin/otp/verify": {
+    "/auth/admin/login": {
       "post": {
-        "description": "Solo cuentas con rol admin; no crea cuentas. El refresh queda en la cookie httpOnly `sisi_admin_rt`.",
-        "operationId": "AdminAuthController_verify",
+        "description": "Una sola cuenta, sin teléfono (ADR-0055). Cada código sirve una vez. El refresh queda en la cookie httpOnly `sisi_admin_rt`.",
+        "operationId": "AdminAuthController_login",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/VerifyOtpDto"
+                "$ref": "#/components/schemas/AdminLoginDto"
               }
             }
           }
@@ -1007,8 +1007,8 @@
               }
             }
           },
-          "403": {
-            "description": "ADMIN_ONLY",
+          "401": {
+            "description": "ADMIN_LOGIN_INVALID o ADMIN_CODE_USED",
             "content": {
               "application/json": {
                 "schema": {
@@ -1026,9 +1026,19 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "ADMIN_LOGIN_NOT_CONFIGURED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
           }
         },
-        "summary": "Valida el código e inicia sesión en el panel",
+        "summary": "Ingresa al panel con el usuario y el código de la app autenticadora",
         "tags": [
           "auth"
         ]
@@ -8953,6 +8963,24 @@
           "tokenType",
           "expiresIn",
           "refreshExpiresIn"
+        ]
+      },
+      "AdminLoginDto": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "example": "admin"
+          },
+          "code": {
+            "type": "string",
+            "example": "482913",
+            "description": "Código de 6 dígitos de la app autenticadora"
+          }
+        },
+        "required": [
+          "username",
+          "code"
         ]
       },
       "AdminSessionDto": {

@@ -1,5 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { AdminAuditService } from '../audit/admin-audit.service';
+import { ADMIN_ACCOUNT_PHONE } from '../auth/admin-login.service';
 import type { AdminContext } from '../audit/admin-context';
 import { BillingLedgerService } from '../billing/billing-ledger.service';
 import { assertNotSelf } from '../common/admin/self-review';
@@ -72,7 +73,8 @@ export class AdminUsersService {
 
   async search(query: UserSearchQueryDto): Promise<UserPageDto> {
     const rows = await this.prisma.user.findMany({
-      where: searchFilter(query.q),
+      // La cuenta del panel (ADR-0055) no es una persona: no se lista.
+      where: { AND: [searchFilter(query.q), { phone: { not: ADMIN_ACCOUNT_PHONE } }] },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: PAGE + 1,
       ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),

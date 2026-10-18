@@ -8,47 +8,52 @@ FakeApi _api() =>
     FakeApi()..on(#dashboardControllerGet, (_) async => ok(dashboard()));
 
 void main() {
-  testWidgets('sin sesión va al ingreso; con el código entra al dashboard', (
-    tester,
-  ) async {
-    final gateway = FakeAuthGateway(signedIn: false);
-    await pumpAdmin(tester, api: _api(), gateway: gateway);
-    expect(find.text('Panel de SISI'), findsOneWidget);
+  testWidgets(
+    'sin sesión va al ingreso: usuario y código, sin teléfono; entra al dashboard',
+    (tester) async {
+      final gateway = FakeAuthGateway(signedIn: false);
+      await pumpAdmin(tester, api: _api(), gateway: gateway);
+      expect(find.text('Panel de SISI'), findsOneWidget);
+      expect(find.text('Celular'), findsNothing);
 
-    await tester.enterText(find.byKey(const Key('login-phone')), '70000001');
-    await tester.tap(find.byKey(const Key('login-submit')));
-    await tester.pumpAndSettle();
-    expect(gateway.requested, ['70000001']);
-    await tester.enterText(find.byKey(const Key('login-code')), '123456');
-    await tester.tap(find.byKey(const Key('login-submit')));
-    await tester.pumpAndSettle();
+      final submit = find.byKey(const Key('login-submit'));
+      expect(tester.widget<FilledButton>(submit).onPressed, isNull);
+      await tester.enterText(find.byKey(const Key('login-code')), '123456');
+      await tester.pump();
+      await tester.tap(submit);
+      await tester.pumpAndSettle();
+      expect(gateway.logins, [('admin', '123456')]);
 
-    expect(find.text('Dashboard'), findsWidgets);
-    expect(find.text('Bs 136,50'), findsOneWidget);
-    expect(find.text('75 %'), findsOneWidget);
-  });
+      expect(find.text('Dashboard'), findsWidgets);
+      expect(find.text('Bs 136,50'), findsOneWidget);
+      expect(find.text('75 %'), findsOneWidget);
+    },
+  );
 
-  testWidgets('una cuenta sin rol admin ve el aviso y no entra', (
-    tester,
-  ) async {
-    final gateway = FakeAuthGateway(
-      signedIn: false,
-      verifyError: apiError(
-        403,
-        'ADMIN_ONLY',
-        'Esta cuenta no tiene acceso al panel.',
-      ),
-    );
-    await pumpAdmin(tester, api: _api(), gateway: gateway);
-    await tester.enterText(find.byKey(const Key('login-phone')), '70000002');
-    await tester.tap(find.byKey(const Key('login-submit')));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('login-code')), '123456');
-    await tester.tap(find.byKey(const Key('login-submit')));
-    await tester.pumpAndSettle();
-    expect(find.text('Esta cuenta no tiene acceso al panel.'), findsOneWidget);
-    expect(find.byKey(const Key('nav-rail')), findsNothing);
-  });
+  testWidgets(
+    'usuario o código incorrecto: muestra el error y borra el código',
+    (tester) async {
+      final gateway = FakeAuthGateway(
+        signedIn: false,
+        loginError: apiError(
+          401,
+          'ADMIN_LOGIN_INVALID',
+          'Usuario o código incorrecto.',
+        ),
+      );
+      await pumpAdmin(tester, api: _api(), gateway: gateway);
+      await tester.enterText(find.byKey(const Key('login-code')), '654321');
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('login-submit')));
+      await tester.pumpAndSettle();
+      expect(find.text('Usuario o código incorrecto.'), findsOneWidget);
+      expect(find.byKey(const Key('nav-rail')), findsNothing);
+      final code = tester.widget<TextField>(
+        find.byKey(const Key('login-code')),
+      );
+      expect(code.controller!.text, isEmpty);
+    },
+  );
 
   testWidgets('con la cookie vigente entra directo; salir vuelve al ingreso', (
     tester,

@@ -48,6 +48,7 @@ export 'package:sisi_api/src/model/admin_job_offer_dto.dart';
 export 'package:sisi_api/src/model/admin_job_party_dto.dart';
 export 'package:sisi_api/src/model/admin_jobs_controller_resolve200_response.dart';
 export 'package:sisi_api/src/model/admin_ledger_entry_dto.dart';
+export 'package:sisi_api/src/model/admin_login_dto.dart';
 export 'package:sisi_api/src/model/admin_offer_event_dto.dart';
 export 'package:sisi_api/src/model/admin_payment_submission_dto.dart';
 export 'package:sisi_api/src/model/admin_period_dto.dart';

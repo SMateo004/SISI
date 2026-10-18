@@ -1,22 +1,25 @@
+import type { Redis } from 'ioredis';
 import request from 'supertest';
+import { ADMIN_ACCOUNT_PHONE } from '../src/auth/admin-login.service';
+import { base32Decode, totpAt, totpStep } from '../src/auth/admin-totp';
 import type { AdminSessionDto } from '../src/auth/dto/auth.dto';
 import { TokenService } from '../src/auth/tokens/token.service';
-import { uniqueIp, uniquePhone } from './utils/unique';
-import {
-  bearer,
-  createTestApp,
-  e164,
-  login,
-  resetPhoneCooldowns,
-  type TestApp,
-} from './utils/test-app';
+import { REDIS_CLIENT } from '../src/redis/redis.constants';
+import { E2E_ADMIN_TOTP_SECRET } from './e2e-env';
+import { uniqueIp } from './utils/unique';
+import { bearer, createTestApp, login, type TestApp } from './utils/test-app';
 
-/** Sesión del panel (ADR-0040): cookie httpOnly, aud=admin y máximo de 8 h. */
+/**
+ * Sesión del panel (ADR-0040) con la cuenta única del panel: usuario fijo y código de una app
+ * autenticadora, sin teléfono (ADR-0055). Cookie httpOnly, aud=admin y máximo de 8 h.
+ */
 describe('Sesión del panel admin (e2e)', () => {
   let t: TestApp;
+  let redis: Redis;
 
   beforeAll(async () => {
     t = await createTestApp();
+    redis = t.app.get<Redis>(REDIS_CLIENT);
   });
 
   afterAll(async () => {
@@ -24,22 +27,25 @@ describe('Sesión del panel admin (e2e)', () => {
   });
 
   const server = () => t.app.getHttpServer();
+  const currentCode = (offsetSteps = 0): string =>
+    totpAt(base32Decode(E2E_ADMIN_TOTP_SECRET), totpStep(Date.now()) + offsetSteps);
 
-  /** Pide el código y entra al panel con él. */
-  async function adminLogin(phone: string, status: number) {
-    const ip = uniqueIp();
-    await request(server())
-      .post('/auth/otp/request')
-      .set('X-Forwarded-For', ip)
-      .send({ phone })
-      .expect(202);
-    const code = t.codes.get(e164(phone));
+  /** Los códigos sirven una vez y hay un tope de intentos global: cada prueba empieza limpia. */
+  async function resetAdminLogin(): Promise<void> {
+    const used = await redis.keys('admin:totp:used:*');
+    if (used.length > 0) await redis.del(...used);
+    await redis.del('rl:adminLogin:all');
+  }
+
+  function panelLogin(status: number, body: { username?: string; code?: string } = {}) {
     return request(server())
-      .post('/auth/admin/otp/verify')
-      .set('X-Forwarded-For', ip)
-      .send({ phone, code })
+      .post('/auth/admin/login')
+      .set('X-Forwarded-For', uniqueIp())
+      .send({ username: body.username ?? 'admin', code: body.code ?? currentCode() })
       .expect(status);
   }
+
+  beforeEach(resetAdminLogin);
 
   const cookieOf = (res: request.Response): string => {
     const raw = res.headers['set-cookie'] as unknown as string[] | undefined;
@@ -49,25 +55,20 @@ describe('Sesión del panel admin (e2e)', () => {
   };
   const cookiePair = (setCookie: string): string => setCookie.split(';')[0] ?? '';
 
-  /** Cuenta admin ya existente (el panel no crea cuentas). */
-  async function adminAccount() {
-    const session = await login(t);
-    await t.prisma.user.update({ where: { id: session.user.id }, data: { role: 'admin' } });
-    // Segundo pedido de código para el mismo número: se limpia su espera.
-    await resetPhoneCooldowns(t);
-    return session;
-  }
-
-  it('un admin entra: token de acceso de 10 min, refresh solo en cookie httpOnly y Strict', async () => {
-    const session = await adminAccount();
-    const phone = session.user.phone.replace('+591', '');
-    const res = await adminLogin(phone, 200);
-    const body = res.body as Record<string, unknown>;
+  it('entra con usuario y código: cuenta del panel sin teléfono, refresh solo en cookie', async () => {
+    const res = await panelLogin(200, { username: '  Admin ' });
+    const body = res.body as AdminSessionDto & Record<string, unknown>;
     expect(body.expiresIn).toBe(600);
     expect(body.refreshToken).toBeUndefined();
-    expect(Date.parse(body.sessionExpiresAt as string) - Date.now()).toBeGreaterThan(
-      7.9 * 3600_000,
-    );
+    expect(Date.parse(body.sessionExpiresAt) - Date.now()).toBeGreaterThan(7.9 * 3600_000);
+    expect(body.user).toMatchObject({ role: 'admin', name: 'Administrador' });
+
+    const account = await t.prisma.user.findUniqueOrThrow({
+      where: { phone: ADMIN_ACCOUNT_PHONE },
+    });
+    expect(account.id).toBe(body.user.id);
+    expect(t.codes.get(ADMIN_ACCOUNT_PHONE)).toBeUndefined();
+
     const cookie = cookieOf(res);
     expect(cookie).toMatch(/HttpOnly/i);
     expect(cookie).toMatch(/Secure/i);
@@ -76,32 +77,65 @@ describe('Sesión del panel admin (e2e)', () => {
     expect(res.headers['cache-control']).toBe('no-store');
 
     // Entra a /admin con el token del panel, pero no a las rutas de la app.
-    const access = body.accessToken as string;
     await request(server())
       .get('/admin/feature-flags')
-      .set(...bearer(access))
+      .set(...bearer(body.accessToken))
       .expect(200);
     const scope = await request(server())
       .get('/me')
-      .set(...bearer(access))
+      .set(...bearer(body.accessToken))
       .expect(403);
     expect(scope.body).toMatchObject({ code: 'ADMIN_SESSION_SCOPE' });
+
+    // Ingresar otra vez usa la misma cuenta (no crea otra).
+    await resetAdminLogin();
+    const again = await panelLogin(200);
+    expect((again.body as AdminSessionDto).user.id).toBe(body.user.id);
   });
 
-  it('una cuenta sin rol admin (o inexistente) no entra y no se crea', async () => {
-    const session = await login(t);
-    await resetPhoneCooldowns(t);
-    const res = await adminLogin(session.user.phone.replace('+591', ''), 403);
-    expect(res.body).toMatchObject({ code: 'ADMIN_ONLY' });
-    expect(res.headers['set-cookie']).toBeUndefined();
+  it('usuario o código incorrectos: 401 sin cookie; acepta el código anterior y el siguiente', async () => {
+    const wrongUser = await panelLogin(401, { username: 'root' });
+    expect(wrongUser.body).toMatchObject({ code: 'ADMIN_LOGIN_INVALID' });
+    expect(wrongUser.headers['set-cookie']).toBeUndefined();
 
-    const fresh = uniquePhone();
-    await adminLogin(fresh, 403);
-    expect(await t.prisma.user.findUnique({ where: { phone: e164(fresh) } })).toBeNull();
+    const wrongCode = await panelLogin(401, { code: currentCode(-5) });
+    expect(wrongCode.body).toMatchObject({ code: 'ADMIN_LOGIN_INVALID' });
+
+    const invalid = await panelLogin(400, { code: '12ab' });
+    expect(invalid.body).toMatchObject({ code: 'VALIDATION_ERROR' });
+
+    // Reloj del teléfono algo corrido: un paso de cada lado.
+    await panelLogin(200, { code: currentCode(-1) });
+    await panelLogin(200, { code: currentCode(1) });
+  });
+
+  it('un código sirve una sola vez', async () => {
+    const code = currentCode();
+    await panelLogin(200, { code });
+    const reused = await panelLogin(401, { code });
+    expect(reused.body).toMatchObject({ code: 'ADMIN_CODE_USED' });
+  });
+
+  it('tope de intentos sumando todas las IP (una sola cuenta)', async () => {
+    const limit = 20;
+    for (let i = 0; i < limit; i++) await panelLogin(401, { code: currentCode(-5) });
+    const blocked = await panelLogin(429);
+    expect(blocked.body).toMatchObject({ code: 'RATE_LIMITED' });
+    expect(blocked.headers['retry-after']).toBeDefined();
+  });
+
+  it('ya no se entra al panel con el teléfono', async () => {
+    const session = await login(t);
+    await t.prisma.user.update({ where: { id: session.user.id }, data: { role: 'admin' } });
+    await request(server())
+      .post('/auth/admin/otp/verify')
+      .set('X-Forwarded-For', uniqueIp())
+      .send({ phone: session.user.phone, code: '123456' })
+      .expect(404);
   });
 
   it('el token de la app de un admin no entra a /admin', async () => {
-    const session = await adminAccount();
+    const session = await login(t);
     const app = await t.app.get(TokenService).issue({ id: session.user.id, role: 'admin' });
     const res = await request(server())
       .get('/admin/feature-flags')
@@ -111,8 +145,7 @@ describe('Sesión del panel admin (e2e)', () => {
   });
 
   it('refresh con la cookie y el header CSRF; reutilizarlo revoca la sesión', async () => {
-    const session = await adminAccount();
-    const login1 = await adminLogin(session.user.phone.replace('+591', ''), 200);
+    const login1 = await panelLogin(200);
     const first = cookiePair(cookieOf(login1));
 
     // Sin el header X-SISI-Admin: 403 (un formulario de otro sitio no puede enviarlo).
@@ -155,7 +188,7 @@ describe('Sesión del panel admin (e2e)', () => {
   });
 
   it('un refresh de la app no sirve en el panel, ni uno del panel en la app', async () => {
-    const session = await adminAccount();
+    const session = await login(t);
     await request(server())
       .post('/auth/admin/refresh')
       .set('Cookie', `sisi_admin_rt=${session.refreshToken}`)
@@ -163,31 +196,23 @@ describe('Sesión del panel admin (e2e)', () => {
       .set('X-Forwarded-For', uniqueIp())
       .expect(401);
 
-    const admin = await t.app
-      .get(TokenService)
-      .issue({ id: session.user.id, role: 'admin' }, 'admin');
+    const panel = cookiePair(cookieOf(await panelLogin(200)));
     await request(server())
       .post('/auth/refresh')
       .set('X-Forwarded-For', uniqueIp())
-      .send({ refreshToken: admin.refreshToken })
+      .send({ refreshToken: panel.replace('sisi_admin_rt=', '') })
       .expect(401);
   });
 
-  it('si la cuenta deja de ser admin, el siguiente refresh termina la sesión', async () => {
-    const session = await adminAccount();
-    const res = await adminLogin(session.user.phone.replace('+591', ''), 200);
-    await t.prisma.user.update({ where: { id: session.user.id }, data: { role: 'user' } });
-    await request(server())
-      .post('/auth/admin/refresh')
-      .set('Cookie', cookiePair(cookieOf(res)))
-      .set('X-SISI-Admin', '1')
-      .set('X-Forwarded-For', uniqueIp())
-      .expect(401);
+  it('la cuenta del panel no puede dejar de ser admin (restricción de la base)', async () => {
+    await panelLogin(200);
+    await expect(
+      t.prisma.user.update({ where: { phone: ADMIN_ACCOUNT_PHONE }, data: { role: 'user' } }),
+    ).rejects.toThrow(/users_phone_e164_check/);
   });
 
   it('logout revoca el refresh y borra la cookie', async () => {
-    const session = await adminAccount();
-    const res = await adminLogin(session.user.phone.replace('+591', ''), 200);
+    const res = await panelLogin(200);
     const cookie = cookiePair(cookieOf(res));
     const out = await request(server())
       .post('/auth/admin/logout')

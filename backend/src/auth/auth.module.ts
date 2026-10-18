@@ -6,6 +6,7 @@ import { PilotModule } from '../pilot/pilot.module';
 import { UsersModule } from '../users/users.module';
 import { UsersService } from '../users/users.service';
 import { AdminAuthController } from './admin-auth.controller';
+import { AdminLoginService } from './admin-login.service';
 import { AuthController } from './auth.controller';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
@@ -40,6 +41,7 @@ import {
   controllers: [AuthController, AdminAuthController],
   providers: [
     OtpService,
+    AdminLoginService,
     TokenService,
     JwtAuthGuard,
     RolesGuard,

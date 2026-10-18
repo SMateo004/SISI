@@ -11,11 +11,11 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
-  ApiForbiddenResponse,
   ApiHeader,
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiServiceUnavailableResponse,
   ApiTags,
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
@@ -33,12 +33,9 @@ import {
   readCookie,
 } from './admin-cookie';
 import { Public } from './decorators/auth.decorators';
-import { AdminSessionDto, VerifyOtpDto } from './dto/auth.dto';
-import { OtpService } from './otp/otp.service';
+import { AdminLoginService } from './admin-login.service';
+import { AdminLoginDto, AdminSessionDto } from './dto/auth.dto';
 import { type IssuedTokens, type TokenSubject, TokenService } from './tokens/token.service';
-
-const notAdmin = (): ApiError =>
-  new ApiError(HttpStatus.FORBIDDEN, 'ADMIN_ONLY', 'Esta cuenta no tiene acceso al panel.');
 
 const noSession = (): ApiError =>
   new ApiError(
@@ -49,7 +46,8 @@ const noSession = (): ApiError =>
 
 /**
  * Sesión del panel admin (ADR-0040). El refresh viaja solo en una cookie httpOnly; el token
- * de acceso (10 min) lo guarda el panel en memoria. El código OTP se pide con /auth/otp/request.
+ * de acceso (10 min) lo guarda el panel en memoria. Se ingresa con el usuario del panel y el
+ * código de una app autenticadora, sin teléfono (ADR-0055).
  */
 @ApiTags('auth')
 @Public()
@@ -59,7 +57,7 @@ export class AdminAuthController {
   private readonly cookiePath: string;
 
   constructor(
-    private readonly otp: OtpService,
+    private readonly adminLogin: AdminLoginService,
     private readonly tokens: TokenService,
     private readonly users: UsersService,
     private readonly presenter: UserPresenter,
@@ -68,25 +66,27 @@ export class AdminAuthController {
     this.cookiePath = config.get('ADMIN_COOKIE_PATH', { infer: true });
   }
 
-  @Post('otp/verify')
+  @Post('login')
   @HttpCode(HttpStatus.OK)
   @RateLimit('otpVerifyIp')
   @ApiOperation({
-    summary: 'Valida el código e inicia sesión en el panel',
+    summary: 'Ingresa al panel con el usuario y el código de la app autenticadora',
     description:
-      'Solo cuentas con rol admin; no crea cuentas. El refresh queda en la cookie httpOnly `sisi_admin_rt`.',
+      'Una sola cuenta, sin teléfono (ADR-0055). Cada código sirve una vez. El refresh queda en la cookie httpOnly `sisi_admin_rt`.',
   })
   @ApiOkResponse({ type: AdminSessionDto })
-  @ApiForbiddenResponse({ type: ApiErrorBody, description: 'ADMIN_ONLY' })
-  async verify(
-    @Body() dto: VerifyOtpDto,
+  @ApiUnauthorizedResponse({
+    type: ApiErrorBody,
+    description: 'ADMIN_LOGIN_INVALID o ADMIN_CODE_USED',
+  })
+  @ApiServiceUnavailableResponse({ type: ApiErrorBody, description: 'ADMIN_LOGIN_NOT_CONFIGURED' })
+  async login(
+    @Body() dto: AdminLoginDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<AdminSessionDto> {
-    const phone = await this.otp.verify(dto.phone, dto.code);
-    const user = await this.users.findByPhone(phone);
-    if (user?.role !== 'admin') throw notAdmin();
-    const tokens = await this.tokens.issue({ id: user.id, role: user.role }, 'admin');
-    return this.respond(res, tokens, { id: user.id, role: user.role });
+    const subject = await this.adminLogin.login(dto.username, dto.code);
+    const tokens = await this.tokens.issue(subject, 'admin');
+    return this.respond(res, tokens, subject);
   }
 
   @Post('refresh')

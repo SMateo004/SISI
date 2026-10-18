@@ -51,22 +51,17 @@ AdminSessionDto adminSession() => AdminSessionDto(
 
 /// Login falso: la sesión se recupera de la "cookie" si [signedIn].
 class FakeAuthGateway implements AuthGateway {
-  FakeAuthGateway({this.signedIn = true, this.verifyError});
+  FakeAuthGateway({this.signedIn = true, this.loginError});
 
   bool signedIn;
-  DioException? verifyError;
-  final requested = <String>[];
+  DioException? loginError;
+  final logins = <(String, String)>[];
   int refreshes = 0;
 
   @override
-  Future<int> requestOtp(String phone) async {
-    requested.add(phone);
-    return 60;
-  }
-
-  @override
-  Future<AdminSessionDto> verify(String phone, String code) async {
-    final error = verifyError;
+  Future<AdminSessionDto> login(String username, String code) async {
+    logins.add((username, code));
+    final error = loginError;
     if (error != null) throw error;
     signedIn = true;
     return adminSession();

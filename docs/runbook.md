@@ -63,7 +63,7 @@ node dist/scripts/dev-tools.js review-worker --phone 70012345 --reject "La foto 
 node dist/scripts/dev-tools.js worker-event --phone 70012345 --event BLOCK_FOR_DEBT
 node dist/scripts/dev-tools.js worker-event --phone 70012345 --event SUSPEND --reason "Prueba"
 node dist/scripts/dev-tools.js create-category --name "Plomería prueba" --min 80 --max 250
-node dist/scripts/dev-tools.js make-admin --phone 70012345
+node dist/scripts/dev-tools.js admin-totp   # clave nueva del panel (ADR-0055)
 # Trabajador aprobado para pruebas, sin subir carnet ni selfie (pasa igual por SUBMIT + APPROVE):
 node dist/scripts/dev-tools.js quick-worker --phone 71111111 --categories plomeria,limpieza --transport moto --radius 10
 # Resolver una disputa de un trabajo (Fase 4): confirm = terminado con comisión; cancel = cancelado sin comisión.
@@ -81,7 +81,7 @@ En Windows, si el argumento lleva paréntesis u otros caracteres especiales, usa
 
 Desde la Fase 6 se revisan en el panel (ver "Panel admin"). Por API, con una sesión del panel (`aud=admin`):
 
-1. Dar rol admin: `node dist/scripts/dev-tools.js make-admin --phone 70012345`. El rol entra en el token siguiente: volver a ingresar o renovar con `POST /auth/refresh`.
+1. Ingresar al panel (`POST /auth/admin/login` con el usuario y el código de la app autenticadora, ADR-0055) y usar su token de acceso.
 2. Ver las retenidas y qué término las retuvo (`matches`):
    ```bash
    curl -H "Authorization: Bearer $TOKEN" "$API/admin/requests?status=retenida"
@@ -230,9 +230,9 @@ Saldo, periodos y movimientos de un trabajador: `GET /admin/billing/workers/<uui
 ## Panel admin (Fase 6)
 
 ### Acceso
-- **Primer admin:** solo por `dev-tools`, nunca desde el panel. `node dist/scripts/dev-tools.js make-admin --phone 7XXXXXXX` (en staging, Render → `api-staging` → Shell). En producción, `dev-tools` no corre: el procedimiento está por definir (propuesta: una consulta SQL revisada por dos personas y anotada aquí con la fecha; ver pendientes).
+- **Acceso:** una sola cuenta, usuario `admin` y código de la app autenticadora (ADR-0055). Ver "Producción → Acceso al panel" para generar y cargar la clave (también en staging).
 - **Ingreso:** el admin entra con su celular y el código de 6 dígitos. La sesión dura 10 min de acceso y 8 h como máximo desde el login. El refresh va en una cookie httpOnly (ADR-0040). Una cuenta sin rol admin ve "Esta cuenta no tiene acceso al panel".
-- **Una sesión del panel no sirve en la app ni al revés.** Las rutas `/admin` exigen `aud=admin`; por API se obtiene con `POST /auth/admin/otp/verify`.
+- **Una sesión del panel no sirve en la app ni al revés.** Las rutas `/admin` exigen `aud=admin`; por API se obtiene con `POST /auth/admin/login` (usuario y código de la app autenticadora, ADR-0055).
 
 ### Operación diaria
 1. **Dashboard:** solicitudes, asignación, expiración, primera oferta, trabajos, cancelaciones, comisión generada y cobrada, deuda vencida y disponibles (hoy o esta semana, hora local).
@@ -347,16 +347,22 @@ Es idempotente (ADR-0036): correrlo de más no duplica nada.
 - Render → `billing-cron` → "Trigger Run". El monitor de Sentry recibe el check-in.
 - Si el cron estuvo caído varias horas, una sola corrida pone todo al día.
 
-### Primer admin en producción
-`dev-tools` no corre en producción. Procedimiento propuesto (pendiente de aprobar):
-1. La persona ingresa a la app con su número, para que exista la cuenta.
-2. Dos personas revisan la consulta y una la corre en Render → `db` → PSQL:
+### Acceso al panel (ADR-0055)
+Una sola cuenta: usuario `admin` y el código de 6 dígitos de una app autenticadora. Sin teléfono ni SMS.
+1. **Generar la clave** (en tu máquina, nunca en el servidor):
 
-   ```sql
-   UPDATE users SET role = 'admin' WHERE phone = '+5917XXXXXXX' AND deleted_at IS NULL RETURNING id, phone, role;
+   ```bash
+   cd backend
+   npm run dev:tools -- admin-totp
    ```
-3. Se anota aquí la fecha, quién la corrió y quién la revisó.
-4. La persona ingresa al panel con `/auth/admin` (su sesión de la app no sirve en el panel).
+
+   Muestra `ADMIN_TOTP_SECRET=…` y un enlace `otpauth://…`.
+2. **Cargarla en el ambiente:** Render → `api` → Environment → `ADMIN_TOTP_SECRET`, y reiniciar. Producción no arranca sin ella. En local va en `backend/.env`.
+3. **Cargarla en la app autenticadora** de cada persona del equipo: "Agregar código" → "Ingresar clave de configuración", cuenta "SISI admin", la clave y "Basada en el tiempo".
+4. **Ingresar al panel** con el usuario `admin` y el código que muestra la app (cambia cada 30 s; cada código sirve una vez).
+5. **Quitar el acceso a alguien:** generar una clave nueva, cambiarla en Render y volver a cargarla en la app de quienes siguen. La anterior deja de servir.
+6. **"Demasiados intentos":** 20 intentos fallidos en 15 minutos bloquean el ingreso para todos durante ese rato.
+7. **"El ingreso al panel no está configurado":** falta `ADMIN_TOTP_SECRET` en la API.
 
 ### Alertas (ADR-0048)
 **En Sentry:**

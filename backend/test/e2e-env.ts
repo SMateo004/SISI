@@ -3,6 +3,9 @@
  * infra/docker-compose.yml. En CI se usan las variables E2E_* (services del workflow).
  * Estas variables tienen prioridad sobre backend/.env.
  */
+/** Clave TOTP del panel solo para los e2e (no es un secreto: nunca sirve fuera de los tests). */
+export const E2E_ADMIN_TOTP_SECRET = 'KRSXG5CTKNEVGSKFGJSUMVSGKRSXG5CT';
+
 export function applyE2eEnv(): void {
   process.env.NODE_ENV = 'test';
   process.env.APP_ENV = 'test';
@@ -20,6 +23,10 @@ export function applyE2eEnv(): void {
   process.env.ADMIN_COUNTERS_EMIT_MS = '300';
   // Fijo: el .env local puede tener /auth/admin (panel sin proxy en desarrollo).
   process.env.ADMIN_COOKIE_PATH = '/api/auth/admin';
+  // Panel (ADR-0055): usuario y clave fijos de los e2e; pisan los del .env local.
+  process.env.ADMIN_USERNAME = 'admin';
+  process.env.ADMIN_TOTP_SECRET = E2E_ADMIN_TOTP_SECRET;
+  process.env.RATE_ADMIN_LOGIN_PER_15MIN = '20';
   // El reconciliador se dispara a mano en los tests (runOnce).
   process.env.MATCHING_RECONCILE_MS = '3600000';
   process.env.LOCATION_SWEEP_MS = '3600000';

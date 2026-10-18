@@ -91,7 +91,7 @@ Aprobadas el 2026-10-18 y aplicadas como valores por defecto (el panel puede cam
 - [x] **Prisma 7.10.1:** scripts de instalación aprobados el 2026-10-18 y agregados a `allowScripts`. `npm audit` de producción sin vulnerabilidades y sin excepciones.
 - [ ] **AAB y Play Console:** no se genera el AAB ni se crea nada en Play Console hasta confirmar el nombre comercial y el identificador del paquete.
 - [ ] **`main` y `v0.9.0`:** recién cuando staging esté validado con la prueba de carga y el simulacro de alertas.
-- [ ] **Primer admin en producción:** SQL revisado por dos personas y anotado en el runbook ("Producción → Primer admin").
+- [x] **Acceso al panel** (decidido el 2026-10-18, ADR-0055): una sola cuenta "admin" con código de app autenticadora, sin teléfono. Reemplaza el "primer admin por SQL". Falta: generar la clave de producción y cargarla en Render (runbook, "Acceso al panel").
 
 ## Después del piloto
 - [ ] **iOS:** cuenta de Apple Developer; enlazar los entitlements en Xcode; llave APNs en Firebase; `IOS_PUSH=true`; TestFlight (ADR-0054).

@@ -23,6 +23,7 @@ doc/AdminJobOfferDto.md
 doc/AdminJobPartyDto.md
 doc/AdminJobsControllerResolve200Response.md
 doc/AdminLedgerEntryDto.md
+doc/AdminLoginDto.md
 doc/AdminOfferEventDto.md
 doc/AdminPaymentSubmissionDto.md
 doc/AdminPeriodDto.md
@@ -265,6 +266,7 @@ lib/src/model/admin_job_offer_dto.dart
 lib/src/model/admin_job_party_dto.dart
 lib/src/model/admin_jobs_controller_resolve200_response.dart
 lib/src/model/admin_ledger_entry_dto.dart
+lib/src/model/admin_login_dto.dart
 lib/src/model/admin_offer_event_dto.dart
 lib/src/model/admin_payment_submission_dto.dart
 lib/src/model/admin_period_dto.dart
@@ -447,6 +449,7 @@ lib/src/model/worker_summary_dto.dart
 test/accept_legal_dto_test.dart
 test/add_pilot_phones_dto_test.dart
 test/add_pilot_phones_result_dto_test.dart
+test/admin_login_dto_test.dart
 test/app_api_test.dart
 test/app_config_dto_test.dart
 test/city_area_dto_test.dart

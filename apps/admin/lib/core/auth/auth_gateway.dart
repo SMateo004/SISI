@@ -1,11 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:sisi_api/sisi_api.dart';
 
-/// Login, refresh y logout del panel (ADR-0040). El refresh viaja solo en la cookie
-/// httpOnly; el panel nunca lo ve.
+/// Login, refresh y logout del panel (ADR-0040). Se ingresa con el usuario del panel y el
+/// código de una app autenticadora, sin teléfono (ADR-0055). El refresh viaja solo en la
+/// cookie httpOnly; el panel nunca lo ve.
 abstract interface class AuthGateway {
-  Future<int> requestOtp(String phone);
-  Future<AdminSessionDto> verify(String phone, String code);
+  Future<AdminSessionDto> login(String username, String code);
   Future<AdminSessionDto> refresh();
   Future<void> logout();
 }
@@ -20,17 +20,9 @@ class DioAuthGateway implements AuthGateway {
   final AuthApi _api;
 
   @override
-  Future<int> requestOtp(String phone) async {
-    final res = await _api.authControllerRequestOtp(
-      requestOtpDto: RequestOtpDto(phone: phone),
-    );
-    return res.data?.resendInSec.toInt() ?? 60;
-  }
-
-  @override
-  Future<AdminSessionDto> verify(String phone, String code) async {
-    final res = await _api.adminAuthControllerVerify(
-      verifyOtpDto: VerifyOtpDto(phone: phone, code: code),
+  Future<AdminSessionDto> login(String username, String code) async {
+    final res = await _api.adminAuthControllerLogin(
+      adminLoginDto: AdminLoginDto(username: username, code: code),
     );
     return res.data!;
   }

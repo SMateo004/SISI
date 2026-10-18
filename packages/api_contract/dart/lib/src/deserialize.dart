@@ -18,6 +18,7 @@ import 'package:sisi_api/src/model/admin_job_offer_dto.dart';
 import 'package:sisi_api/src/model/admin_job_party_dto.dart';
 import 'package:sisi_api/src/model/admin_jobs_controller_resolve200_response.dart';
 import 'package:sisi_api/src/model/admin_ledger_entry_dto.dart';
+import 'package:sisi_api/src/model/admin_login_dto.dart';
 import 'package:sisi_api/src/model/admin_offer_event_dto.dart';
 import 'package:sisi_api/src/model/admin_payment_submission_dto.dart';
 import 'package:sisi_api/src/model/admin_period_dto.dart';
@@ -256,6 +257,8 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
           return AdminJobsControllerResolve200Response.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'AdminLedgerEntryDto':
           return AdminLedgerEntryDto.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'AdminLoginDto':
+          return AdminLoginDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'AdminOfferEventDto':
           return AdminOfferEventDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'AdminPaymentSubmissionDto':

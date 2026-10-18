@@ -20,3 +20,8 @@ R3.3 y R9.2: las solicitudes con términos prohibidos (servicios sexuales, droga
 
 ## Consecuencias
 Puede haber falsos positivos: no se rechaza, se retiene y el admin decide (`release`/`reject`). El usuario solo ve un mensaje neutral, para no enseñar qué palabra disparó el filtro. La lista de términos es responsabilidad de negocio (docs/pendientes.md).
+
+## Actualización (Fase 6)
+- **Servicio propio:** los términos se administran desde el panel con `ModerationTermsService`. El controlador ya no escribe en la base. Cada alta, cambio o baja queda en `admin_audit_log` con antes y después, y al confirmarse invalida la versión.
+- **Probador:** `POST /admin/moderation-terms/test` corre `ModerationService.check` sobre un texto pegado, con los términos vigentes y el mismo presupuesto de tiempo. Muestra qué términos coinciden y no guarda nada.
+- **Chat:** un mensaje retenido se puede liberar (se entrega) o descartar. `descartado` es un estado nuevo del chat; quien lo envió lo sigue viendo como "no enviado".

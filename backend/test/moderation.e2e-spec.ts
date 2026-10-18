@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { ModerationService } from '../src/moderation/moderation.service';
-import type { ModerationTermDto } from '../src/moderation/moderation-terms.controller';
+import type { ModerationTermDto } from '../src/moderation/dto/moderation-terms.dto';
 import {
   bearer,
   createTestApp,

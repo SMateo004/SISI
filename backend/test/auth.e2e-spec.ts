@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import type { Redis } from 'ioredis';
 import request from 'supertest';
 import type { TokensDto } from '../src/auth/dto/auth.dto';
@@ -203,9 +204,11 @@ describe('Autenticación (e2e)', () => {
       expect(Number(res.headers['retry-after'])).toBeLessThanOrEqual(60);
     });
 
-    it('por IP: 20 pedidos de código por hora', async () => {
+    it('por IP: RATE_OTP_IP_PER_HOUR pedidos de código por hora (60 por defecto, CGNAT)', async () => {
+      const limit = Number(t.app.get(ConfigService).get('RATE_OTP_IP_PER_HOUR'));
+      expect(limit).toBeGreaterThan(0);
       const ip = uniqueIp();
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < limit; i++) {
         await request(server())
           .post('/auth/otp/request')
           .set('X-Forwarded-For', ip)

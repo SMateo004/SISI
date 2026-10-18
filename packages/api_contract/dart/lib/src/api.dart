@@ -8,16 +8,19 @@ import 'package:sisi_api/src/auth/basic_auth.dart';
 import 'package:sisi_api/src/auth/bearer_auth.dart';
 import 'package:sisi_api/src/auth/oauth.dart';
 import 'package:sisi_api/src/api/admin_api.dart';
+import 'package:sisi_api/src/api/app_api.dart';
 import 'package:sisi_api/src/api/auth_api.dart';
 import 'package:sisi_api/src/api/calificaciones_api.dart';
 import 'package:sisi_api/src/api/categories_api.dart';
 import 'package:sisi_api/src/api/chat_api.dart';
 import 'package:sisi_api/src/api/ganancias_api.dart';
 import 'package:sisi_api/src/api/health_api.dart';
+import 'package:sisi_api/src/api/legal_api.dart';
 import 'package:sisi_api/src/api/maps_api.dart';
 import 'package:sisi_api/src/api/me_api.dart';
 import 'package:sisi_api/src/api/notificaciones_api.dart';
 import 'package:sisi_api/src/api/ofertas_api.dart';
+import 'package:sisi_api/src/api/pilot_api.dart';
 import 'package:sisi_api/src/api/reportes_api.dart';
 import 'package:sisi_api/src/api/requests_api.dart';
 import 'package:sisi_api/src/api/trabajos_api.dart';
@@ -120,6 +123,12 @@ class SisiApi {
     return AdminApi(dio);
   }
 
+  /// Get AppApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  AppApi getAppApi() {
+    return AppApi(dio);
+  }
+
   /// Get AuthApi instance, base route and serializer can be overridden by a given but be careful,
   /// by doing that all interceptors will not be executed
   AuthApi getAuthApi() {
@@ -156,6 +165,12 @@ class SisiApi {
     return HealthApi(dio);
   }
 
+  /// Get LegalApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  LegalApi getLegalApi() {
+    return LegalApi(dio);
+  }
+
   /// Get MapsApi instance, base route and serializer can be overridden by a given but be careful,
   /// by doing that all interceptors will not be executed
   MapsApi getMapsApi() {
@@ -178,6 +193,12 @@ class SisiApi {
   /// by doing that all interceptors will not be executed
   OfertasApi getOfertasApi() {
     return OfertasApi(dio);
+  }
+
+  /// Get PilotApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  PilotApi getPilotApi() {
+    return PilotApi(dio);
   }
 
   /// Get ReportesApi instance, base route and serializer can be overridden by a given but be careful,

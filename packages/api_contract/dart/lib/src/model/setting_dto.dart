@@ -243,7 +243,9 @@ ofertas(r'ofertas'),
 @JsonValue(r'trabajos')
 trabajos(r'trabajos'),
 @JsonValue(r'cobros')
-cobros(r'cobros');
+cobros(r'cobros'),
+@JsonValue(r'app')
+app(r'app');
 
 const SettingDtoGroupEnum(this.value);
 
@@ -260,7 +262,9 @@ int_(r'int'),
 @JsonValue(r'decimal')
 decimal(r'decimal'),
 @JsonValue(r'rings')
-rings(r'rings');
+rings(r'rings'),
+@JsonValue(r'text')
+text(r'text');
 
 const SettingDtoKindEnum(this.value);
 
@@ -285,7 +289,9 @@ ofertas(r'ofertas'),
 @JsonValue(r'veces')
 veces(r'veces'),
 @JsonValue(r'anillos')
-anillos(r'anillos');
+anillos(r'anillos'),
+@JsonValue(r'texto')
+texto(r'texto');
 
 const SettingDtoUnitEnum(this.value);
 

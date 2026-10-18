@@ -13,6 +13,11 @@ Method | HTTP request | Description
 [**meControllerMe**](MeApi.md#mecontrollerme) | **GET** /me | Mi cuenta
 [**meControllerPhotoUploadUrl**](MeApi.md#mecontrollerphotouploadurl) | **POST** /me/photo/upload-url | URL prefirmada para subir mi foto de perfil
 [**meControllerUpdate**](MeApi.md#mecontrollerupdate) | **PATCH** /me | Actualiza mi nombre (la foto se cambia con /me/photo)
+[**meDeletionControllerCheck**](MeApi.md#medeletioncontrollercheck) | **GET** /me/deletion | ¿Puedo eliminar mi cuenta? Qué se borra, qué se conserva y qué lo impide
+[**meDeletionControllerCode**](MeApi.md#medeletioncontrollercode) | **POST** /me/deletion/code | Envía el código de confirmación a mi celular
+[**meDeletionControllerDelete**](MeApi.md#medeletioncontrollerdelete) | **POST** /me/deletion | Eliminar mi cuenta con el código recibido (no se puede deshacer)
+[**webDeletionControllerCode**](MeApi.md#webdeletioncontrollercode) | **POST** /account-deletion/code | Pide el código para eliminar una cuenta
+[**webDeletionControllerDelete**](MeApi.md#webdeletioncontrollerdelete) | **POST** /account-deletion | Eliminar la cuenta de ese número con el código (no se puede deshacer)
 
 
 # **meControllerConfirmPhoto**
@@ -57,9 +62,11 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **meControllerMe**
-> UserDto meControllerMe()
+> MeDto meControllerMe()
 
 Mi cuenta
+
+legalPending: textos vigentes que falta aceptar (la app muestra la pantalla de aceptación).
 
 ### Example
 ```dart
@@ -80,7 +87,7 @@ This endpoint does not need any parameter.
 
 ### Return type
 
-[**UserDto**](UserDto.md)
+[**MeDto**](MeDto.md)
 
 ### Authorization
 
@@ -169,6 +176,201 @@ Name | Type | Description  | Notes
 ### Authorization
 
 [bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **meDeletionControllerCheck**
+> DeletionCheckDto meDeletionControllerCheck()
+
+¿Puedo eliminar mi cuenta? Qué se borra, qué se conserva y qué lo impide
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getMeApi();
+
+try {
+    final response = api.meDeletionControllerCheck();
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling MeApi->meDeletionControllerCheck: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**DeletionCheckDto**](DeletionCheckDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **meDeletionControllerCode**
+> meDeletionControllerCode()
+
+Envía el código de confirmación a mi celular
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getMeApi();
+
+try {
+    api.meDeletionControllerCode();
+} on DioException catch (e) {
+    print('Exception when calling MeApi->meDeletionControllerCode: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **meDeletionControllerDelete**
+> meDeletionControllerDelete(confirmDeletionDto)
+
+Eliminar mi cuenta con el código recibido (no se puede deshacer)
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getMeApi();
+final ConfirmDeletionDto confirmDeletionDto = ; // ConfirmDeletionDto | 
+
+try {
+    api.meDeletionControllerDelete(confirmDeletionDto);
+} on DioException catch (e) {
+    print('Exception when calling MeApi->meDeletionControllerDelete: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **confirmDeletionDto** | [**ConfirmDeletionDto**](ConfirmDeletionDto.md)|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **webDeletionControllerCode**
+> webDeletionControllerCode(webDeletionCodeDto)
+
+Pide el código para eliminar una cuenta
+
+La respuesta es la misma tenga o no cuenta el número (solo se envía SMS si la tiene).
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getMeApi();
+final WebDeletionCodeDto webDeletionCodeDto = ; // WebDeletionCodeDto | 
+
+try {
+    api.webDeletionControllerCode(webDeletionCodeDto);
+} on DioException catch (e) {
+    print('Exception when calling MeApi->webDeletionControllerCode: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **webDeletionCodeDto** | [**WebDeletionCodeDto**](WebDeletionCodeDto.md)|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **webDeletionControllerDelete**
+> webDeletionControllerDelete(webDeletionDto)
+
+Eliminar la cuenta de ese número con el código (no se puede deshacer)
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getMeApi();
+final WebDeletionDto webDeletionDto = ; // WebDeletionDto | 
+
+try {
+    api.webDeletionControllerDelete(webDeletionDto);
+} on DioException catch (e) {
+    print('Exception when calling MeApi->webDeletionControllerDelete: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **webDeletionDto** | [**WebDeletionDto**](WebDeletionDto.md)|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
 
 ### HTTP request headers
 

@@ -444,8 +444,31 @@
         ]
       }
     },
+    "/version": {
+      "get": {
+        "operationId": "VersionController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Versión y commit desplegados",
+        "tags": [
+          "health"
+        ]
+      }
+    },
     "/me": {
       "get": {
+        "description": "legalPending: textos vigentes que falta aceptar (la app muestra la pantalla de aceptación).",
         "operationId": "MeController_me",
         "parameters": [],
         "responses": {
@@ -454,7 +477,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserDto"
+                  "$ref": "#/components/schemas/MeDto"
                 }
               }
             }
@@ -661,6 +684,89 @@
         ]
       }
     },
+    "/legal/current": {
+      "get": {
+        "operationId": "LegalController_current",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LegalDocumentDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Términos de uso y política de privacidad vigentes (ADR-0051)",
+        "tags": [
+          "legal"
+        ]
+      }
+    },
+    "/me/legal/accept": {
+      "post": {
+        "description": "Queda registrado con versión y fecha. Una versión nueva vuelve a pedirlo.",
+        "operationId": "LegalController_accept",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptLegalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalPendingDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR (adult debe ser true)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "LEGAL_VERSION_CHANGED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Aceptar las versiones vigentes y declarar la mayoría de edad",
+        "tags": [
+          "legal"
+        ]
+      }
+    },
     "/auth/otp/request": {
       "post": {
         "description": "La respuesta es la misma tenga o no cuenta el número. Límites: 1 código cada 60 s, 5 por hora y 10 por día por número; 20 por hora por IP.",
@@ -689,6 +795,16 @@
           },
           "400": {
             "description": "PHONE_INVALID, PHONE_NOT_MOBILE o PHONE_COUNTRY_NOT_ALLOWED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "PILOT_NOT_ALLOWED: piloto cerrado y el número no está invitado (no se envía SMS)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1003,6 +1119,272 @@
         "summary": "Cierra la sesión del panel (revoca el refresh y borra la cookie)",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/pilot/interest": {
+      "post": {
+        "description": "Para quien todavía no puede crear su cuenta en el piloto. Mide la demanda.",
+        "operationId": "PilotController_interest",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PilotInterestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "PHONE_INVALID o VALIDATION_ERROR",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "\"Pronto en tu zona\": dejar el interés (ADR-0052)",
+        "tags": [
+          "pilot"
+        ]
+      }
+    },
+    "/admin/pilot": {
+      "get": {
+        "operationId": "AdminPilotController_overview",
+        "parameters": [
+          {
+            "name": "cityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PilotOverviewDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Piloto cerrado: flag, lista de números e interés (ADR-0052)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/pilot/allowlist": {
+      "post": {
+        "operationId": "AdminPilotController_add",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddPilotPhonesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddPilotPhonesResultDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Habilitar números (se pueden pegar varios), con motivo",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/pilot/allowlist/{id}": {
+      "delete": {
+        "operationId": "AdminPilotController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemovePilotPhoneDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Quitar un número de la lista (su cuenta, si ya la creó, sigue)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/pilot/interest": {
+      "get": {
+        "operationId": "AdminPilotController_interest",
+        "parameters": [
+          {
+            "name": "cityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PilotInterestRowDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Interés registrado (\"Pronto en tu zona\"), lo más nuevo primero",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/pilot/interest.csv": {
+      "get": {
+        "operationId": "AdminPilotController_interestCsv",
+        "parameters": [
+          {
+            "name": "cityId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Interés en CSV (para medir la demanda)",
+        "tags": [
+          "admin"
         ]
       }
     },
@@ -1634,6 +2016,173 @@
           }
         ],
         "summary": "Ciudades",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/cities/{id}/service-area": {
+      "get": {
+        "operationId": "AdminCityAreaController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CityAreaDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Zona de servicio de la ciudad: polígono GeoJSON o radio (ADR-0052)",
+        "tags": [
+          "admin"
+        ]
+      },
+      "put": {
+        "description": "Se valida el GeoJSON (un contorno cerrado dentro de Bolivia, válido en PostGIS y con el centro adentro). Vale para las solicitudes nuevas.",
+        "operationId": "AdminCityAreaController_set",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCityAreaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CityAreaDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "SERVICE_AREA_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cambiar la zona (polígono o radio), con motivo",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/cities/{id}/service-area/test": {
+      "post": {
+        "operationId": "AdminCityAreaController_test",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestPointDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestPointResultDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Probar si un punto está dentro de la zona (sin guardar nada)",
         "tags": [
           "admin"
         ]
@@ -7224,6 +7773,68 @@
         ]
       }
     },
+    "/admin/dashboard/pilot": {
+      "get": {
+        "description": "Embudo (creada → con oferta → asignada → terminada → comisión cobrada), primera oferta, expiración, tasa de cobro y retención semanal de trabajadores y empleadores, desde el inicio del piloto.",
+        "operationId": "DashboardController_pilot",
+        "parameters": [
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "day",
+              "type": "string",
+              "enum": [
+                "day",
+                "week"
+              ]
+            }
+          },
+          {
+            "name": "cityId",
+            "required": false,
+            "in": "query",
+            "description": "Por defecto, la ciudad principal",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PilotMetricsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Métricas del piloto (ADR-0052)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/admin/counters": {
       "get": {
         "description": "También llegan en vivo por el evento admin:counters (ADR-0044).",
@@ -7259,6 +7870,219 @@
         "summary": "Colas pendientes para el menú del panel",
         "tags": [
           "admin"
+        ]
+      }
+    },
+    "/app/config": {
+      "get": {
+        "description": "Versión mínima por plataforma (si la instalada es menor, upgradeRequired y la tienda), WhatsApp de soporte y versiones legales vigentes.",
+        "operationId": "ClientAppController_config",
+        "parameters": [
+          {
+            "name": "platform",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "android",
+                "ios",
+                "web"
+              ]
+            }
+          },
+          {
+            "name": "version",
+            "required": false,
+            "in": "query",
+            "description": "Versión instalada",
+            "schema": {
+              "example": "0.9.0",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppConfigDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Configuración de la app al abrirla",
+        "tags": [
+          "app"
+        ]
+      }
+    },
+    "/me/deletion": {
+      "get": {
+        "operationId": "MeDeletionController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletionCheckDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "¿Puedo eliminar mi cuenta? Qué se borra, qué se conserva y qué lo impide",
+        "tags": [
+          "me"
+        ]
+      },
+      "post": {
+        "operationId": "MeDeletionController_delete",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmDeletionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "409": {
+            "description": "ACCOUNT_HAS_DEBT y otros impedimentos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Eliminar mi cuenta con el código recibido (no se puede deshacer)",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/me/deletion/code": {
+      "post": {
+        "operationId": "MeDeletionController_code",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "Código enviado"
+          },
+          "409": {
+            "description": "ACCOUNT_HAS_DEBT y otros impedimentos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Envía el código de confirmación a mi celular",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/account-deletion/code": {
+      "post": {
+        "description": "La respuesta es la misma tenga o no cuenta el número (solo se envía SMS si la tiene).",
+        "operationId": "WebDeletionController_code",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebDeletionCodeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Si el número tiene cuenta, se envió el código"
+          }
+        },
+        "summary": "Pide el código para eliminar una cuenta",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/account-deletion": {
+      "post": {
+        "operationId": "WebDeletionController_delete",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebDeletionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": "ACCOUNT_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ACCOUNT_HAS_DEBT y otros impedimentos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Eliminar la cuenta de ese número con el código (no se puede deshacer)",
+        "tags": [
+          "me"
         ]
       }
     }
@@ -7418,7 +8242,8 @@
               "matching",
               "ofertas",
               "trabajos",
-              "cobros"
+              "cobros",
+              "app"
             ]
           },
           "label": {
@@ -7433,7 +8258,8 @@
             "enum": [
               "int",
               "decimal",
-              "rings"
+              "rings",
+              "text"
             ]
           },
           "unit": {
@@ -7445,7 +8271,8 @@
               "Bs",
               "ofertas",
               "veces",
-              "anillos"
+              "anillos",
+              "texto"
             ]
           },
           "min": {
@@ -7646,6 +8473,109 @@
           "timestamp"
         ]
       },
+      "VersionDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "example": "0.9.0"
+          },
+          "sha": {
+            "type": "string",
+            "nullable": true
+          },
+          "env": {
+            "type": "string",
+            "example": "production"
+          }
+        },
+        "required": [
+          "version",
+          "sha",
+          "env"
+        ]
+      },
+      "MeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "7b0a1c7e-5f1e-4c41-9a51-0f8e7f1f5a10"
+          },
+          "phone": {
+            "type": "string",
+            "example": "+59170012345"
+          },
+          "name": {
+            "type": "string",
+            "example": "María Pérez",
+            "nullable": true
+          },
+          "photoUrl": {
+            "type": "string",
+            "example": "https://...firmada...",
+            "nullable": true,
+            "description": "URL temporal de la foto de perfil"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "admin"
+            ],
+            "example": "user"
+          },
+          "activeMode": {
+            "type": "string",
+            "enum": [
+              "employer",
+              "worker"
+            ],
+            "example": "employer"
+          },
+          "cityId": {
+            "type": "string",
+            "example": "b1f0e1a2-3c4d-4e5f-8a9b-0c1d2e3f4a5b"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-10-14T12:00:00.000Z"
+          },
+          "legalPending": {
+            "type": "array",
+            "example": [],
+            "items": {
+              "type": "string",
+              "enum": [
+                "terms",
+                "privacy"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "phone",
+          "name",
+          "photoUrl",
+          "role",
+          "activeMode",
+          "cityId",
+          "createdAt",
+          "legalPending"
+        ]
+      },
+      "UpdateMeDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "María Pérez",
+            "minLength": 2,
+            "maxLength": 60
+          }
+        }
+      },
       "UserDto": {
         "type": "object",
         "properties": {
@@ -7703,17 +8633,6 @@
           "cityId",
           "createdAt"
         ]
-      },
-      "UpdateMeDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "María Pérez",
-            "minLength": 2,
-            "maxLength": 60
-          }
-        }
       },
       "UploadRequestDto": {
         "type": "object",
@@ -7787,6 +8706,101 @@
         },
         "required": [
           "key"
+        ]
+      },
+      "LegalDocumentDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "terms",
+              "privacy"
+            ]
+          },
+          "version": {
+            "type": "number",
+            "example": 1
+          },
+          "title": {
+            "type": "string",
+            "example": "Términos de uso"
+          },
+          "contentMd": {
+            "type": "string",
+            "description": "Texto en Markdown"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "draft": {
+            "type": "boolean",
+            "description": "Sigue pendiente de revisión legal (borrador)"
+          }
+        },
+        "required": [
+          "type",
+          "version",
+          "title",
+          "contentMd",
+          "publishedAt",
+          "draft"
+        ]
+      },
+      "AcceptLegalDto": {
+        "type": "object",
+        "properties": {
+          "termsVersion": {
+            "type": "number",
+            "example": 1,
+            "description": "Versión de los términos que se muestran"
+          },
+          "privacyVersion": {
+            "type": "number",
+            "example": 1,
+            "description": "Versión de la política de privacidad que se muestra"
+          },
+          "adult": {
+            "type": "boolean",
+            "description": "Declaro ser mayor de 18 años"
+          },
+          "appVersion": {
+            "type": "string",
+            "example": "0.9.0+3"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "android",
+              "ios",
+              "web"
+            ]
+          }
+        },
+        "required": [
+          "termsVersion",
+          "privacyVersion",
+          "adult"
+        ]
+      },
+      "LegalPendingDto": {
+        "type": "object",
+        "properties": {
+          "legalPending": {
+            "type": "array",
+            "description": "Textos que falta aceptar",
+            "items": {
+              "type": "string",
+              "enum": [
+                "terms",
+                "privacy"
+              ]
+            }
+          }
+        },
+        "required": [
+          "legalPending"
         ]
       },
       "RequestOtpDto": {
@@ -7970,6 +8984,206 @@
           "expiresIn",
           "sessionExpiresAt",
           "user"
+        ]
+      },
+      "PilotInterestDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "example": "70012345"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "worker",
+              "employer",
+              "ambos"
+            ],
+            "description": "Quiere trabajar, contratar o las dos"
+          },
+          "categoryId": {
+            "type": "string",
+            "description": "Categoría que le interesa"
+          },
+          "zone": {
+            "type": "string",
+            "example": "Plan 3000",
+            "description": "Barrio o zona"
+          }
+        },
+        "required": [
+          "phone",
+          "role"
+        ]
+      },
+      "PilotPhoneDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string",
+            "example": "+59170012345"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "phone",
+          "note",
+          "createdAt"
+        ]
+      },
+      "PilotOverviewDto": {
+        "type": "object",
+        "properties": {
+          "cityId": {
+            "type": "string"
+          },
+          "cityName": {
+            "type": "string",
+            "example": "Santa Cruz de la Sierra"
+          },
+          "closed": {
+            "type": "boolean",
+            "description": "Flag pilot.closed de la ciudad (se cambia en Feature flags)"
+          },
+          "allowlist": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PilotPhoneDto"
+            }
+          },
+          "interestCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "cityId",
+          "cityName",
+          "closed",
+          "allowlist",
+          "interestCount"
+        ]
+      },
+      "AddPilotPhonesDto": {
+        "type": "object",
+        "properties": {
+          "phones": {
+            "example": [
+              "70012345",
+              "+59171234567"
+            ],
+            "description": "Números a habilitar (con o sin +591)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "note": {
+            "type": "string",
+            "example": "Trabajadores de la feria del Plan 3000"
+          },
+          "cityId": {
+            "type": "string",
+            "description": "Ciudad (por defecto, la del piloto)"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Primer grupo del piloto"
+          }
+        },
+        "required": [
+          "phones",
+          "reason"
+        ]
+      },
+      "AddPilotPhonesResultDto": {
+        "type": "object",
+        "properties": {
+          "added": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "alreadyListed": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "invalid": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "added",
+          "alreadyListed",
+          "invalid"
+        ]
+      },
+      "RemovePilotPhoneDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "Pidió salir del piloto"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "PilotInterestRowDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "worker",
+              "employer",
+              "ambos"
+            ]
+          },
+          "categoryName": {
+            "type": "string",
+            "nullable": true
+          },
+          "zone": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "phone",
+          "role",
+          "categoryName",
+          "zone",
+          "createdAt"
         ]
       },
       "SwitchModeDto": {
@@ -8548,6 +9762,99 @@
           "name",
           "timezone",
           "active"
+        ]
+      },
+      "CityAreaDto": {
+        "type": "object",
+        "properties": {
+          "cityId": {
+            "type": "string"
+          },
+          "centerLat": {
+            "type": "number",
+            "nullable": true
+          },
+          "centerLng": {
+            "type": "number",
+            "nullable": true
+          },
+          "radiusKm": {
+            "type": "number",
+            "nullable": true,
+            "description": "Radio si no hay polígono"
+          },
+          "geojson": {
+            "type": "string",
+            "nullable": true,
+            "description": "Polígono GeoJSON (texto); null = se usa el radio"
+          }
+        },
+        "required": [
+          "cityId",
+          "centerLat",
+          "centerLng",
+          "radiusKm",
+          "geojson"
+        ]
+      },
+      "SetCityAreaDto": {
+        "type": "object",
+        "properties": {
+          "geojson": {
+            "type": "string",
+            "nullable": true,
+            "example": "{\"type\":\"Polygon\",\"coordinates\":[[[-63.25,-17.72],[-63.1,-17.72],[-63.1,-17.85],[-63.25,-17.85],[-63.25,-17.72]]]}",
+            "description": "GeoJSON Polygon ([longitud, latitud]); null para volver al radio"
+          },
+          "radiusKm": {
+            "type": "number",
+            "example": 15
+          },
+          "reason": {
+            "type": "string",
+            "example": "Zona del piloto acordada con operaciones"
+          }
+        },
+        "required": [
+          "geojson",
+          "reason"
+        ]
+      },
+      "TestPointDto": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "number",
+            "example": -17.7834
+          },
+          "lng": {
+            "type": "number",
+            "example": -63.1821
+          }
+        },
+        "required": [
+          "lat",
+          "lng"
+        ]
+      },
+      "TestPointResultDto": {
+        "type": "object",
+        "properties": {
+          "inside": {
+            "type": "boolean"
+          },
+          "by": {
+            "type": "string",
+            "enum": [
+              "polygon",
+              "radius",
+              "none"
+            ]
+          }
+        },
+        "required": [
+          "inside",
+          "by"
         ]
       },
       "ModerationTermDto": {
@@ -13309,6 +14616,328 @@
           "overdueWorkers",
           "workersAvailableNow",
           "queues"
+        ]
+      },
+      "PilotFunnelDto": {
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "number",
+            "description": "Solicitudes publicadas (sin borradores)"
+          },
+          "withOffer": {
+            "type": "number",
+            "description": "Con al menos una oferta"
+          },
+          "assigned": {
+            "type": "number",
+            "description": "Asignadas (trabajo creado)"
+          },
+          "completed": {
+            "type": "number",
+            "description": "Trabajo terminado"
+          },
+          "commissionCollected": {
+            "type": "number",
+            "description": "Terminado y con la comisión ya cobrada (periodo pagado)"
+          }
+        },
+        "required": [
+          "created",
+          "withOffer",
+          "assigned",
+          "completed",
+          "commissionCollected"
+        ]
+      },
+      "PilotWeekDto": {
+        "type": "object",
+        "properties": {
+          "weekStart": {
+            "type": "string",
+            "example": "2026-11-02",
+            "description": "Lunes de la semana (hora local)"
+          },
+          "activeWorkers": {
+            "type": "number",
+            "description": "Trabajadores que ofertaron esa semana"
+          },
+          "activeEmployers": {
+            "type": "number",
+            "description": "Empleadores que publicaron esa semana"
+          },
+          "workerRetentionPct": {
+            "type": "number",
+            "nullable": true,
+            "description": "% de los trabajadores activos la semana anterior que volvieron"
+          },
+          "employerRetentionPct": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "weekStart",
+          "activeWorkers",
+          "activeEmployers",
+          "workerRetentionPct",
+          "employerRetentionPct"
+        ]
+      },
+      "PilotMetricsDto": {
+        "type": "object",
+        "properties": {
+          "cityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cityName": {
+            "type": "string"
+          },
+          "startedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-11-02",
+            "description": "Inicio del piloto (parámetro PILOT_STARTED_AT); sin él, las últimas 8 semanas"
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "funnel": {
+            "$ref": "#/components/schemas/PilotFunnelDto"
+          },
+          "avgFirstOfferSec": {
+            "type": "number",
+            "nullable": true
+          },
+          "expirationRatePct": {
+            "type": "number",
+            "nullable": true
+          },
+          "collectionRatePct": {
+            "type": "number",
+            "nullable": true,
+            "description": "Comisión cobrada sobre generada, en el rango"
+          },
+          "weekly": {
+            "description": "Hasta 8 semanas, la última es la actual",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PilotWeekDto"
+            }
+          }
+        },
+        "required": [
+          "cityId",
+          "cityName",
+          "startedAt",
+          "from",
+          "to",
+          "funnel",
+          "avgFirstOfferSec",
+          "expirationRatePct",
+          "collectionRatePct",
+          "weekly"
+        ]
+      },
+      "SupportDto": {
+        "type": "object",
+        "properties": {
+          "whatsapp": {
+            "type": "string",
+            "example": "+59170000000"
+          },
+          "url": {
+            "type": "string",
+            "example": "https://wa.me/59170000000?text=Hola"
+          }
+        },
+        "required": [
+          "whatsapp",
+          "url"
+        ]
+      },
+      "LegalVersionDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "terms",
+              "privacy"
+            ]
+          },
+          "version": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "type",
+          "version"
+        ]
+      },
+      "AppConfigDto": {
+        "type": "object",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "android",
+              "ios",
+              "web"
+            ]
+          },
+          "minVersion": {
+            "type": "string",
+            "example": "0.9.0"
+          },
+          "upgradeRequired": {
+            "type": "boolean",
+            "description": "La versión enviada es menor que la mínima"
+          },
+          "storeUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "support": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SupportDto"
+              }
+            ]
+          },
+          "legal": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LegalVersionDto"
+            }
+          }
+        },
+        "required": [
+          "platform",
+          "minVersion",
+          "upgradeRequired",
+          "storeUrl",
+          "support",
+          "legal"
+        ]
+      },
+      "DeletionBlockerDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "ACCOUNT_IS_ADMIN",
+              "ACCOUNT_HAS_ACTIVE_JOB",
+              "ACCOUNT_HAS_PENDING_PAYMENT",
+              "ACCOUNT_HAS_DEBT"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "balanceBs": {
+            "type": "string",
+            "example": "19.50",
+            "description": "Deuda a pagar (ACCOUNT_HAS_DEBT)"
+          },
+          "paymentReference": {
+            "type": "string",
+            "nullable": true,
+            "example": "SISI-2643-K7M2QX"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "DeletionCheckDto": {
+        "type": "object",
+        "properties": {
+          "canDelete": {
+            "type": "boolean"
+          },
+          "blockers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeletionBlockerDto"
+            }
+          },
+          "erased": {
+            "example": [
+              "Tu nombre, teléfono y foto",
+              "Tus documentos de identidad"
+            ],
+            "description": "Qué se borra",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "kept": {
+            "description": "Qué se conserva sin datos personales (obligaciones legales)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "canDelete",
+          "blockers",
+          "erased",
+          "kept"
+        ]
+      },
+      "ConfirmDeletionDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "123456",
+            "description": "Código recibido por SMS"
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "WebDeletionCodeDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "example": "70012345"
+          }
+        },
+        "required": [
+          "phone"
+        ]
+      },
+      "WebDeletionDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "example": "70012345"
+          },
+          "code": {
+            "type": "string",
+            "example": "123456"
+          }
+        },
+        "required": [
+          "phone",
+          "code"
         ]
       }
     }

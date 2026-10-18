@@ -249,12 +249,14 @@ const _$SettingDtoGroupEnumEnumMap = {
   SettingDtoGroupEnum.ofertas: 'ofertas',
   SettingDtoGroupEnum.trabajos: 'trabajos',
   SettingDtoGroupEnum.cobros: 'cobros',
+  SettingDtoGroupEnum.app: 'app',
 };
 
 const _$SettingDtoKindEnumEnumMap = {
   SettingDtoKindEnum.int_: 'int',
   SettingDtoKindEnum.decimal: 'decimal',
   SettingDtoKindEnum.rings: 'rings',
+  SettingDtoKindEnum.text: 'text',
 };
 
 const _$SettingDtoUnitEnumEnumMap = {
@@ -265,4 +267,5 @@ const _$SettingDtoUnitEnumEnumMap = {
   SettingDtoUnitEnum.ofertas: 'ofertas',
   SettingDtoUnitEnum.veces: 'veces',
   SettingDtoUnitEnum.anillos: 'anillos',
+  SettingDtoUnitEnum.texto: 'texto',
 };

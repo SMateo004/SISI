@@ -97,9 +97,17 @@ Class | Method | HTTP request | Description
 [*AdminApi*](doc/AdminApi.md) | [**adminChatControllerHeld**](doc/AdminApi.md#adminchatcontrollerheld) | **GET** /admin/chat/held | Mensajes de chat retenidos, del más antiguo al más nuevo
 [*AdminApi*](doc/AdminApi.md) | [**adminChatControllerRelease**](doc/AdminApi.md#adminchatcontrollerrelease) | **POST** /admin/chat/{messageId}/release | Liberar un mensaje retenido: se entrega al destinatario
 [*AdminApi*](doc/AdminApi.md) | [**adminCitiesControllerList**](doc/AdminApi.md#admincitiescontrollerlist) | **GET** /admin/cities | Ciudades
+[*AdminApi*](doc/AdminApi.md) | [**adminCityAreaControllerGet**](doc/AdminApi.md#admincityareacontrollerget) | **GET** /admin/cities/{id}/service-area | Zona de servicio de la ciudad: polígono GeoJSON o radio (ADR-0052)
+[*AdminApi*](doc/AdminApi.md) | [**adminCityAreaControllerSet**](doc/AdminApi.md#admincityareacontrollerset) | **PUT** /admin/cities/{id}/service-area | Cambiar la zona (polígono o radio), con motivo
+[*AdminApi*](doc/AdminApi.md) | [**adminCityAreaControllerTest**](doc/AdminApi.md#admincityareacontrollertest) | **POST** /admin/cities/{id}/service-area/test | Probar si un punto está dentro de la zona (sin guardar nada)
 [*AdminApi*](doc/AdminApi.md) | [**adminJobsControllerDetail**](doc/AdminApi.md#adminjobscontrollerdetail) | **GET** /admin/jobs/{id} | Detalle de un trabajo para revisar una disputa
 [*AdminApi*](doc/AdminApi.md) | [**adminJobsControllerDisputed**](doc/AdminApi.md#adminjobscontrollerdisputed) | **GET** /admin/jobs/disputed | Trabajos con un problema reportado, sin resolver
 [*AdminApi*](doc/AdminApi.md) | [**adminJobsControllerResolve**](doc/AdminApi.md#adminjobscontrollerresolve) | **POST** /admin/jobs/{id}/resolve | Resolver una disputa
+[*AdminApi*](doc/AdminApi.md) | [**adminPilotControllerAdd**](doc/AdminApi.md#adminpilotcontrolleradd) | **POST** /admin/pilot/allowlist | Habilitar números (se pueden pegar varios), con motivo
+[*AdminApi*](doc/AdminApi.md) | [**adminPilotControllerInterest**](doc/AdminApi.md#adminpilotcontrollerinterest) | **GET** /admin/pilot/interest | Interés registrado (\&quot;Pronto en tu zona\&quot;), lo más nuevo primero
+[*AdminApi*](doc/AdminApi.md) | [**adminPilotControllerInterestCsv**](doc/AdminApi.md#adminpilotcontrollerinterestcsv) | **GET** /admin/pilot/interest.csv | Interés en CSV (para medir la demanda)
+[*AdminApi*](doc/AdminApi.md) | [**adminPilotControllerOverview**](doc/AdminApi.md#adminpilotcontrolleroverview) | **GET** /admin/pilot | Piloto cerrado: flag, lista de números e interés (ADR-0052)
+[*AdminApi*](doc/AdminApi.md) | [**adminPilotControllerRemove**](doc/AdminApi.md#adminpilotcontrollerremove) | **DELETE** /admin/pilot/allowlist/{id} | Quitar un número de la lista (su cuenta, si ya la creó, sigue)
 [*AdminApi*](doc/AdminApi.md) | [**adminReportsControllerList**](doc/AdminApi.md#adminreportscontrollerlist) | **GET** /admin/reports | Reportes por estado (por defecto, pendientes)
 [*AdminApi*](doc/AdminApi.md) | [**adminReportsControllerResolve**](doc/AdminApi.md#adminreportscontrollerresolve) | **POST** /admin/reports/{id}/resolve | Marcar un reporte como válido o descartado
 [*AdminApi*](doc/AdminApi.md) | [**adminRequestsControllerList**](doc/AdminApi.md#adminrequestscontrollerlist) | **GET** /admin/requests | Solicitudes por estado (por defecto, las retenidas por moderación)
@@ -115,6 +123,7 @@ Class | Method | HTTP request | Description
 [*AdminApi*](doc/AdminApi.md) | [**adminUsersControllerSuspend**](doc/AdminApi.md#adminuserscontrollersuspend) | **POST** /admin/workers/{id}/suspend | Suspender el perfil de trabajador
 [*AdminApi*](doc/AdminApi.md) | [**dashboardControllerCounters**](doc/AdminApi.md#dashboardcontrollercounters) | **GET** /admin/counters | Colas pendientes para el menú del panel
 [*AdminApi*](doc/AdminApi.md) | [**dashboardControllerGet**](doc/AdminApi.md#dashboardcontrollerget) | **GET** /admin/dashboard | Dashboard del día o de la semana (hora local de la ciudad)
+[*AdminApi*](doc/AdminApi.md) | [**dashboardControllerPilot**](doc/AdminApi.md#dashboardcontrollerpilot) | **GET** /admin/dashboard/pilot | Métricas del piloto (ADR-0052)
 [*AdminApi*](doc/AdminApi.md) | [**featureFlagsControllerList**](doc/AdminApi.md#featureflagscontrollerlist) | **GET** /admin/feature-flags | Feature flags (globales y por ciudad)
 [*AdminApi*](doc/AdminApi.md) | [**featureFlagsControllerSet**](doc/AdminApi.md#featureflagscontrollerset) | **PUT** /admin/feature-flags/{key} | Enciende o apaga un flag
 [*AdminApi*](doc/AdminApi.md) | [**moderationTermsControllerCreate**](doc/AdminApi.md#moderationtermscontrollercreate) | **POST** /admin/moderation-terms | Agrega un término o patrón
@@ -127,6 +136,7 @@ Class | Method | HTTP request | Description
 [*AdminApi*](doc/AdminApi.md) | [**verificationsControllerDocumentUrl**](doc/AdminApi.md#verificationscontrollerdocumenturl) | **GET** /admin/workers/{userId}/documents/{documentId}/url | Enlace temporal a un documento de identidad (R9.5)
 [*AdminApi*](doc/AdminApi.md) | [**verificationsControllerQueue**](doc/AdminApi.md#verificationscontrollerqueue) | **GET** /admin/verifications | Cola de verificaciones (pendiente_revision)
 [*AdminApi*](doc/AdminApi.md) | [**verificationsControllerReject**](doc/AdminApi.md#verificationscontrollerreject) | **POST** /admin/verifications/{userId}/reject | Rechazar con motivo de la lista y nota
+[*AppApi*](doc/AppApi.md) | [**clientAppControllerConfig**](doc/AppApi.md#clientappcontrollerconfig) | **GET** /app/config | Configuración de la app al abrirla
 [*AuthApi*](doc/AuthApi.md) | [**adminAuthControllerLogout**](doc/AuthApi.md#adminauthcontrollerlogout) | **POST** /auth/admin/logout | Cierra la sesión del panel (revoca el refresh y borra la cookie)
 [*AuthApi*](doc/AuthApi.md) | [**adminAuthControllerRefresh**](doc/AuthApi.md#adminauthcontrollerrefresh) | **POST** /auth/admin/refresh | Renueva el token de acceso del panel con la cookie
 [*AuthApi*](doc/AuthApi.md) | [**adminAuthControllerVerify**](doc/AuthApi.md#adminauthcontrollerverify) | **POST** /auth/admin/otp/verify | Valida el código e inicia sesión en el panel
@@ -149,11 +159,19 @@ Class | Method | HTTP request | Description
 [*GananciasApi*](doc/GananciasApi.md) | [**earningsControllerPeriods**](doc/GananciasApi.md#earningscontrollerperiods) | **GET** /me/earnings/periods | Historial de periodos (cortes semanales)
 [*GananciasApi*](doc/GananciasApi.md) | [**earningsControllerSummary**](doc/GananciasApi.md#earningscontrollersummary) | **GET** /me/earnings/summary | Resumen de ganancias (R8.1)
 [*HealthApi*](doc/HealthApi.md) | [**healthControllerCheck**](doc/HealthApi.md#healthcontrollercheck) | **GET** /health | Estado de la API, la base de datos (con PostGIS) y Redis
+[*HealthApi*](doc/HealthApi.md) | [**versionControllerGet**](doc/HealthApi.md#versioncontrollerget) | **GET** /version | Versión y commit desplegados
+[*LegalApi*](doc/LegalApi.md) | [**legalControllerAccept**](doc/LegalApi.md#legalcontrolleraccept) | **POST** /me/legal/accept | Aceptar las versiones vigentes y declarar la mayoría de edad
+[*LegalApi*](doc/LegalApi.md) | [**legalControllerCurrent**](doc/LegalApi.md#legalcontrollercurrent) | **GET** /legal/current | Términos de uso y política de privacidad vigentes (ADR-0051)
 [*MapsApi*](doc/MapsApi.md) | [**geocodingControllerReverse**](doc/MapsApi.md#geocodingcontrollerreverse) | **GET** /geocoding/reverse | Dirección sugerida para unas coordenadas
 [*MeApi*](doc/MeApi.md) | [**meControllerConfirmPhoto**](doc/MeApi.md#mecontrollerconfirmphoto) | **PUT** /me/photo | Confirma la foto subida y la deja como foto de perfil
 [*MeApi*](doc/MeApi.md) | [**meControllerMe**](doc/MeApi.md#mecontrollerme) | **GET** /me | Mi cuenta
 [*MeApi*](doc/MeApi.md) | [**meControllerPhotoUploadUrl**](doc/MeApi.md#mecontrollerphotouploadurl) | **POST** /me/photo/upload-url | URL prefirmada para subir mi foto de perfil
 [*MeApi*](doc/MeApi.md) | [**meControllerUpdate**](doc/MeApi.md#mecontrollerupdate) | **PATCH** /me | Actualiza mi nombre (la foto se cambia con /me/photo)
+[*MeApi*](doc/MeApi.md) | [**meDeletionControllerCheck**](doc/MeApi.md#medeletioncontrollercheck) | **GET** /me/deletion | ¿Puedo eliminar mi cuenta? Qué se borra, qué se conserva y qué lo impide
+[*MeApi*](doc/MeApi.md) | [**meDeletionControllerCode**](doc/MeApi.md#medeletioncontrollercode) | **POST** /me/deletion/code | Envía el código de confirmación a mi celular
+[*MeApi*](doc/MeApi.md) | [**meDeletionControllerDelete**](doc/MeApi.md#medeletioncontrollerdelete) | **POST** /me/deletion | Eliminar mi cuenta con el código recibido (no se puede deshacer)
+[*MeApi*](doc/MeApi.md) | [**webDeletionControllerCode**](doc/MeApi.md#webdeletioncontrollercode) | **POST** /account-deletion/code | Pide el código para eliminar una cuenta
+[*MeApi*](doc/MeApi.md) | [**webDeletionControllerDelete**](doc/MeApi.md#webdeletioncontrollerdelete) | **POST** /account-deletion | Eliminar la cuenta de ese número con el código (no se puede deshacer)
 [*NotificacionesApi*](doc/NotificacionesApi.md) | [**notificationsControllerList**](doc/NotificacionesApi.md#notificationscontrollerlist) | **GET** /me/notifications | Mis avisos, del más reciente al más antiguo
 [*NotificacionesApi*](doc/NotificacionesApi.md) | [**notificationsControllerMarkRead**](doc/NotificacionesApi.md#notificationscontrollermarkread) | **POST** /me/notifications/{id}/read | Marcar un aviso como leído
 [*NotificacionesApi*](doc/NotificacionesApi.md) | [**notificationsControllerReadAll**](doc/NotificacionesApi.md#notificationscontrollerreadall) | **POST** /me/notifications/read-all | Marcar todos mis avisos como leídos
@@ -167,6 +185,7 @@ Class | Method | HTTP request | Description
 [*OfertasApi*](doc/OfertasApi.md) | [**offersControllerList**](doc/OfertasApi.md#offerscontrollerlist) | **GET** /requests/{id}/offers | Ofertas de mi solicitud (R5.3)
 [*OfertasApi*](doc/OfertasApi.md) | [**offersControllerOffer**](doc/OfertasApi.md#offerscontrolleroffer) | **POST** /requests/{id}/offers | Ofertar: aceptar el precio o contraofertar (R5.2)
 [*OfertasApi*](doc/OfertasApi.md) | [**offersControllerWithdraw**](doc/OfertasApi.md#offerscontrollerwithdraw) | **DELETE** /requests/{id}/offers/mine | Retirar mi oferta
+[*PilotApi*](doc/PilotApi.md) | [**pilotControllerInterest**](doc/PilotApi.md#pilotcontrollerinterest) | **POST** /pilot/interest | \&quot;Pronto en tu zona\&quot;: dejar el interés (ADR-0052)
 [*ReportesApi*](doc/ReportesApi.md) | [**reportsControllerCreate**](doc/ReportesApi.md#reportscontrollercreate) | **POST** /reports | Reportar una solicitud, un perfil, un mensaje o un trabajo
 [*ReportesApi*](doc/ReportesApi.md) | [**reportsControllerMine**](doc/ReportesApi.md#reportscontrollermine) | **GET** /reports/mine | Mis reportes y su estado
 [*RequestsApi*](doc/RequestsApi.md) | [**requestsControllerCancel**](doc/RequestsApi.md#requestscontrollercancel) | **POST** /requests/{id}/cancel | Cancela la solicitud (mientras no esté asignada)
@@ -198,7 +217,10 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
+ - [AcceptLegalDto](doc/AcceptLegalDto.md)
  - [AcceptOfferResultDto](doc/AcceptOfferResultDto.md)
+ - [AddPilotPhonesDto](doc/AddPilotPhonesDto.md)
+ - [AddPilotPhonesResultDto](doc/AddPilotPhonesResultDto.md)
  - [AdjustmentPreviewDto](doc/AdjustmentPreviewDto.md)
  - [AdjustmentResultDto](doc/AdjustmentResultDto.md)
  - [AdminCategoryCityDto](doc/AdminCategoryCityDto.md)
@@ -225,6 +247,7 @@ Class | Method | HTTP request | Description
  - [AdminWorkerBillingDto](doc/AdminWorkerBillingDto.md)
  - [AllocationDto](doc/AllocationDto.md)
  - [ApiErrorBody](doc/ApiErrorBody.md)
+ - [AppConfigDto](doc/AppConfigDto.md)
  - [ApproveVerificationDto](doc/ApproveVerificationDto.md)
  - [AuditEntryDto](doc/AuditEntryDto.md)
  - [AuditPageDto](doc/AuditPageDto.md)
@@ -235,6 +258,8 @@ Class | Method | HTTP request | Description
  - [CategoryDto](doc/CategoryDto.md)
  - [ChatMessageDto](doc/ChatMessageDto.md)
  - [ChatPageDto](doc/ChatPageDto.md)
+ - [CityAreaDto](doc/CityAreaDto.md)
+ - [ConfirmDeletionDto](doc/ConfirmDeletionDto.md)
  - [ConfirmUploadDto](doc/ConfirmUploadDto.md)
  - [CountersDto](doc/CountersDto.md)
  - [CreateCategoryDto](doc/CreateCategoryDto.md)
@@ -249,6 +274,8 @@ Class | Method | HTTP request | Description
  - [CurrentQrDto](doc/CurrentQrDto.md)
  - [DashboardDto](doc/DashboardDto.md)
  - [DebtCapStateDto](doc/DebtCapStateDto.md)
+ - [DeletionBlockerDto](doc/DeletionBlockerDto.md)
+ - [DeletionCheckDto](doc/DeletionCheckDto.md)
  - [DisputeJobDto](doc/DisputeJobDto.md)
  - [DocumentUploadRequestDto](doc/DocumentUploadRequestDto.md)
  - [DocumentUrlDto](doc/DocumentUrlDto.md)
@@ -274,11 +301,15 @@ Class | Method | HTTP request | Description
  - [JobTimelineDto](doc/JobTimelineDto.md)
  - [LedgerPageDto](doc/LedgerPageDto.md)
  - [LedgerRowDto](doc/LedgerRowDto.md)
+ - [LegalDocumentDto](doc/LegalDocumentDto.md)
+ - [LegalPendingDto](doc/LegalPendingDto.md)
+ - [LegalVersionDto](doc/LegalVersionDto.md)
  - [LocationUpdateDto](doc/LocationUpdateDto.md)
  - [LocationUpdateResultDto](doc/LocationUpdateResultDto.md)
  - [LoginResponseDto](doc/LoginResponseDto.md)
  - [MarkReadDto](doc/MarkReadDto.md)
  - [MarkReadResultDto](doc/MarkReadResultDto.md)
+ - [MeDto](doc/MeDto.md)
  - [ModeDeniedDto](doc/ModeDeniedDto.md)
  - [ModerationDecisionDto](doc/ModerationDecisionDto.md)
  - [ModerationMatchDto](doc/ModerationMatchDto.md)
@@ -304,6 +335,13 @@ Class | Method | HTTP request | Description
  - [PeriodPageDto](doc/PeriodPageDto.md)
  - [PeriodRowDto](doc/PeriodRowDto.md)
  - [PeriodSummaryDto](doc/PeriodSummaryDto.md)
+ - [PilotFunnelDto](doc/PilotFunnelDto.md)
+ - [PilotInterestDto](doc/PilotInterestDto.md)
+ - [PilotInterestRowDto](doc/PilotInterestRowDto.md)
+ - [PilotMetricsDto](doc/PilotMetricsDto.md)
+ - [PilotOverviewDto](doc/PilotOverviewDto.md)
+ - [PilotPhoneDto](doc/PilotPhoneDto.md)
+ - [PilotWeekDto](doc/PilotWeekDto.md)
  - [PresignedUploadDto](doc/PresignedUploadDto.md)
  - [PreviewAllocationDto](doc/PreviewAllocationDto.md)
  - [PriceRangeDto](doc/PriceRangeDto.md)
@@ -321,6 +359,7 @@ Class | Method | HTTP request | Description
  - [RegisterPaymentDto](doc/RegisterPaymentDto.md)
  - [RejectSubmissionDto](doc/RejectSubmissionDto.md)
  - [RejectVerificationDto](doc/RejectVerificationDto.md)
+ - [RemovePilotPhoneDto](doc/RemovePilotPhoneDto.md)
  - [ReportCountsDto](doc/ReportCountsDto.md)
  - [ReportDto](doc/ReportDto.md)
  - [ReportRowDto](doc/ReportRowDto.md)
@@ -339,13 +378,17 @@ Class | Method | HTTP request | Description
  - [SendMessageDto](doc/SendMessageDto.md)
  - [SentMessageDto](doc/SentMessageDto.md)
  - [SetAvailabilityDto](doc/SetAvailabilityDto.md)
+ - [SetCityAreaDto](doc/SetCityAreaDto.md)
  - [SetFeatureFlagDto](doc/SetFeatureFlagDto.md)
  - [SetQrDto](doc/SetQrDto.md)
  - [SetSettingDto](doc/SetSettingDto.md)
  - [SettingDto](doc/SettingDto.md)
  - [SubmitUpgradeDto](doc/SubmitUpgradeDto.md)
+ - [SupportDto](doc/SupportDto.md)
  - [SwitchModeDto](doc/SwitchModeDto.md)
  - [TestModerationDto](doc/TestModerationDto.md)
+ - [TestPointDto](doc/TestPointDto.md)
+ - [TestPointResultDto](doc/TestPointResultDto.md)
  - [TokensDto](doc/TokensDto.md)
  - [TrackedPointDto](doc/TrackedPointDto.md)
  - [UnreadCountDto](doc/UnreadCountDto.md)
@@ -366,6 +409,9 @@ Class | Method | HTTP request | Description
  - [VerificationResultDto](doc/VerificationResultDto.md)
  - [VerificationRowDto](doc/VerificationRowDto.md)
  - [VerifyOtpDto](doc/VerifyOtpDto.md)
+ - [VersionDto](doc/VersionDto.md)
+ - [WebDeletionCodeDto](doc/WebDeletionCodeDto.md)
+ - [WebDeletionDto](doc/WebDeletionDto.md)
  - [WorkerDocumentStatusDto](doc/WorkerDocumentStatusDto.md)
  - [WorkerProfileDto](doc/WorkerProfileDto.md)
  - [WorkerStatusResultDto](doc/WorkerStatusResultDto.md)

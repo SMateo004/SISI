@@ -34,9 +34,17 @@ Method | HTTP request | Description
 [**adminChatControllerHeld**](AdminApi.md#adminchatcontrollerheld) | **GET** /admin/chat/held | Mensajes de chat retenidos, del más antiguo al más nuevo
 [**adminChatControllerRelease**](AdminApi.md#adminchatcontrollerrelease) | **POST** /admin/chat/{messageId}/release | Liberar un mensaje retenido: se entrega al destinatario
 [**adminCitiesControllerList**](AdminApi.md#admincitiescontrollerlist) | **GET** /admin/cities | Ciudades
+[**adminCityAreaControllerGet**](AdminApi.md#admincityareacontrollerget) | **GET** /admin/cities/{id}/service-area | Zona de servicio de la ciudad: polígono GeoJSON o radio (ADR-0052)
+[**adminCityAreaControllerSet**](AdminApi.md#admincityareacontrollerset) | **PUT** /admin/cities/{id}/service-area | Cambiar la zona (polígono o radio), con motivo
+[**adminCityAreaControllerTest**](AdminApi.md#admincityareacontrollertest) | **POST** /admin/cities/{id}/service-area/test | Probar si un punto está dentro de la zona (sin guardar nada)
 [**adminJobsControllerDetail**](AdminApi.md#adminjobscontrollerdetail) | **GET** /admin/jobs/{id} | Detalle de un trabajo para revisar una disputa
 [**adminJobsControllerDisputed**](AdminApi.md#adminjobscontrollerdisputed) | **GET** /admin/jobs/disputed | Trabajos con un problema reportado, sin resolver
 [**adminJobsControllerResolve**](AdminApi.md#adminjobscontrollerresolve) | **POST** /admin/jobs/{id}/resolve | Resolver una disputa
+[**adminPilotControllerAdd**](AdminApi.md#adminpilotcontrolleradd) | **POST** /admin/pilot/allowlist | Habilitar números (se pueden pegar varios), con motivo
+[**adminPilotControllerInterest**](AdminApi.md#adminpilotcontrollerinterest) | **GET** /admin/pilot/interest | Interés registrado (\&quot;Pronto en tu zona\&quot;), lo más nuevo primero
+[**adminPilotControllerInterestCsv**](AdminApi.md#adminpilotcontrollerinterestcsv) | **GET** /admin/pilot/interest.csv | Interés en CSV (para medir la demanda)
+[**adminPilotControllerOverview**](AdminApi.md#adminpilotcontrolleroverview) | **GET** /admin/pilot | Piloto cerrado: flag, lista de números e interés (ADR-0052)
+[**adminPilotControllerRemove**](AdminApi.md#adminpilotcontrollerremove) | **DELETE** /admin/pilot/allowlist/{id} | Quitar un número de la lista (su cuenta, si ya la creó, sigue)
 [**adminReportsControllerList**](AdminApi.md#adminreportscontrollerlist) | **GET** /admin/reports | Reportes por estado (por defecto, pendientes)
 [**adminReportsControllerResolve**](AdminApi.md#adminreportscontrollerresolve) | **POST** /admin/reports/{id}/resolve | Marcar un reporte como válido o descartado
 [**adminRequestsControllerList**](AdminApi.md#adminrequestscontrollerlist) | **GET** /admin/requests | Solicitudes por estado (por defecto, las retenidas por moderación)
@@ -52,6 +60,7 @@ Method | HTTP request | Description
 [**adminUsersControllerSuspend**](AdminApi.md#adminuserscontrollersuspend) | **POST** /admin/workers/{id}/suspend | Suspender el perfil de trabajador
 [**dashboardControllerCounters**](AdminApi.md#dashboardcontrollercounters) | **GET** /admin/counters | Colas pendientes para el menú del panel
 [**dashboardControllerGet**](AdminApi.md#dashboardcontrollerget) | **GET** /admin/dashboard | Dashboard del día o de la semana (hora local de la ciudad)
+[**dashboardControllerPilot**](AdminApi.md#dashboardcontrollerpilot) | **GET** /admin/dashboard/pilot | Métricas del piloto (ADR-0052)
 [**featureFlagsControllerList**](AdminApi.md#featureflagscontrollerlist) | **GET** /admin/feature-flags | Feature flags (globales y por ciudad)
 [**featureFlagsControllerSet**](AdminApi.md#featureflagscontrollerset) | **PUT** /admin/feature-flags/{key} | Enciende o apaga un flag
 [**moderationTermsControllerCreate**](AdminApi.md#moderationtermscontrollercreate) | **POST** /admin/moderation-terms | Agrega un término o patrón
@@ -1141,6 +1150,135 @@ This endpoint does not need any parameter.
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **adminCityAreaControllerGet**
+> CityAreaDto adminCityAreaControllerGet(id)
+
+Zona de servicio de la ciudad: polígono GeoJSON o radio (ADR-0052)
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final String id = id_example; // String | 
+
+try {
+    final response = api.adminCityAreaControllerGet(id);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminCityAreaControllerGet: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+
+### Return type
+
+[**CityAreaDto**](CityAreaDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminCityAreaControllerSet**
+> CityAreaDto adminCityAreaControllerSet(id, setCityAreaDto)
+
+Cambiar la zona (polígono o radio), con motivo
+
+Se valida el GeoJSON (un contorno cerrado dentro de Bolivia, válido en PostGIS y con el centro adentro). Vale para las solicitudes nuevas.
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final String id = id_example; // String | 
+final SetCityAreaDto setCityAreaDto = ; // SetCityAreaDto | 
+
+try {
+    final response = api.adminCityAreaControllerSet(id, setCityAreaDto);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminCityAreaControllerSet: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+ **setCityAreaDto** | [**SetCityAreaDto**](SetCityAreaDto.md)|  | 
+
+### Return type
+
+[**CityAreaDto**](CityAreaDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminCityAreaControllerTest**
+> TestPointResultDto adminCityAreaControllerTest(id, testPointDto)
+
+Probar si un punto está dentro de la zona (sin guardar nada)
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final String id = id_example; // String | 
+final TestPointDto testPointDto = ; // TestPointDto | 
+
+try {
+    final response = api.adminCityAreaControllerTest(id, testPointDto);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminCityAreaControllerTest: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+ **testPointDto** | [**TestPointDto**](TestPointDto.md)|  | 
+
+### Return type
+
+[**TestPointResultDto**](TestPointResultDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **adminJobsControllerDetail**
 > AdminJobDetailDto adminJobsControllerDetail(id)
 
@@ -1254,6 +1392,211 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**AdminJobsControllerResolve200Response**](AdminJobsControllerResolve200Response.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminPilotControllerAdd**
+> AddPilotPhonesResultDto adminPilotControllerAdd(addPilotPhonesDto)
+
+Habilitar números (se pueden pegar varios), con motivo
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final AddPilotPhonesDto addPilotPhonesDto = ; // AddPilotPhonesDto | 
+
+try {
+    final response = api.adminPilotControllerAdd(addPilotPhonesDto);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminPilotControllerAdd: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **addPilotPhonesDto** | [**AddPilotPhonesDto**](AddPilotPhonesDto.md)|  | 
+
+### Return type
+
+[**AddPilotPhonesResultDto**](AddPilotPhonesResultDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminPilotControllerInterest**
+> List<PilotInterestRowDto> adminPilotControllerInterest(cityId)
+
+Interés registrado (\"Pronto en tu zona\"), lo más nuevo primero
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final String cityId = cityId_example; // String | 
+
+try {
+    final response = api.adminPilotControllerInterest(cityId);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminPilotControllerInterest: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **cityId** | **String**|  | [optional] 
+
+### Return type
+
+[**List&lt;PilotInterestRowDto&gt;**](PilotInterestRowDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminPilotControllerInterestCsv**
+> adminPilotControllerInterestCsv(cityId)
+
+Interés en CSV (para medir la demanda)
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final String cityId = cityId_example; // String | 
+
+try {
+    api.adminPilotControllerInterestCsv(cityId);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminPilotControllerInterestCsv: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **cityId** | **String**|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminPilotControllerOverview**
+> PilotOverviewDto adminPilotControllerOverview(cityId)
+
+Piloto cerrado: flag, lista de números e interés (ADR-0052)
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final String cityId = cityId_example; // String | 
+
+try {
+    final response = api.adminPilotControllerOverview(cityId);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminPilotControllerOverview: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **cityId** | **String**|  | [optional] 
+
+### Return type
+
+[**PilotOverviewDto**](PilotOverviewDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminPilotControllerRemove**
+> adminPilotControllerRemove(id, removePilotPhoneDto)
+
+Quitar un número de la lista (su cuenta, si ya la creó, sigue)
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final String id = id_example; // String | 
+final RemovePilotPhoneDto removePilotPhoneDto = ; // RemovePilotPhoneDto | 
+
+try {
+    api.adminPilotControllerRemove(id, removePilotPhoneDto);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminPilotControllerRemove: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+ **removePilotPhoneDto** | [**RemovePilotPhoneDto**](RemovePilotPhoneDto.md)|  | 
+
+### Return type
+
+void (empty response body)
 
 ### Authorization
 
@@ -1905,6 +2248,51 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**DashboardDto**](DashboardDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **dashboardControllerPilot**
+> PilotMetricsDto dashboardControllerPilot(range, cityId)
+
+Métricas del piloto (ADR-0052)
+
+Embudo (creada → con oferta → asignada → terminada → comisión cobrada), primera oferta, expiración, tasa de cobro y retención semanal de trabajadores y empleadores, desde el inicio del piloto.
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+final String range = range_example; // String | 
+final String cityId = 38400000-8cf0-11bd-b23e-10b96e4ef00d; // String | Por defecto, la ciudad principal
+
+try {
+    final response = api.dashboardControllerPilot(range, cityId);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->dashboardControllerPilot: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **range** | **String**|  | [optional] [default to 'day']
+ **cityId** | **String**| Por defecto, la ciudad principal | [optional] 
+
+### Return type
+
+[**PilotMetricsDto**](PilotMetricsDto.md)
 
 ### Authorization
 

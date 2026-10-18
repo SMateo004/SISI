@@ -39,8 +39,14 @@ export class LegalService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   async onModuleInit(): Promise<void> {
-    await this.reload();
-    if (this.config.get('APP_ENV', { infer: true }) === 'production') {
+    const production = this.config.get('APP_ENV', { infer: true }) === 'production';
+    // Sin base al arrancar (o en la exportación de OpenAPI) se reintenta en la recarga periódica;
+    // producción, en cambio, no arranca sin poder verificar sus textos.
+    await this.reload().catch((error: unknown) => {
+      if (production) throw error;
+      this.logger.warn(`Textos legales no disponibles al arrancar: ${String(error)}`);
+    });
+    if (production) {
       const missing = TYPES.filter((t) => !this.current.has(t));
       const drafts = [...this.current.values()].filter((d) => d.draft).map((d) => d.type);
       if (missing.length > 0 || drafts.length > 0) {

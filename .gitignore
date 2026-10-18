@@ -80,3 +80,7 @@ logs/
 
 # --- Prisma (cliente generado) ---
 backend/src/generated/
+
+# Prueba de carga: tokens y resultados crudos (ADR-0053)
+loadtest/usuarios*.json
+loadtest/resultados/

@@ -1,4 +1,6 @@
 import { AuditModule } from '../audit/audit.module';
+import { writeFileSync } from 'node:fs';
+import { LoadtestModule, LoadtestSeeder } from './loadtest-seed';
 import { RetentionModule } from '../retention/retention.module';
 import { RetentionService } from '../retention/retention.service';
 import { StorageModule } from '../storage/storage.module';
@@ -46,6 +48,8 @@ import { type WorkerEventInput, WorkerStatusService } from '../workers/worker-st
  *   npm run dev:tools -- billing-run --at 2026-10-19T04:05:00Z   (cron de cobros con reloj simulado)
  *   npm run dev:tools -- resolve-report --report <uuid> --approve --reason "Se verificó"   (o --reject "motivo")
  *   npm run dev:tools -- ops-drill outbox|otp|push|clear   (simulacro de alertas en staging, ADR-0048)
+ *   npm run dev:tools -- loadtest-seed --workers 200 --employers 40 --out loadtest/usuarios.json   (solo local/staging)
+ *   npm run dev:tools -- db-stats --times 12   (conexiones a Postgres cada 5 s, para la prueba de carga)
  *   npm run dev:tools -- retention --dry-run   (cuenta lo que borraría la retención; sin --dry-run, borra; ADR-0050)
  */
 @Module({
@@ -64,6 +68,7 @@ import { type WorkerEventInput, WorkerStatusService } from '../workers/worker-st
     ObservabilityModule,
     StorageModule,
     RetentionModule,
+    LoadtestModule,
   ],
   providers: [
     OpsDrill,
@@ -100,6 +105,10 @@ async function main(): Promise<void> {
       report: { type: 'string' },
       at: { type: 'string' },
       'dry-run': { type: 'boolean' },
+      workers: { type: 'string' },
+      employers: { type: 'string' },
+      out: { type: 'string' },
+      times: { type: 'string' },
     },
   });
 
@@ -250,6 +259,31 @@ async function main(): Promise<void> {
         const dryRun = values['dry-run'] ?? false;
         const report = await app.get(RetentionService).run({ dryRun });
         logger.log(`Retención${dryRun ? ' (prueba)' : ''}: ${JSON.stringify(report)}`);
+        break;
+      }
+      case 'loadtest-seed': {
+        // Usuarios de la prueba de carga con sus tokens (ADR-0053). Nunca en producción.
+        const seeded = await app
+          .get(LoadtestSeeder)
+          .seed(Number(values.workers ?? 200), Number(values.employers ?? 40), status);
+        const out = values.out ?? 'loadtest-usuarios.json';
+        writeFileSync(out, JSON.stringify(seeded, null, 2));
+        logger.log(
+          `Prueba de carga: ${String(seeded.workers.length)} trabajadores y ${String(seeded.employers.length)} empleadores en ${out} (contiene tokens: no compartir)`,
+        );
+        break;
+      }
+      case 'db-stats': {
+        // Conexiones a Postgres por estado cada 5 s (CSV), durante la prueba de carga.
+        const times = Number(values.times ?? 12);
+        console.log('hora,estado,conexiones');
+        for (let i = 0; i < times; i++) {
+          const now = new Date().toISOString();
+          for (const row of await app.get(LoadtestSeeder).dbStats()) {
+            console.log(`${now},${row.state},${String(row.n)}`);
+          }
+          if (i < times - 1) await new Promise((r) => setTimeout(r, 5000));
+        }
         break;
       }
       case 'resolve-report': {

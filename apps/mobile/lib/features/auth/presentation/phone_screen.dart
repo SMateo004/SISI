@@ -52,7 +52,14 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
       if (!mounted) return;
       context.push(Routes.otp(digits, sent.resendInSec));
     } catch (e) {
-      setState(() => _error = ApiException.from(e).message);
+      final error = ApiException.from(e);
+      // Piloto cerrado y el número no está invitado: "Pronto en tu zona" (ADR-0052).
+      if (error.code == 'PILOT_NOT_ALLOWED' && mounted) {
+        final city = error.extra['cityName'] as String? ?? 'tu ciudad';
+        context.push(Routes.comingSoonFor(digits, city));
+        return;
+      }
+      setState(() => _error = error.message);
     } finally {
       if (mounted) setState(() => _sending = false);
     }

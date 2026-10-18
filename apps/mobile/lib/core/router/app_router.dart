@@ -20,8 +20,36 @@ import '../../features/requests/domain/service_request.dart';
 import '../../features/requests/presentation/request_detail_screen.dart';
 import '../../features/worker_onboarding/presentation/onboarding_flow_screen.dart';
 import '../../features/worker_onboarding/presentation/review_status_screen.dart';
+import '../../features/about/about_screen.dart';
+import '../../features/account_deletion/account_deletion.dart';
+import '../../features/legal/legal_screen.dart';
+import '../../features/legal/update_screen.dart';
+import '../../features/pilot/coming_soon_screen.dart';
+import '../app_gate/app_gate.dart';
 import '../auth/session_controller.dart';
 import 'routes.dart';
+
+/// Redirección según la sesión y la puerta de la app (ADR-0051, ADR-0054):
+/// - una versión vieja lleva a "Actualiza la app" desde cualquier pantalla;
+/// - con sesión y textos legales sin aceptar, a aceptarlos (salvo leerlos o borrar la cuenta).
+String? gateRedirect(SessionStatus session, AppGate gate, String location) {
+  if (gate.upgradeRequired) {
+    return location == Routes.update ? null : Routes.update;
+  }
+  if (location == Routes.update) return Routes.home;
+  final base = sessionRedirect(session, location);
+  if (base != null) return base;
+  if (session != SessionStatus.authenticated) return null;
+  if (gate.mustAcceptLegal && !Routes.worksWithoutLegal(location)) {
+    return Routes.legal;
+  }
+  if (location == Routes.legal &&
+      gate.legalPending != null &&
+      !gate.mustAcceptLegal) {
+    return Routes.home;
+  }
+  return null;
+}
 
 /// Redirección según la sesión: sin sesión todo lleva a /ingresar; con sesión,
 /// las pantallas de login llevan al inicio.
@@ -36,14 +64,18 @@ String? sessionRedirect(SessionStatus session, String location) {
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final refresh = ValueNotifier<SessionStatus>(ref.read(sessionProvider));
-  ref.listen(sessionProvider, (_, next) => refresh.value = next);
+  final refresh = ValueNotifier<int>(0);
+  ref.listen(sessionProvider, (_, _) => refresh.value++);
+  ref.listen(appGateProvider, (_, _) => refresh.value++);
 
   final router = GoRouter(
     initialLocation: Routes.home,
     refreshListenable: refresh,
-    redirect: (context, state) =>
-        sessionRedirect(ref.read(sessionProvider), state.matchedLocation),
+    redirect: (context, state) => gateRedirect(
+      ref.read(sessionProvider),
+      ref.read(appGateProvider),
+      state.matchedLocation,
+    ),
     routes: [
       GoRoute(
         path: Routes.splash,
@@ -135,6 +167,37 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.notifications,
         builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: Routes.legal,
+        builder: (context, state) => const LegalScreen(),
+      ),
+      GoRoute(
+        path: Routes.legalDocumentPath,
+        builder: (context, state) => LegalDocumentScreen(
+          type: state.pathParameters['tipo'] == 'privacidad'
+              ? 'privacy'
+              : 'terms',
+        ),
+      ),
+      GoRoute(
+        path: Routes.update,
+        builder: (context, state) => const UpdateScreen(),
+      ),
+      GoRoute(
+        path: Routes.about,
+        builder: (context, state) => const AboutScreen(),
+      ),
+      GoRoute(
+        path: Routes.deleteAccount,
+        builder: (context, state) => const DeleteAccountScreen(),
+      ),
+      GoRoute(
+        path: Routes.comingSoon,
+        builder: (context, state) => ComingSoonScreen(
+          phoneDigits: state.uri.queryParameters['telefono'] ?? '',
+          cityName: state.uri.queryParameters['ciudad'] ?? 'tu ciudad',
+        ),
       ),
     ],
   );

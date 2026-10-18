@@ -50,4 +50,12 @@ abstract final class Env {
       firebaseProjectId.isNotEmpty;
 
   static bool get isProduction => appEnv == 'production';
+
+  /// Versión de la app (X.Y.Z) y número de build, que pone el workflow de release desde el
+  /// pubspec (ADR-0054). Vacía en desarrollo: la API no le aplica la versión mínima.
+  static const String appVersion = String.fromEnvironment('APP_VERSION');
+  static const String appBuild = String.fromEnvironment('APP_BUILD');
+
+  /// DSN de Sentry de la app (ADR-0048). Vacío = sin reporte de errores.
+  static const String sentryDsn = String.fromEnvironment('SENTRY_DSN');
 }

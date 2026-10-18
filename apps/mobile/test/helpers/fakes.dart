@@ -31,6 +31,13 @@ import 'package:sisi_mobile/features/notifications/data/notifications_repository
 import 'package:sisi_mobile/features/reports/data/reports_repository.dart';
 import 'package:sisi_mobile/features/reviews/data/reviews_repository.dart';
 
+import 'package:sisi_mobile/core/app_gate/client_app_repository.dart';
+import 'package:sisi_mobile/core/permissions/permission_primer.dart';
+import 'package:sisi_mobile/core/push/notifications_primer.dart';
+import 'package:sisi_mobile/features/account_deletion/account_deletion.dart';
+import 'package:sisi_mobile/features/pilot/coming_soon_screen.dart';
+
+import 'fake_app.dart';
 import 'fake_earnings.dart';
 import 'fake_jobs.dart';
 import 'fake_matching.dart';
@@ -45,15 +52,23 @@ AppUser testUser({
 }) => AppUser(id: 'u1', phone: '+59170012345', name: name, activeMode: mode);
 
 class FakeAuthRepository implements AuthRepository {
-  FakeAuthRepository({this.validCode = '123456', this.resendInSec = 60});
+  FakeAuthRepository({
+    this.validCode = '123456',
+    this.resendInSec = 60,
+    this.requestError,
+  });
 
   final String validCode;
   final int resendInSec;
   final requested = <String>[];
 
+  /// Si no es null, pedir el código falla con este error (p. ej. PILOT_NOT_ALLOWED).
+  ApiException? requestError;
+
   @override
   Future<OtpRequested> requestOtp(String phone) async {
     requested.add(phone);
+    if (requestError != null) throw requestError!;
     return OtpRequested(expiresInSec: 300, resendInSec: resendInSec);
   }
 
@@ -298,6 +313,11 @@ Future<void> pumpSisiApp(
   FakeNotificationsRepository? notifications,
   List<Uri>? openedUrls,
   FakeEarningsRepository? earnings,
+  FakeClientAppRepository? clientApp,
+  FakeAccountRepository? account,
+  FakePilotRepository? pilot,
+  PrimerStore? primers,
+  bool pushAvailable = false,
 }) async {
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 2.6;
@@ -347,6 +367,24 @@ Future<void> pumpSisiApp(
         earningsRepositoryProvider.overrideWithValue(
           earnings ?? FakeEarningsRepository(),
         ),
+        clientAppRepositoryProvider.overrideWithValue(
+          clientApp ?? FakeClientAppRepository(),
+        ),
+        accountRepositoryProvider.overrideWithValue(
+          account ?? FakeAccountRepository(),
+        ),
+        pilotRepositoryProvider.overrideWithValue(
+          pilot ?? FakePilotRepository(),
+        ),
+        // Avisos y cámara ya explicados: las pruebas que no los miran no ven diálogos.
+        primerStoreProvider.overrideWithValue(
+          primers ??
+              MemoryPrimerStore({
+                PrimedPermission.notifications: PrimerAnswer.accepted,
+                PrimedPermission.camera: PrimerAnswer.accepted,
+              }),
+        ),
+        pushAvailableProvider.overrideWithValue(pushAvailable),
         // Sin envío periódico de ubicación (pumpAndSettle no terminaría).
         tripLocationIntervalProvider.overrideWithValue(null),
         urlOpenerProvider.overrideWithValue((uri) async {

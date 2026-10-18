@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/http/api_exception.dart';
+import '../../../core/push/notifications_primer.dart';
 import '../../../core/router/routes.dart';
 import '../../earnings/presentation/earnings_banners.dart';
 import '../../jobs/presentation/job_history_screen.dart';
@@ -68,6 +69,7 @@ class _HomeBody extends StatelessWidget {
         const SizedBox(height: 16),
         // Bloqueo, tope o vencimiento: también en modo empleador (R1.6).
         const HomeEarningsBanner(),
+        const NotificationsPrimerCard(),
         ActiveJobCard(role: isWorker ? 'worker' : 'employer'),
         if (user.name == null)
           Card(

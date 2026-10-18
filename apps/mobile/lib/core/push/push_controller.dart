@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/session_controller.dart';
 import '../http/api_client.dart';
 import '../router/app_router.dart';
+import '../permissions/permission_primer.dart';
+import 'notifications_primer.dart';
 import 'push_service.dart';
 
 final pushServiceProvider = Provider<PushService>(
@@ -117,9 +119,12 @@ class PushController {
   }
 }
 
-/// Activo mientras hay sesión.
+/// Activo mientras hay sesión y la persona aceptó la explicación de los avisos (ADR-0051):
+/// recién entonces se pide el permiso del sistema.
 final pushControllerProvider = Provider<PushController?>((ref) {
   if (ref.watch(sessionProvider) != SessionStatus.authenticated) return null;
+  final primer = ref.watch(notificationsPrimerProvider).value;
+  if (primer != PrimerAnswer.accepted) return null;
   final controller = PushController(ref);
   ref.onDispose(controller.dispose);
   controller.start();

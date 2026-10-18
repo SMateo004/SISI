@@ -20,6 +20,25 @@ abstract final class Routes {
   static const earnings = '/ganancias';
   static const pay = '/ganancias/pagar';
 
+  /// Aceptar los textos legales vigentes (bloqueante, ADR-0051).
+  static const legal = '/legal';
+  static const legalDocumentPath = '/legal/:tipo';
+
+  /// Versión vieja: actualizar desde la tienda (ADR-0054).
+  static const update = '/actualizar';
+  static const about = '/acerca';
+  static const deleteAccount = '/eliminar-cuenta';
+
+  /// Piloto cerrado: número fuera de la lista (ADR-0052).
+  static const comingSoon = '/pronto';
+
+  /// Lectura de un texto legal (`terminos` o `privacidad`).
+  static String legalDocument(String type) =>
+      '/legal/${type == 'privacy' ? 'privacidad' : 'terminos'}';
+
+  static String comingSoonFor(String phoneDigits, String cityName) =>
+      '$comingSoon?telefono=$phoneDigits&ciudad=${Uri.encodeComponent(cityName)}';
+
   static String requestDetail(String id) => '/solicitudes/$id';
 
   /// Solicitud que le llegó al trabajador (también la abre el push).
@@ -42,5 +61,14 @@ abstract final class Routes {
 
   /// Rutas a las que se entra sin sesión.
   static bool isPublic(String location) =>
-      location == splash || location == login || location.startsWith(otpPath);
+      location == splash ||
+      location == login ||
+      location.startsWith(otpPath) ||
+      location.startsWith(comingSoon);
+
+  /// Rutas que funcionan sin haber aceptado los textos (leerlos, aceptarlos, borrar la cuenta).
+  static bool worksWithoutLegal(String location) =>
+      location.startsWith(legal) ||
+      location == about ||
+      location == deleteAccount;
 }

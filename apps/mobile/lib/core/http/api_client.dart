@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../app_gate/app_gate.dart';
+import '../app_gate/app_gate_interceptor.dart';
 import '../auth/auth_interceptor.dart';
 import '../auth/session_controller.dart';
 import '../auth/token_storage.dart';
@@ -42,6 +44,14 @@ final dioProvider = Provider<Dio>((ref) {
       retryDio: dio,
     ),
   );
+  // Versión de la app en cada petición y aviso de 426 y 403 legales (ADR-0051, ADR-0054).
+  final gate = AppGateInterceptor(
+    onUpgrade: (url) => ref.read(appGateProvider.notifier).upgradeRequired(url),
+    onLegal: (pending) =>
+        ref.read(appGateProvider.notifier).legalRequired(pending),
+  );
+  dio.interceptors.add(gate);
+  plain.interceptors.add(gate);
   ref.onDispose(() {
     dio.close();
     plain.close();

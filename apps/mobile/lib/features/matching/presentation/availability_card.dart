@@ -2,19 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/http/api_exception.dart';
+import '../../../core/permissions/permission_primer.dart';
 import '../application/availability_controller.dart';
-
-/// Se explica una vez por sesión antes de pedir el permiso del sistema.
-class _RationaleShown extends Notifier<bool> {
-  @override
-  bool build() => false;
-
-  void markShown() => state = true;
-}
-
-final _rationaleShownProvider = NotifierProvider<_RationaleShown, bool>(
-  _RationaleShown.new,
-);
 
 /// Toggle "Disponible" (ADR-0024).
 class AvailabilityCard extends ConsumerStatefulWidget {
@@ -27,34 +16,19 @@ class AvailabilityCard extends ConsumerStatefulWidget {
 class _AvailabilityCardState extends ConsumerState<AvailabilityCard> {
   bool _busy = false;
 
-  Future<bool> _explainLocation() async {
-    if (ref.read(_rationaleShownProvider)) return true;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        icon: const Icon(Icons.location_on_outlined),
-        title: const Text('Tu ubicación'),
-        content: const Text(
-          'Para mostrarte solicitudes cerca de ti necesitamos tu ubicación. '
-          'Solo la usamos mientras estás disponible y la app está abierta. '
-          'Los clientes no ven dónde estás: solo la distancia aproximada.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Ahora no'),
-          ),
-          FilledButton(
-            key: const Key('location-rationale-continue'),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Continuar'),
-          ),
-        ],
-      ),
-    );
-    if (ok == true) ref.read(_rationaleShownProvider.notifier).markShown();
-    return ok == true;
-  }
+  /// Se explica antes de pedir el permiso del sistema; aceptada, no se vuelve a mostrar.
+  Future<bool> _explainLocation() => explainOnce(
+    context,
+    ref.read(primerStoreProvider),
+    PrimedPermission.location,
+    icon: Icons.location_on_outlined,
+    title: 'Tu ubicación',
+    message:
+        'Para mostrarte solicitudes cerca de ti necesitamos tu ubicación. '
+        'Solo la usamos mientras estás disponible y la app está abierta. '
+        'Los clientes no ven dónde estás: solo la distancia aproximada.',
+    continueKey: const Key('location-rationale-continue'),
+  );
 
   Future<void> _toggle(bool on) async {
     if (on && !await _explainLocation()) return;

@@ -12,6 +12,9 @@ import '../../auth/data/auth_repository.dart';
 import '../application/current_user.dart';
 import '../domain/app_user.dart';
 import 'user_avatar.dart';
+import '../../../core/app_gate/app_gate.dart';
+import '../../../core/links/url_opener.dart';
+import '../../about/about_screen.dart';
 
 /// Perfil básico editable: nombre y foto.
 class ProfileScreen extends ConsumerWidget {
@@ -153,6 +156,22 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
           title: const Text('Estado del servidor'),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => context.push(Routes.serverStatus),
+        ),
+        if (ref.watch(appGateProvider).support case final support?)
+          ListTile(
+            key: const Key('profile-support'),
+            leading: const Icon(Icons.support_agent),
+            title: const Text('Ayuda por WhatsApp'),
+            trailing: const Icon(Icons.open_in_new),
+            onTap: () => ref.read(urlOpenerProvider)(support.url),
+          ),
+        ListTile(
+          key: const Key('profile-about'),
+          leading: const Icon(Icons.info_outline),
+          title: const Text('Acerca de'),
+          subtitle: Text(appVersionLabel()),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => context.push(Routes.about),
         ),
         const Divider(height: 32),
         OutlinedButton.icon(

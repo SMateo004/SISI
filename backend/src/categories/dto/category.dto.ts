@@ -1,10 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsBoolean,
   IsOptional,
   IsString,
   Length,
   Matches,
+  IsUUID,
   MaxLength,
   ValidateIf,
 } from 'class-validator';
@@ -76,6 +79,76 @@ export class UpdateCategoryDto {
   @IsOptional()
   @IsBoolean({ message: 'active debe ser verdadero o falso.' })
   active?: boolean;
+
+  @ApiPropertyOptional({
+    example: ['certificado_electricista'],
+    type: String,
+    isArray: true,
+    description: 'Requisitos extra de verificación (claves en minúsculas, R2.2)',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @Matches(/^[a-z0-9_]{2,40}$/, {
+    each: true,
+    message: 'Cada requisito es una clave en minúsculas (ej. certificado_electricista).',
+  })
+  extraRequirements?: string[];
+}
+
+/** Categoría nueva (R2.2). Se crea en las ciudades indicadas (activas). */
+export class CreateCategoryDto {
+  @ApiProperty({ example: 'jardineria', description: 'Identificador estable: no cambia después' })
+  @Matches(/^[a-z][a-z0-9-]{1,39}$/, {
+    message: 'El slug va en minúsculas, sin espacios (ej. jardineria).',
+  })
+  slug!: string;
+
+  @ApiProperty({ example: 'Jardinería' })
+  @IsString()
+  @Length(2, 60, { message: 'El nombre debe tener entre 2 y 60 caracteres.' })
+  name!: string;
+
+  @ApiPropertyOptional({ example: 'Poda, césped y riego', nullable: true, type: String })
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @IsString()
+  @MaxLength(200, { message: 'La descripción admite hasta 200 caracteres.' })
+  description?: string | null;
+
+  @ApiProperty({ example: '80.00' })
+  @Matches(MONEY_PATTERN, { message: MONEY_MESSAGE })
+  priceMinBs!: string;
+
+  @ApiProperty({ example: '300.00' })
+  @Matches(MONEY_PATTERN, { message: MONEY_MESSAGE })
+  priceMaxBs!: string;
+
+  @ApiPropertyOptional({ example: '13.00', description: 'Por defecto 13 % (R2.2)' })
+  @IsOptional()
+  @Matches(PCT_PATTERN, { message: PCT_MESSAGE })
+  commissionPct?: string;
+
+  @ApiPropertyOptional({
+    example: ['certificado_electricista'],
+    type: String,
+    isArray: true,
+    description: 'Requisitos extra de verificación (claves en minúsculas, R2.2)',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @Matches(/^[a-z0-9_]{2,40}$/, {
+    each: true,
+    message: 'Cada requisito es una clave en minúsculas (ej. certificado_electricista).',
+  })
+  extraRequirements?: string[];
+
+  @ApiPropertyOptional({ type: String, isArray: true, description: 'Ciudades donde queda activa' })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('all', { each: true, message: 'Una ciudad no es válida.' })
+  cityIds?: string[];
 }
 
 export class UpsertCategoryCityDto {
@@ -129,5 +202,20 @@ export class AdminCategoryDto {
   @ApiProperty({ example: '300.00' }) priceMaxBs!: string;
   @ApiProperty({ example: '13.00' }) commissionPct!: string;
   @ApiProperty() active!: boolean;
+  @ApiProperty({ type: String, isArray: true }) extraRequirements!: string[];
   @ApiProperty({ type: [AdminCategoryCityDto] }) cities!: AdminCategoryCityDto[];
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'Aviso al cambiar la comisión: solo afecta a los trabajos asignados desde ahora',
+  })
+  notice!: string | null;
+}
+
+export class AdminCityDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({ example: 'santa-cruz' }) slug!: string;
+  @ApiProperty({ example: 'Santa Cruz de la Sierra' }) name!: string;
+  @ApiProperty({ example: 'America/La_Paz' }) timezone!: string;
+  @ApiProperty() active!: boolean;
 }

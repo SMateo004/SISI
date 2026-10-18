@@ -1,3 +1,4 @@
+import type { AuditHook } from '../audit/admin-audit.service';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import type { Redis } from 'ioredis';
 import { ApiError } from '../common/errors/api-error';
@@ -51,10 +52,12 @@ export class FeatureFlagsService {
     });
   }
 
+  /** Enciende o apaga un flag. Desde el panel, `audit` lo registra en la misma transacción. */
   async set(
     key: string,
     input: { cityId: string | null; enabled: boolean; description?: string },
     actorId: string,
+    audit?: AuditHook,
   ): Promise<FeatureFlagRow> {
     if (!FLAG_KEY_PATTERN.test(key)) {
       throw new ApiError(
@@ -67,15 +70,29 @@ export class FeatureFlagsService {
       const city = await this.prisma.city.findUnique({ where: { id: input.cityId } });
       if (!city) throw new ApiError(HttpStatus.NOT_FOUND, 'CITY_NOT_FOUND', 'La ciudad no existe.');
     }
-    // Upsert con el índice único (key, city_id) NULLS NOT DISTINCT: Prisma no acepta null en claves compuestas.
-    await this.prisma.$executeRaw`
-      INSERT INTO feature_flags (key, city_id, enabled, description, updated_by, updated_at)
-      VALUES (${key}, ${input.cityId}::uuid, ${input.enabled}, ${input.description ?? null}, ${actorId}::uuid, now())
-      ON CONFLICT (key, city_id) DO UPDATE
-      SET enabled = EXCLUDED.enabled,
-          description = COALESCE(EXCLUDED.description, feature_flags.description),
-          updated_by = EXCLUDED.updated_by,
-          updated_at = now()`;
+    await this.prisma.$transaction(async (tx) => {
+      const before = await tx.featureFlag.findFirst({
+        where: { key, cityId: input.cityId },
+        select: { enabled: true },
+      });
+      // Upsert con el índice único (key, city_id) NULLS NOT DISTINCT: Prisma no acepta null en claves compuestas.
+      await tx.$executeRaw`
+        INSERT INTO feature_flags (key, city_id, enabled, description, updated_by, updated_at)
+        VALUES (${key}, ${input.cityId}::uuid, ${input.enabled}, ${input.description ?? null}, ${actorId}::uuid, now())
+        ON CONFLICT (key, city_id) DO UPDATE
+        SET enabled = EXCLUDED.enabled,
+            description = COALESCE(EXCLUDED.description, feature_flags.description),
+            updated_by = EXCLUDED.updated_by,
+            updated_at = now()`;
+      await audit?.record(tx, {
+        action: 'config.flag_set',
+        targetType: 'feature_flag',
+        targetId: input.cityId ? `${key}@${input.cityId}` : key,
+        before: before ? { enabled: before.enabled } : null,
+        after: { enabled: input.enabled },
+        cityId: input.cityId,
+      });
+    });
     await this.redis.del(cacheKey(key));
     return this.prisma.featureFlag.findFirstOrThrow({
       where: { key, cityId: input.cityId },

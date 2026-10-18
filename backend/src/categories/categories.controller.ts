@@ -1,13 +1,16 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Put } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Put } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiConflictResponse,
+  ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
 import { type AuthenticatedUser, CurrentUser } from '../auth/decorators/auth.decorators';
+import { AdminCtx, type AdminContext } from '../audit/admin-context';
 import { Admin } from '../common/admin/admin-permissions';
 import { ApiErrorBody } from '../common/errors/api-error';
 import { UsersService } from '../users/users.service';
@@ -15,7 +18,9 @@ import { AdminCategoriesService } from './admin-categories.service';
 import { CategoryResolver } from './category-resolver';
 import {
   AdminCategoryDto,
+  AdminCityDto,
   CategoryDto,
+  CreateCategoryDto,
   toCategoryDto,
   UpdateCategoryDto,
   UpsertCategoryCityDto,
@@ -58,18 +63,35 @@ export class AdminCategoriesController {
     return this.admin.list();
   }
 
+  @Post()
+  @ApiOperation({
+    summary: 'Crea una categoría (R2.2)',
+    description:
+      'Con rango, comisión (13 % por defecto), requisitos extra y las ciudades donde queda activa.',
+  })
+  @ApiCreatedResponse({ type: AdminCategoryDto })
+  @ApiConflictResponse({ type: ApiErrorBody, description: 'CATEGORY_SLUG_TAKEN' })
+  create(@AdminCtx() ctx: AdminContext, @Body() dto: CreateCategoryDto): Promise<AdminCategoryDto> {
+    return this.admin.create(ctx, dto);
+  }
+
   @Patch(':id')
-  @ApiOperation({ summary: 'Edita los valores base de una categoría' })
+  @ApiOperation({
+    summary: 'Edita los valores base de una categoría',
+    description:
+      'Si cambia la comisión, `notice` avisa que solo afecta a los trabajos asignados desde ahora.',
+  })
   @ApiOkResponse({ type: AdminCategoryDto })
   @ApiBadRequestResponse({
     type: ApiErrorBody,
     description: 'PRICE_RANGE_INVALID o VALIDATION_ERROR',
   })
   update(
+    @AdminCtx() ctx: AdminContext,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateCategoryDto,
   ): Promise<AdminCategoryDto> {
-    return this.admin.update(id, dto);
+    return this.admin.update(ctx, id, dto);
   }
 
   @Put(':id/cities/:cityId')
@@ -83,10 +105,26 @@ export class AdminCategoriesController {
     description: 'PRICE_RANGE_INVALID o VALIDATION_ERROR',
   })
   upsertCity(
+    @AdminCtx() ctx: AdminContext,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Param('cityId', new ParseUUIDPipe()) cityId: string,
     @Body() dto: UpsertCategoryCityDto,
   ): Promise<AdminCategoryDto> {
-    return this.admin.upsertCity(id, cityId, dto);
+    return this.admin.upsertCity(ctx, id, cityId, dto);
+  }
+}
+
+/** Ciudades (solo lectura en el MVP: se agregan por seed o migración). */
+@ApiTags('admin')
+@Admin('catalogo')
+@Controller('admin/cities')
+export class AdminCitiesController {
+  constructor(private readonly admin: AdminCategoriesService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Ciudades' })
+  @ApiOkResponse({ type: AdminCityDto, isArray: true })
+  list(): Promise<AdminCityDto[]> {
+    return this.admin.cities();
   }
 }

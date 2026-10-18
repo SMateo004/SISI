@@ -10,7 +10,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { IsBoolean, IsOptional, IsString, IsUUID, MaxLength, ValidateIf } from 'class-validator';
-import { type AuthenticatedUser, CurrentUser } from '../auth/decorators/auth.decorators';
+import { AdminAuditService } from '../audit/admin-audit.service';
+import { AdminCtx, type AdminContext } from '../audit/admin-context';
 import { Admin } from '../common/admin/admin-permissions';
 import { ApiErrorBody } from '../common/errors/api-error';
 import { FeatureFlagsService } from './feature-flags.service';
@@ -60,7 +61,10 @@ const toDto = (f: {
 @ApiForbiddenResponse({ type: ApiErrorBody, description: 'FORBIDDEN: solo administradores' })
 @Controller('admin/feature-flags')
 export class FeatureFlagsController {
-  constructor(private readonly flags: FeatureFlagsService) {}
+  constructor(
+    private readonly flags: FeatureFlagsService,
+    private readonly audit: AdminAuditService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Feature flags (globales y por ciudad)' })
@@ -77,7 +81,7 @@ export class FeatureFlagsController {
   @ApiOkResponse({ type: FeatureFlagDto })
   @ApiBadRequestResponse({ type: ApiErrorBody, description: 'FLAG_KEY_INVALID o VALIDATION_ERROR' })
   async set(
-    @CurrentUser() current: AuthenticatedUser,
+    @AdminCtx() ctx: AdminContext,
     @Param('key') key: string,
     @Body() dto: SetFeatureFlagDto,
   ): Promise<FeatureFlagDto> {
@@ -85,7 +89,8 @@ export class FeatureFlagsController {
       await this.flags.set(
         key,
         { cityId: dto.cityId ?? null, enabled: dto.enabled, description: dto.description },
-        current.id,
+        ctx.adminId,
+        this.audit.hook(ctx),
       ),
     );
   }

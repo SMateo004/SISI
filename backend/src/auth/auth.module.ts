@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import type { AppConfigService } from '../config/app-config';
+import { PilotModule } from '../pilot/pilot.module';
 import { UsersModule } from '../users/users.module';
 import { UsersService } from '../users/users.service';
 import { AdminAuthController } from './admin-auth.controller';
@@ -26,6 +27,8 @@ import {
 @Module({
   imports: [
     UsersModule,
+    // Piloto cerrado: un número fuera de la lista no recibe código (ADR-0052).
+    PilotModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: AppConfigService) => ({

@@ -24,6 +24,7 @@ export const RATE_LIMIT_POLICIES = {
   geocodeIp: { limitFrom: 'RATE_GEOCODE_IP_PER_MIN', windowSec: 60 },
   requestCreateIp: { limitFrom: 'RATE_REQUEST_CREATE_IP_PER_HOUR', windowSec: 3600 },
   offerCreateIp: { limitFrom: 'RATE_OFFER_IP_PER_MIN', windowSec: 60 },
+  pilotInterestIp: { limitFrom: 'RATE_PILOT_INTEREST_IP_PER_HOUR', windowSec: 3600 },
   reportUser: { limitFrom: 'RATE_REPORT_PER_HOUR', windowSec: 3600, per: 'user' },
   uploadUrlUser: { limitFrom: 'RATE_UPLOAD_URL_PER_HOUR', windowSec: 3600, per: 'user' },
   deviceUser: { limitFrom: 'RATE_DEVICE_PER_HOUR', windowSec: 3600, per: 'user' },

@@ -16,6 +16,13 @@ export const FEATURE_FLAGS: {
       'Matching por anillos (ADR-0025). Apagado, las solicitudes quedan en buscando y el matching se retoma al encenderlo.',
   },
   {
+    key: 'pilot.closed',
+    citySlug: 'santa-cruz',
+    enabled: false,
+    description:
+      'Piloto cerrado (ADR-0052): encendido, solo los números de la lista del piloto pueden crear una cuenta; los demás ven "Pronto en tu zona". Cargar la lista antes de encenderlo.',
+  },
+  {
     key: 'payments.gateway',
     citySlug: null,
     enabled: false,

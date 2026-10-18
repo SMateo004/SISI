@@ -37,6 +37,8 @@ model City {
   workerLocations WorkerLocation[]
   notifications   Notification[]
   adminAuditLog   AdminAuditLog[]
+  pilotAllowlist  PilotAllowedPhone[]
+  pilotInterest   PilotInterest[]
 
   @@map("cities")
 }
@@ -135,9 +137,10 @@ model Category {
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  workers  WorkerCategory[]
-  cities   CategoryCity[]
-  requests ServiceRequest[]
+  workers       WorkerCategory[]
+  cities        CategoryCity[]
+  requests      ServiceRequest[]
+  pilotInterest PilotInterest[]
 
   @@map("categories")
 }
@@ -1115,4 +1118,42 @@ enum LegalDocumentType {
   privacy
 
   @@map("legal_document_type")
+}
+
+/// Piloto cerrado (ADR-0052): con el flag pilot.closed de la ciudad, solo estos números pueden
+/// crear una cuenta. Las cuentas que ya existen siguen entrando.
+model PilotAllowedPhone {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cityId    String   @map("city_id") @db.Uuid
+  /// E.164 (+591…).
+  phone     String
+  note      String?
+  addedById String?  @map("added_by_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  city City @relation(fields: [cityId], references: [id])
+
+  @@unique([cityId, phone])
+  @@map("pilot_allowlist")
+}
+
+/// "Pronto en tu zona": interés de un número fuera del piloto, para medir la demanda (ADR-0052).
+/// Uno por número y ciudad; si vuelve a dejarlo se actualiza.
+model PilotInterest {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cityId     String   @map("city_id") @db.Uuid
+  phone      String
+  /// worker, employer o ambos.
+  role       String
+  categoryId String?  @map("category_id") @db.Uuid
+  zone       String?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  city     City      @relation(fields: [cityId], references: [id])
+  category Category? @relation(fields: [categoryId], references: [id])
+
+  @@unique([cityId, phone])
+  @@index([cityId, createdAt])
+  @@map("pilot_interest")
 }

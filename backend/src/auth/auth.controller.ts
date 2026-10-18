@@ -2,6 +2,7 @@ import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import {
   ApiAcceptedResponse,
   ApiBadRequestResponse,
+  ApiForbiddenResponse,
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
@@ -13,6 +14,7 @@ import {
 import { ApiErrorBody } from '../common/errors/api-error';
 import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 import { UserPresenter } from '../users/user.presenter';
+import { PilotService } from '../pilot/pilot.service';
 import { UsersService } from '../users/users.service';
 import { Public } from './decorators/auth.decorators';
 import {
@@ -36,6 +38,7 @@ export class AuthController {
     private readonly tokens: TokenService,
     private readonly users: UsersService,
     private readonly presenter: UserPresenter,
+    private readonly pilot: PilotService,
   ) {}
 
   @Post('otp/request')
@@ -52,7 +55,12 @@ export class AuthController {
     description: 'PHONE_INVALID, PHONE_NOT_MOBILE o PHONE_COUNTRY_NOT_ALLOWED',
   })
   @ApiServiceUnavailableResponse({ type: ApiErrorBody, description: 'OTP_SEND_FAILED' })
-  requestOtp(@Body() dto: RequestOtpDto): Promise<OtpRequestedDto> {
+  @ApiForbiddenResponse({
+    type: ApiErrorBody,
+    description: 'PILOT_NOT_ALLOWED: piloto cerrado y el número no está invitado (no se envía SMS)',
+  })
+  async requestOtp(@Body() dto: RequestOtpDto): Promise<OtpRequestedDto> {
+    await this.pilot.assertCanSignIn(this.otp.normalize(dto.phone));
     return this.otp.request(dto.phone);
   }
 
@@ -67,6 +75,8 @@ export class AuthController {
   @ApiBadRequestResponse({ type: ApiErrorBody, description: 'OTP_INVALID u OTP_TOO_MANY_ATTEMPTS' })
   async verifyOtp(@Body() dto: VerifyOtpDto): Promise<LoginResponseDto> {
     const phone = await this.otp.verify(dto.phone, dto.code);
+    // Por si lo sacaron de la lista entre el pedido del código y el ingreso.
+    await this.pilot.assertCanSignIn(phone);
     const { user, isNewUser } = await this.users.findOrCreateVerified(phone);
     const tokens = await this.tokens.issue({ id: user.id, role: user.role });
     return { ...tokens, user: await this.presenter.present(user), isNewUser };

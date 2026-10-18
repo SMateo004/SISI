@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/audit/audit_screen.dart';
 import '../../features/auth/login_screen.dart';
 import '../../features/billing/billing_screen.dart';
 import '../../features/billing/worker_billing_screen.dart';
@@ -124,6 +125,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/configuracion/:tab',
             builder: (_, s) => SettingsScreen(tab: s.pathParameters['tab']!),
           ),
+          GoRoute(path: '/auditoria', builder: (_, _) => const AuditScreen()),
         ],
       ),
     ],

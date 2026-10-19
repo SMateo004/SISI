@@ -1,0 +1,173 @@
+# Render Blueprint de SISI: STAGING (rama develop; docs/02 §8, ADR-0007, ADR-0039).
+# En Render: New → Blueprint → este repo, con Blueprint Path = render.staging.yaml.
+# Producción está en render.yaml (otro Blueprint, otro proyecto): así crear staging no crea
+# los servicios pagos de producción.
+# Sin secretos: los valores externos se piden en el dashboard (sync: false)
+# y los JWT se generan solos (generateValue: true).
+#
+# Nombres con sufijo -staging (Render exige nombres únicos en el workspace).
+
+projects:
+  - name: sisi-staging
+    environments:
+      # ───────────────────────────── STAGING ─────────────────────────────
+      - name: staging
+        envVarGroups:
+          - name: sisi-staging-shared
+            envVars:
+              - key: NODE_ENV
+                value: production
+              - key: APP_ENV
+                value: staging
+              # ADVERTENCIA: OTP por consola (el código sale en los logs de Render).
+              # Staging NO debe publicarse a usuarios reales (docs/runbook.md).
+              - key: OTP_PROVIDER
+                value: console
+              # Geocodificación de prueba hasta tener la llave de Maps de servidor (ADR-0021).
+              - key: GEOCODING_PROVIDER
+                value: fake
+              # Push falso (solo log) hasta configurar Firebase y FIREBASE_SERVICE_ACCOUNT (ADR-0027).
+              - key: PUSH_PROVIDER
+                value: fake
+              - key: NODE_VERSION
+                value: "24"
+              - key: TZ_DEFAULT
+                value: America/La_Paz
+              - key: JWT_SECRET
+                generateValue: true
+              - key: JWT_REFRESH_SECRET
+                generateValue: true
+
+        services:
+          - type: web
+            name: api-staging
+            runtime: node
+            region: virginia
+            plan: starter
+            branch: develop
+            rootDir: backend
+            buildCommand: npm ci --include=dev && npm run build
+            preDeployCommand: npx prisma migrate deploy && npm run prisma:seed
+            startCommand: npm run start:prod
+            healthCheckPath: /health
+            autoDeployTrigger: checksPass # despliega solo si pasa backend-ci
+            envVars:
+              - fromGroup: sisi-staging-shared
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: db-staging
+                  property: connectionString
+              - key: REDIS_URL
+                fromService:
+                  type: keyvalue
+                  name: cache-staging
+                  property: connectionString
+              # URLs fijas de los proyectos de Vercel de staging (ADR-0039), p. ej.:
+              # https://app-web-staging.vercel.app,https://admin-staging.vercel.app
+              - key: CORS_ORIGINS
+                sync: false
+              - key: OTP_PROVIDER_KEY
+                sync: false
+              - key: OTP_SENDER
+                sync: false
+              - key: FIREBASE_SERVICE_ACCOUNT
+                sync: false
+              - key: STORAGE_ENDPOINT # R2: https://<account_id>.r2.cloudflarestorage.com
+                sync: false
+              - key: STORAGE_REGION
+                value: auto
+              - key: STORAGE_BUCKET
+                sync: false
+              - key: STORAGE_ACCESS_KEY
+                sync: false
+              - key: STORAGE_SECRET_KEY
+                sync: false
+              - key: MAPS_API_KEY # llave de SERVIDOR (Geocoding API), distinta de la de la app
+                sync: false
+              - key: ADMIN_TOTP_SECRET # ingreso al panel (ADR-0055): dev-tools admin-totp
+                sync: false
+              - key: SENTRY_DSN
+                sync: false
+
+          - type: worker
+            name: worker-staging
+            runtime: node
+            region: virginia
+            plan: starter
+            branch: develop
+            rootDir: backend
+            buildCommand: npm ci --include=dev && npm run build
+            startCommand: npm run start:worker
+            autoDeployTrigger: checksPass # despliega solo si pasa backend-ci
+            envVars:
+              - fromGroup: sisi-staging-shared
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: db-staging
+                  property: connectionString
+              - key: REDIS_URL
+                fromService:
+                  type: keyvalue
+                  name: cache-staging
+                  property: connectionString
+              # Borra archivos de cuentas eliminadas y de la retención (ADR-0049, ADR-0050).
+              - key: STORAGE_ENDPOINT
+                sync: false
+              - key: STORAGE_REGION
+                value: auto
+              - key: STORAGE_BUCKET
+                sync: false
+              - key: STORAGE_ACCESS_KEY
+                sync: false
+              - key: STORAGE_SECRET_KEY
+                sync: false
+              - key: FIREBASE_SERVICE_ACCOUNT
+                sync: false
+              - key: SENTRY_DSN
+                sync: false
+
+          - type: cron
+            name: billing-cron-staging
+            runtime: node
+            region: virginia
+            plan: starter
+            branch: develop
+            rootDir: backend
+            # Puesta al día de cobros cada hora (ADR-0036): cierra los periodos cuyo fin ya pasó
+            # (corte del domingo 23:59 local), vence los impagos y programa avisos. Idempotente:
+            # una corrida fallida se recupera en la siguiente. Render interpreta el cron en UTC;
+            # los límites del negocio se calculan en la zona de cada ciudad, no aquí.
+            schedule: "5 * * * *"
+            buildCommand: npm ci --include=dev && npm run build
+            startCommand: npm run start:billing-cron
+            autoDeployTrigger: checksPass # despliega solo si pasa backend-ci
+            envVars:
+              - fromGroup: sisi-staging-shared
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: db-staging
+                  property: connectionString
+              - key: REDIS_URL
+                fromService:
+                  type: keyvalue
+                  name: cache-staging
+                  property: connectionString
+              - key: SENTRY_DSN
+                sync: false
+
+          - type: keyvalue
+            name: cache-staging
+            region: virginia
+            plan: free
+            # Obligatorio para colas BullMQ: nunca descartar claves.
+            maxmemoryPolicy: noeviction
+            ipAllowList: [] # solo red privada de Render
+
+        databases:
+          - name: db-staging
+            databaseName: sisi
+            user: sisi
+            region: virginia
+            plan: basic-256mb
+            postgresMajorVersion: "17"
+            ipAllowList: [] # solo red privada de Render

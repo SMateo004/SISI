@@ -13,6 +13,30 @@ Mientras esto siga así:
 
 Producción no arranca con el OTP por consola: la API se niega a iniciar.
 
+## Montar staging (una sola vez)
+
+Orden: R2 → Vercel → Render → GitHub. Staging y producción son Blueprints separados (`render.staging.yaml` y `render.yaml`): crear staging no crea los servicios pagos de producción.
+
+1. **Cloudflare R2:**
+   - crear el bucket `sisi-staging` (privado, sin acceso público ni `r2.dev`);
+   - R2 → Manage API tokens → token con "Object Read & Write" solo para ese bucket. Anotar Access Key ID, Secret Access Key y el endpoint `https://<account_id>.r2.cloudflarestorage.com`;
+   - bucket → Settings → CORS: el contenido de `infra/storage/cors.production.json` con las dos URLs de Vercel del paso 2.
+2. **Vercel** (CLI, en tu terminal: `npm i -g vercel@63.1.2`, `vercel login`):
+   - `vercel project add app-web-staging` y `vercel project add admin-staging`;
+   - de cada proyecto, Settings → General → Project ID; del equipo, Settings → General → Team ID (es el `VERCEL_ORG_ID`);
+   - Account → Tokens → token nuevo para GitHub Actions.
+3. **Clave del panel de staging** (en tu terminal, distinta de la local): `cd backend && npm run dev:tools -- admin-totp`.
+4. **Render:** New → Blueprint → repo `SISI`, rama `develop`, **Blueprint Path = `render.staging.yaml`**. Completar los valores `sync: false`:
+   - `CORS_ORIGINS` = `https://app-web-staging.vercel.app,https://admin-staging.vercel.app`;
+   - `STORAGE_ENDPOINT`, `STORAGE_BUCKET` (`sisi-staging`), `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` (paso 1), en `api-staging` y `worker-staging`;
+   - `ADMIN_TOTP_SECRET` (paso 3);
+   - el resto (`OTP_PROVIDER_KEY`, `OTP_SENDER`, `FIREBASE_SERVICE_ACCOUNT`, `MAPS_API_KEY`, `SENTRY_DSN`) puede quedar vacío en staging.
+   - Al terminar el primer deploy: `curl https://<api-staging>.onrender.com/health`.
+5. **GitHub → Settings → Environments → `staging`:**
+   - secretos (en tu terminal): `gh secret set VERCEL_TOKEN --env staging`, y lo mismo con `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID_APP_WEB` y `VERCEL_PROJECT_ID_ADMIN`;
+   - variables: `API_URL` y `SOCKET_URL` = `https://<api-staging>.onrender.com`.
+6. **Publicar la web:** Actions → `deploy-web` → Run workflow (o un push a `develop`).
+
 ## Desplegar, revertir y ver logs (ADR-0039)
 
 ### URLs de staging

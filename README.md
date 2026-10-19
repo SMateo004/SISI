@@ -10,7 +10,8 @@ apps/admin/             Flutter web (→ Vercel "admin")
 backend/                NestJS 12 + Prisma 7 + PostgreSQL/PostGIS + Redis
 packages/api_contract/  OpenAPI generado y cliente Dart sisi_api
 infra/                  docker-compose para desarrollo local
-render.yaml             Blueprint de Render (staging y production)
+render.yaml             Blueprint de Render: producción
+render.staging.yaml     Blueprint de Render: staging
 .github/workflows/      backend-ci, deploy-web, mobile-release
 ```
 

@@ -68,7 +68,8 @@ Orden: R2 → Vercel → Render → GitHub. Staging y producción son Blueprints
 ## Probar un login en staging
 
 1. Pedir el código desde la app.
-2. Render → `api-staging` → Logs → buscar `Código OTP para +591…`.
+2. Panel → **Códigos OTP**: aparece el código de cada número en segundos, con nombre y modo, o "Registro nuevo" (ADR-0056). Solo mientras no hay SMS; nunca en producción.
+3. También sigue en Render → `api-staging` → Logs → `Código OTP para +591…`.
 
 ## Herramienta de desarrollo (`dev-tools`)
 

@@ -133,6 +133,8 @@ export 'package:sisi_api/src/model/my_review_dto.dart';
 export 'package:sisi_api/src/model/notification_dto.dart';
 export 'package:sisi_api/src/model/notification_page_dto.dart';
 export 'package:sisi_api/src/model/offer_worker_dto.dart';
+export 'package:sisi_api/src/model/otp_code_dto.dart';
+export 'package:sisi_api/src/model/otp_codes_dto.dart';
 export 'package:sisi_api/src/model/otp_requested_dto.dart';
 export 'package:sisi_api/src/model/overdue_list_dto.dart';
 export 'package:sisi_api/src/model/overdue_row_dto.dart';

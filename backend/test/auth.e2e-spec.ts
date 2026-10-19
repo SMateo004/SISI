@@ -2,6 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import type { Redis } from 'ioredis';
 import request from 'supertest';
 import type { TokensDto } from '../src/auth/dto/auth.dto';
+import { CONSOLE_OTP_FEED_KEY } from '../src/auth/otp/console-otp-feed';
 import { REDIS_CLIENT } from '../src/redis/redis.constants';
 import {
   bearer,
@@ -58,6 +59,9 @@ describe('Autenticación (e2e)', () => {
     for (const key of keys) {
       expect(JSON.stringify(await client.hgetall(key))).not.toContain(code);
     }
+    // Única excepción, solo con el OTP por consola (nunca en producción): la copia que ve el
+    // panel mientras no hay SMS (ADR-0056), en su propia clave.
+    expect(await client.hget(CONSOLE_OTP_FEED_KEY, e164(phone))).toContain(code);
   });
 
   it('rechaza un código incorrecto con un mensaje genérico', async () => {

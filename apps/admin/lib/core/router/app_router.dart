@@ -10,6 +10,7 @@ import '../../features/catalog/catalog_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/moderation/dispute_screen.dart';
 import '../../features/moderation/moderation_screen.dart';
+import '../../features/otp_codes/otp_codes_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/users/user_profile_screen.dart';
 import '../../features/users/users_screen.dart';
@@ -125,6 +126,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/configuracion/:tab',
             builder: (_, s) => SettingsScreen(tab: s.pathParameters['tab']!),
           ),
+          GoRoute(path: '/codigos', builder: (_, _) => const OtpCodesScreen()),
           GoRoute(path: '/auditoria', builder: (_, _) => const AuditScreen()),
         ],
       ),

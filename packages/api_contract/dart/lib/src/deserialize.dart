@@ -103,6 +103,8 @@ import 'package:sisi_api/src/model/my_review_dto.dart';
 import 'package:sisi_api/src/model/notification_dto.dart';
 import 'package:sisi_api/src/model/notification_page_dto.dart';
 import 'package:sisi_api/src/model/offer_worker_dto.dart';
+import 'package:sisi_api/src/model/otp_code_dto.dart';
+import 'package:sisi_api/src/model/otp_codes_dto.dart';
 import 'package:sisi_api/src/model/otp_requested_dto.dart';
 import 'package:sisi_api/src/model/overdue_list_dto.dart';
 import 'package:sisi_api/src/model/overdue_row_dto.dart';
@@ -427,6 +429,10 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
           return NotificationPageDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'OfferWorkerDto':
           return OfferWorkerDto.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'OtpCodeDto':
+          return OtpCodeDto.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'OtpCodesDto':
+          return OtpCodesDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'OtpRequestedDto':
           return OtpRequestedDto.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'OverdueListDto':

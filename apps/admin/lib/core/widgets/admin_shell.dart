@@ -31,6 +31,8 @@ final _sections = <_Section>[
   ),
   _Section('/cobros', 'Cobros', Icons.payments_outlined, (c) => c.submissions),
   const _Section('/usuarios', 'Usuarios', Icons.people_outline),
+  // Solo útil sin SMS (staging o local, ADR-0056); en producción la lista sale vacía.
+  const _Section('/codigos', 'Códigos OTP', Icons.sms_outlined),
   const _Section('/catalogo', 'Catálogo', Icons.category_outlined),
   const _Section('/configuracion', 'Configuración', Icons.tune),
   const _Section('/auditoria', 'Auditoría', Icons.history),

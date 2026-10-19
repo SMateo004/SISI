@@ -10,6 +10,7 @@ import { AdminLoginService } from './admin-login.service';
 import { AuthController } from './auth.controller';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { ConsoleOtpFeed } from './otp/console-otp-feed';
 import { OtpHasher } from './otp/otp-hasher';
 import { OTP_PROVIDER } from './otp/otp-provider';
 import { createOtpProvider } from './otp/otp-provider.factory';
@@ -41,6 +42,7 @@ import {
   controllers: [AuthController, AdminAuthController],
   providers: [
     OtpService,
+    ConsoleOtpFeed,
     AdminLoginService,
     TokenService,
     JwtAuthGuard,

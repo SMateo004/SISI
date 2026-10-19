@@ -40,6 +40,7 @@ Method | HTTP request | Description
 [**adminJobsControllerDetail**](AdminApi.md#adminjobscontrollerdetail) | **GET** /admin/jobs/{id} | Detalle de un trabajo para revisar una disputa
 [**adminJobsControllerDisputed**](AdminApi.md#adminjobscontrollerdisputed) | **GET** /admin/jobs/disputed | Trabajos con un problema reportado, sin resolver
 [**adminJobsControllerResolve**](AdminApi.md#adminjobscontrollerresolve) | **POST** /admin/jobs/{id}/resolve | Resolver una disputa
+[**adminOtpCodesControllerList**](AdminApi.md#adminotpcodescontrollerlist) | **GET** /admin/otp-codes | Códigos de ingreso vigentes (solo sin SMS y fuera de producción)
 [**adminPilotControllerAdd**](AdminApi.md#adminpilotcontrolleradd) | **POST** /admin/pilot/allowlist | Habilitar números (se pueden pegar varios), con motivo
 [**adminPilotControllerInterest**](AdminApi.md#adminpilotcontrollerinterest) | **GET** /admin/pilot/interest | Interés registrado (\&quot;Pronto en tu zona\&quot;), lo más nuevo primero
 [**adminPilotControllerInterestCsv**](AdminApi.md#adminpilotcontrollerinterestcsv) | **GET** /admin/pilot/interest.csv | Interés en CSV (para medir la demanda)
@@ -1400,6 +1401,45 @@ Name | Type | Description  | Notes
 ### HTTP request headers
 
  - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminOtpCodesControllerList**
+> OtpCodesDto adminOtpCodesControllerList()
+
+Códigos de ingreso vigentes (solo sin SMS y fuera de producción)
+
+El más reciente primero; cada código queda hasta que vence y se marca al usarse.
+
+### Example
+```dart
+import 'package:sisi_api/api.dart';
+
+final api = SisiApi().getAdminApi();
+
+try {
+    final response = api.adminOtpCodesControllerList();
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminOtpCodesControllerList: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**OtpCodesDto**](OtpCodesDto.md)
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

@@ -120,6 +120,8 @@ doc/NotificationDto.md
 doc/NotificationPageDto.md
 doc/OfertasApi.md
 doc/OfferWorkerDto.md
+doc/OtpCodeDto.md
+doc/OtpCodesDto.md
 doc/OtpRequestedDto.md
 doc/OverdueListDto.md
 doc/OverdueRowDto.md
@@ -351,6 +353,8 @@ lib/src/model/my_review_dto.dart
 lib/src/model/notification_dto.dart
 lib/src/model/notification_page_dto.dart
 lib/src/model/offer_worker_dto.dart
+lib/src/model/otp_code_dto.dart
+lib/src/model/otp_codes_dto.dart
 lib/src/model/otp_requested_dto.dart
 lib/src/model/overdue_list_dto.dart
 lib/src/model/overdue_row_dto.dart
@@ -461,6 +465,8 @@ test/legal_document_dto_test.dart
 test/legal_pending_dto_test.dart
 test/legal_version_dto_test.dart
 test/me_dto_test.dart
+test/otp_code_dto_test.dart
+test/otp_codes_dto_test.dart
 test/pilot_api_test.dart
 test/pilot_funnel_dto_test.dart
 test/pilot_interest_dto_test.dart

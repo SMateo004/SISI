@@ -6,6 +6,7 @@ import { OpsMetrics } from '../../observability/ops-metrics';
 import { RateLimitStore } from '../../common/rate-limit/rate-limit.store';
 import { RateLimitedException } from '../../common/rate-limit/rate-limited.exception';
 import type { AppConfigService } from '../../config/app-config';
+import { ConsoleOtpFeed } from './console-otp-feed';
 import { OtpHasher } from './otp-hasher';
 import { OTP_PROVIDER, type OtpProvider } from './otp-provider';
 import { OTP_STORE, type OtpStore } from './otp.store';
@@ -36,6 +37,8 @@ export class OtpService {
     private readonly rateLimits: RateLimitStore,
     // Contador de fallos para la alerta de OTP (ADR-0048); opcional en los tests unitarios.
     @Optional() private readonly metrics?: OpsMetrics,
+    // Códigos visibles en el panel mientras no hay SMS (ADR-0056); nunca en producción.
+    @Optional() private readonly consoleFeed?: ConsoleOtpFeed,
   ) {
     this.hasher = new OtpHasher(config.get('JWT_SECRET', { infer: true }));
   }
@@ -84,6 +87,7 @@ export class OtpService {
       await this.metrics?.count('otp_fail');
       throw error;
     }
+    if (this.provider.name === 'console') await this.consoleFeed?.record(phone, code, ttl);
     return { expiresInSec: ttl, resendInSec: cooldown };
   }
 
@@ -97,6 +101,7 @@ export class OtpService {
     );
     switch (result) {
       case 'ok':
+        await this.consoleFeed?.markUsed(phone);
         return phone;
       case 'exhausted':
         throw new ApiError(

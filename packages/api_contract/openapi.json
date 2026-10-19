@@ -7387,6 +7387,44 @@
         ]
       }
     },
+    "/admin/otp-codes": {
+      "get": {
+        "description": "El más reciente primero; cada código queda hasta que vence y se marca al usarse.",
+        "operationId": "AdminOtpCodesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OtpCodesDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN, ADMIN_SESSION_REQUIRED o ADMIN_PERMISSION_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Códigos de ingreso vigentes (solo sin SMS y fuera de producción)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/admin/verifications": {
       "get": {
         "description": "De la más antigua a la más nueva, 25 por página.",
@@ -14232,6 +14270,75 @@
           "userId",
           "status",
           "modeForcedToEmployer"
+        ]
+      },
+      "OtpCodeDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "example": "+59170012345"
+          },
+          "code": {
+            "type": "string",
+            "example": "482913"
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "usedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "accountExists": {
+            "type": "boolean",
+            "description": "El número ya tiene cuenta (si no, es un registro nuevo)"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "example": "María Pérez"
+          },
+          "activeMode": {
+            "type": "string",
+            "enum": [
+              "employer",
+              "worker"
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "phone",
+          "code",
+          "sentAt",
+          "expiresAt",
+          "accountExists"
+        ]
+      },
+      "OtpCodesDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Solo con OTP_PROVIDER=console y fuera de producción; si no, siempre vacío"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OtpCodeDto"
+            }
+          }
+        },
+        "required": [
+          "enabled",
+          "items"
         ]
       },
       "VerificationRowDto": {

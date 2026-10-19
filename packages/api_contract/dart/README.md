@@ -103,6 +103,7 @@ Class | Method | HTTP request | Description
 [*AdminApi*](doc/AdminApi.md) | [**adminJobsControllerDetail**](doc/AdminApi.md#adminjobscontrollerdetail) | **GET** /admin/jobs/{id} | Detalle de un trabajo para revisar una disputa
 [*AdminApi*](doc/AdminApi.md) | [**adminJobsControllerDisputed**](doc/AdminApi.md#adminjobscontrollerdisputed) | **GET** /admin/jobs/disputed | Trabajos con un problema reportado, sin resolver
 [*AdminApi*](doc/AdminApi.md) | [**adminJobsControllerResolve**](doc/AdminApi.md#adminjobscontrollerresolve) | **POST** /admin/jobs/{id}/resolve | Resolver una disputa
+[*AdminApi*](doc/AdminApi.md) | [**adminOtpCodesControllerList**](doc/AdminApi.md#adminotpcodescontrollerlist) | **GET** /admin/otp-codes | Códigos de ingreso vigentes (solo sin SMS y fuera de producción)
 [*AdminApi*](doc/AdminApi.md) | [**adminPilotControllerAdd**](doc/AdminApi.md#adminpilotcontrolleradd) | **POST** /admin/pilot/allowlist | Habilitar números (se pueden pegar varios), con motivo
 [*AdminApi*](doc/AdminApi.md) | [**adminPilotControllerInterest**](doc/AdminApi.md#adminpilotcontrollerinterest) | **GET** /admin/pilot/interest | Interés registrado (\&quot;Pronto en tu zona\&quot;), lo más nuevo primero
 [*AdminApi*](doc/AdminApi.md) | [**adminPilotControllerInterestCsv**](doc/AdminApi.md#adminpilotcontrollerinterestcsv) | **GET** /admin/pilot/interest.csv | Interés en CSV (para medir la demanda)
@@ -322,6 +323,8 @@ Class | Method | HTTP request | Description
  - [NotificationDto](doc/NotificationDto.md)
  - [NotificationPageDto](doc/NotificationPageDto.md)
  - [OfferWorkerDto](doc/OfferWorkerDto.md)
+ - [OtpCodeDto](doc/OtpCodeDto.md)
+ - [OtpCodesDto](doc/OtpCodesDto.md)
  - [OtpRequestedDto](doc/OtpRequestedDto.md)
  - [OverdueListDto](doc/OverdueListDto.md)
  - [OverdueRowDto](doc/OverdueRowDto.md)

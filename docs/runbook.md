@@ -27,7 +27,7 @@ Orden: R2 → Vercel → Render → GitHub. Staging y producción son Blueprints
    - Account → Tokens → token nuevo para GitHub Actions.
 3. **Clave del panel de staging** (en tu terminal, distinta de la local): `cd backend && npm run dev:tools -- admin-totp`.
 4. **Render:** New → Blueprint → repo `SISI`, rama `develop`, **Blueprint Path = `render.staging.yaml`**. Completar los valores `sync: false`:
-   - `CORS_ORIGINS` = `https://app-web-staging.vercel.app,https://admin-staging.vercel.app`;
+   - `CORS_ORIGINS` = las URLs que Vercel asignó a los dos proyectos (Settings → Domains); hoy `https://app-web-staging.vercel.app,https://admin-staging-eight-snowy.vercel.app`;
    - `STORAGE_ENDPOINT`, `STORAGE_BUCKET` (`sisi-staging`), `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` (paso 1), en `api-staging` y `worker-staging`;
    - `ADMIN_TOTP_SECRET` (paso 3);
    - el resto (`OTP_PROVIDER_KEY`, `OTP_SENDER`, `FIREBASE_SERVICE_ACCOUNT`, `MAPS_API_KEY`, `SENTRY_DSN`) puede quedar vacío en staging.
@@ -42,9 +42,9 @@ Orden: R2 → Vercel → Render → GitHub. Staging y producción son Blueprints
 ### URLs de staging
 | Pieza | URL | Origen |
 |---|---|---|
-| API y socket | `https://<api-staging>.onrender.com` | Render, servicio `api-staging` |
+| API y socket | `https://api-staging-ch8k.onrender.com` | Render, servicio `api-staging` |
 | App web | `https://app-web-staging.vercel.app` | Vercel, proyecto `app-web-staging` |
-| Admin | `https://admin-staging.vercel.app` (la API va por `/api/*`) | Vercel, proyecto `admin-staging` |
+| Admin | `https://admin-staging-eight-snowy.vercel.app` (la API va por `/api/*`) | Vercel, proyecto `admin-staging` (`admin-staging.vercel.app` ya era de otra cuenta) |
 
 `CORS_ORIGINS` de `api-staging` = las dos URLs de Vercel separadas por coma.
 

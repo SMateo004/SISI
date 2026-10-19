@@ -20,7 +20,7 @@ Orden: R2 → Vercel → Render → GitHub. Staging y producción son Blueprints
 1. **Cloudflare R2:**
    - crear el bucket `sisi-staging` (privado, sin acceso público ni `r2.dev`);
    - R2 → Manage API tokens → token con "Object Read & Write" solo para ese bucket. Anotar Access Key ID, Secret Access Key y el endpoint `https://<account_id>.r2.cloudflarestorage.com`;
-   - bucket → Settings → CORS: el contenido de `infra/storage/cors.production.json` con las dos URLs de Vercel del paso 2.
+   - bucket → Settings → CORS Policy → Add/Edit → pestaña JSON: pegar `infra/storage/r2-cors.staging.json` tal cual (formato del dashboard: una lista de reglas, sin `CORSRules`). Sin esto el navegador no puede subir fotos, carnets ni selfies.
 2. **Vercel** (CLI, en tu terminal: `npm i -g vercel@63.1.2`, `vercel login`):
    - `vercel project add app-web-staging` y `vercel project add admin-staging`;
    - de cada proyecto, Settings → General → Project ID; del equipo, Settings → General → Team ID (es el `VERCEL_ORG_ID`);
@@ -323,7 +323,7 @@ Saldo, periodos y movimientos de un trabajador: `GET /admin/billing/workers/<uui
    - `SENTRY_DSN`.
 
    Copiar los deploy hooks de api, worker y billing-cron a los secretos de GitHub.
-3. **R2:** bucket privado (sin acceso público ni `r2.dev`), CORS desde `infra/storage/cors.production.json` con las URLs reales y un token con permisos solo sobre ese bucket.
+3. **R2:** bucket privado (sin acceso público ni `r2.dev`), CORS desde `infra/storage/cors.production.json` (formato del dashboard de Cloudflare, pestaña JSON) con las URLs reales y un token con permisos solo sobre ese bucket.
 4. **Textos legales finales** en `backend/legal/` sin el marcador (si no, ni la API ni el AAB de producción se construyen).
 
 ### Desplegar

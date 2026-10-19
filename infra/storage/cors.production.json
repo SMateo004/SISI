@@ -1,12 +1,9 @@
-{
-  "_comentario": "Plantilla del CORS del bucket R2 de producción (ADR-0012, ADR-0047). Reemplazar los orígenes por las URLs reales de la app web y del admin (o el dominio propio) y cargarla en Cloudflare → R2 → bucket → Settings → CORS policy. Sin comodines ni http.",
-  "CORSRules": [
-    {
-      "AllowedOrigins": ["https://<app-web>.vercel.app", "https://<admin>.vercel.app"],
-      "AllowedMethods": ["GET", "PUT", "HEAD"],
-      "AllowedHeaders": ["content-type", "content-length"],
-      "ExposeHeaders": ["ETag"],
-      "MaxAgeSeconds": 3000
-    }
-  ]
-}
+[
+  {
+    "AllowedOrigins": ["https://<app-web>.vercel.app", "https://<admin>.vercel.app"],
+    "AllowedMethods": ["GET", "PUT", "HEAD"],
+    "AllowedHeaders": ["content-type", "content-length"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3000
+  }
+]

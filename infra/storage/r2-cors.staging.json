@@ -1,0 +1,12 @@
+[
+  {
+    "AllowedOrigins": [
+      "https://app-web-staging.vercel.app",
+      "https://admin-staging-eight-snowy.vercel.app"
+    ],
+    "AllowedMethods": ["GET", "PUT", "HEAD"],
+    "AllowedHeaders": ["content-type", "content-length"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3000
+  }
+]

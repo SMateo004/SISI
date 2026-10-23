@@ -3,17 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sisi_api/sisi_api.dart';
 
+import '../../core/config/env.dart';
 import '../../core/format/dates.dart';
 import '../../core/format/money.dart';
 import '../../core/http/api_client.dart';
 import '../../core/widgets/common.dart';
 import '../../core/widgets/confirm_action_dialog.dart';
 import '../pilot/pilot_panel.dart';
+import 'ops_drill.dart';
 
-const _tabs = [
+/// "Simulacro" solo fuera de producción (la API también rechaza el error de prueba ahí).
+final _tabs = [
   ('parametros', 'Parámetros'),
   ('flags', 'Feature flags'),
   ('piloto', 'Piloto'),
+  if (!Env.isProduction) ('simulacro', 'Simulacro de alertas'),
 ];
 
 const _groups = {
@@ -59,6 +63,7 @@ class SettingsScreen extends ConsumerWidget {
         child: switch (tab) {
           'flags' => const _Flags(),
           'piloto' => const PilotPanel(),
+          'simulacro' when !Env.isProduction => const OpsDrillPanel(),
           _ => const _Parameters(),
         },
       ),

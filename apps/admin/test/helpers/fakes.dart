@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sisi_admin/app.dart';
 import 'package:sisi_admin/core/auth/auth_gateway.dart';
@@ -151,6 +152,7 @@ Future<ProviderContainer> pumpAdmin(
   FakeCountersFeed? feed,
   String location = '/',
   Size size = const Size(2200, 1200),
+  List<Override> overrides = const [],
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -162,6 +164,7 @@ Future<ProviderContainer> pumpAdmin(
         authGatewayProvider.overrideWithValue(gateway ?? FakeAuthGateway()),
         adminApiProvider.overrideWithValue(api),
         countersFeedProvider.overrideWithValue(feed ?? FakeCountersFeed()),
+        ...overrides,
       ],
       child: const SisiAdminApp(),
     ),
